@@ -1667,7 +1667,7 @@ function renderNotificationsFeed(userEmail) {
         let badgeClass = isChatMsg ? "bg-primary text-white" : (isOwnerAlert ? "bg-warning text-dark" : (isApproved ? "bg-success text-white" : (isMoreInfo ? "bg-warning text-dark" : (isRejected ? "bg-danger text-white" : "bg-info text-dark"))));
 
         container.innerHTML += `
-            <div class="p-3 mb-2 rounded-3 border shadow-sm position-relative" style="background-color: #120f26; border-color: rgba(168, 85, 247, 0.25) !important;">
+            <div class="notification-item-card p-3 mb-2 rounded-3 border shadow-sm position-relative">
                 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
                     <span class="badge ${badgeClass} extra-small fw-bold px-2.5 py-1">${badgeText}</span>
                     <div class="d-flex align-items-center gap-2">
@@ -1680,7 +1680,7 @@ function renderNotificationsFeed(userEmail) {
                         </button>
                     </div>
                 </div>
-                <p class="small mb-2 text-light fw-medium" style="line-height: 1.4;">${escapeHtml(n.message)}</p>
+                <p class="notification-message-text small mb-2 fw-medium" style="line-height: 1.4;">${escapeHtml(n.message)}</p>
                 
                 ${n.chatId ? `
                     <div class="mt-2 pt-2 border-top border-secondary-subtle d-flex justify-content-between align-items-center">
