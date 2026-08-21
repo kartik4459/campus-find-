@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Campus Lost & Found</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="admin">
+
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <!-- Hamburger menu button -->
+                <button class="btn btn-menu me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <a class="navbar-brand" href="index.html"><img src="images/campusfind-logo.png" alt="CampusFind Logo" class="brand-logo-img">
+                    CampusFind
+                </a>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <a href="index.html" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-none d-md-inline-block">
+                    <i class="bi bi-house-door me-1"></i> Home
+                </a>
+                <a href="index.html" class="btn btn-sm btn-outline-secondary rounded-circle d-inline-flex d-md-none" style="width: 36px; height: 36px; align-items: center; justify-content: center; padding: 0;">
+                    <i class="bi bi-house-door fs-5"></i>
+                </a>
+                <!-- Dynamic User Account Status Badge -->
+                <div id="nav-user-display">
+                    <!-- Dynamic user panel rendered via app.js -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Slide-out Left Sidebar Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fw-bold d-flex align-items-center gap-2" id="sidebarMenuLabel">
+                <span class="brand-icon" style="width:32px; height:32px; font-size:0.95rem; animation:none;"><i class="bi bi-search-heart"></i></span>
+                Menu
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="sidebar-nav">
+                <a class="nav-link" href="index.html"><i class="bi bi-house-door me-2"></i>Home</a>
+                <a class="nav-link" href="report.html"><i class="bi bi-plus-square me-2"></i>Report Item</a>
+                <a class="nav-link" href="matches.html"><i class="bi bi-cpu me-2"></i>Match Engine</a>
+                <a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a class="nav-link active text-warning" href="admin.html"><i class="bi bi-shield-lock me-2"></i>Admin</a>
+            </div>
+            
+            <div class="p-3 bg-light rounded-3 border mt-4 small text-muted">
+                <div class="fw-bold mb-1 text-primary"><i class="bi bi-lightning-charge me-1"></i>Algorithm Active</div>
+                Multi-attribute comparison matches items across zones, categories, colors, dates, and descriptions in real time.
+            </div>
+        </div>
+    </div>
+
+    <main class="py-5">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1"><i class="bi bi-shield-lock text-warning me-2"></i>Admin Console</h2>
+                    <p class="text-muted mb-0">Manage system reports, view posting users, and reset demo data.</p>
+                </div>
+                <div>
+                    <button type="button" id="btn-reset-sample-data" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Demo Dataset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reports Management Table -->
+            <div class="bg-white rounded-3 border shadow-sm p-4">
+                <h5 class="fw-bold mb-3">All System Reports</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Item Name</th>
+                                <th>Posted By User</th>
+                                <th>Zone</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body">
+                            <!-- Populated dynamically via app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-muted">
+            © 2026 Campus Lost & Found System. Admin Console.
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/matching.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

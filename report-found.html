@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Found Item - Campus Lost & Found</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="report-found">
+
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <!-- Hamburger menu button -->
+                <button class="btn btn-menu me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <a class="navbar-brand" href="index.html"><img src="images/campusfind-logo.png" alt="CampusFind Logo" class="brand-logo-img">
+                    CampusFind
+                </a>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <a href="index.html" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-none d-md-inline-block">
+                    <i class="bi bi-house-door me-1"></i> Home
+                </a>
+                <a href="index.html" class="btn btn-sm btn-outline-secondary rounded-circle d-inline-flex d-md-none" style="width: 36px; height: 36px; align-items: center; justify-content: center; padding: 0;">
+                    <i class="bi bi-house-door fs-5"></i>
+                </a>
+                <!-- Dynamic User Account Status Badge -->
+                <div id="nav-user-display">
+                    <!-- Dynamic user panel rendered via app.js -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Slide-out Left Sidebar Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fw-bold d-flex align-items-center gap-2" id="sidebarMenuLabel">
+                <span class="brand-icon" style="width:32px; height:32px; font-size:0.95rem; animation:none;"><i class="bi bi-search-heart"></i></span>
+                Menu
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="sidebar-nav">
+                <a class="nav-link" href="index.html"><i class="bi bi-house-door me-2"></i>Home</a>
+                <a class="nav-link active" href="report.html"><i class="bi bi-plus-square me-2"></i>Report Item</a>
+                <a class="nav-link" href="matches.html"><i class="bi bi-cpu me-2"></i>Match Engine</a>
+                <a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a class="nav-link text-warning" href="admin.html"><i class="bi bi-shield-lock me-2"></i>Admin</a>
+            </div>
+            
+            <div class="p-3 bg-light rounded-3 border mt-4 small text-muted">
+                <div class="fw-bold mb-1 text-primary"><i class="bi bi-lightning-charge me-1"></i>Algorithm Active</div>
+                Multi-attribute comparison matches items across zones, categories, colors, dates, and descriptions in real time.
+            </div>
+        </div>
+    </div>
+
+    <main class="py-5">
+        <div class="container">
+            <div class="max-w-xl mx-auto">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold mb-1">Submit Found Item Report</h2>
+                    <p class="text-muted">Enter item details & upload an image so our matching algorithm can find probability matches.</p>
+                </div>
+
+                <!-- Dynamic Instruction Card -->
+                <div id="instruction-card" class="mb-4"></div>
+
+                <div class="form-card">
+                    <form id="report-form">
+                        <input type="hidden" id="report-type-input" name="type" value="found">
+
+                        <!-- Navigation to Lost Report Page -->
+                        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 bg-light rounded-3 border">
+                            <div>
+                                <h6 class="fw-bold mb-1 text-heading">Lost something instead?</h6>
+                                <p class="text-muted small mb-0">File a lost report to search the database.</p>
+                            </div>
+                            <a href="report.html" class="btn btn-sm btn-lost rounded-pill px-3 fw-bold">
+                                <i class="bi bi-exclamation-circle me-1"></i>I Lost Something
+                            </a>
+                        </div>
+
+                        <!-- Item Details -->
+                        <h5 class="fw-bold mb-3"><i class="bi bi-tag text-primary me-2"></i>Item Characteristics</h5>
+
+                        <div class="mb-3">
+                            <label for="itemName" class="form-label fw-semibold">Item Name <span class="text-danger">*</span></label>
+                            <input type="text" id="itemName" class="form-control" placeholder="e.g. Black Nike Backpack, iPhone 14 Pro, Brown Wallet" required>
+                        </div>
+
+                        <!-- Image Upload Field -->
+                        <div class="mb-3 p-3 bg-light rounded-3 border">
+                            <label for="itemImage" class="form-label fw-semibold text-dark mb-1">
+                                <i class="bi bi-image text-primary me-1"></i>Upload Item Photo (Optional)
+                            </label>
+                            <input type="file" id="itemImage" accept="image/*" class="form-control form-control-sm" onchange="previewImage(event)">
+                            <div class="text-center mt-2">
+                                <img id="img-preview" src="" class="img-fluid rounded border d-none" style="max-height: 180px; object-fit: cover;">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="category" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                                <select id="category" class="form-select" required>
+                                    <option value="">Select Category...</option>
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Bags">Bags</option>
+                                    <option value="Wallets">Wallets</option>
+                                    <option value="ID Cards">ID Cards</option>
+                                    <option value="Keys">Keys</option>
+                                    <option value="Books">Books</option>
+                                    <option value="Clothing">Clothing</option>
+                                    <option value="Accessories">Accessories</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="color" class="form-label fw-semibold">Primary Color <span class="text-danger">*</span></label>
+                                <select id="color" class="form-select" required>
+                                    <option value="">Select Color...</option>
+                                    <option value="Black">Black</option>
+                                    <option value="White">White</option>
+                                    <option value="Blue">Blue</option>
+                                    <option value="Red">Red</option>
+                                    <option value="Green">Green</option>
+                                    <option value="Yellow">Yellow</option>
+                                    <option value="Brown">Brown</option>
+                                    <option value="Grey">Grey</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="zone" class="form-label fw-semibold">Campus Zone / Location <span class="text-danger">*</span></label>
+                                <select id="zone" class="form-select" required>
+                                    <option value="">Select Zone...</option>
+                                    <option value="Library">Library</option>
+                                    <option value="Main Block">Main Block</option>
+                                    <option value="Cafeteria">Cafeteria</option>
+                                    <option value="Hostel">Hostel</option>
+                                    <option value="Sports Complex">Sports Complex</option>
+                                    <option value="Parking">Parking</option>
+                                    <option value="Auditorium">Auditorium</option>
+                                    <option value="Laboratory">Laboratory</option>
+                                    <option value="Admin Block">Admin Block</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="date" class="form-label fw-semibold">Date Found <span class="text-danger">*</span></label>
+                                <input type="date" id="date" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-semibold">Item Description <span class="text-danger">*</span></label>
+                            <textarea id="description" rows="3" class="form-control" placeholder="Provide distinct description words..." required></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="contactPhone" class="form-label fw-semibold">Contact Phone (Optional)</label>
+                            <input type="tel" id="contactPhone" class="form-control" placeholder="+91 98765 43210">
+                        </div>
+
+                        <button type="submit" class="btn btn-matching btn-lg w-100 fw-bold">
+                            Submit & Run Intelligent Matching Engine
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-muted">
+            © 2026 Campus Lost & Found System. Powered by Intelligent Multi-Attribute Matching.
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/matching.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

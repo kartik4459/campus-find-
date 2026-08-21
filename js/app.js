@@ -1,0 +1,2439 @@
+// Main Application Logic (app.js)
+// Handles page rendering, card displays, user session state, matching views, notifications, and claim approval flow
+
+let uploadedImageBase64 = null;
+
+// Image preview helper function
+function previewImage(event) {
+    let file = event.target.files[0];
+    if (file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            uploadedImageBase64 = e.target.result;
+            let preview = document.getElementById("img-preview");
+            if (preview) {
+                preview.src = e.target.result;
+                preview.classList.remove("d-none");
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+window.addEventListener('load', function() {
+    // Render dynamic navbar user badge & account switcher
+    renderNavbarUser();
+
+    // Determine active page
+    let path = window.location.pathname;
+    if (path.includes("report.html") || path.includes("report-found.html")) {
+        initReportPage();
+    } else if (path.includes("matches.html")) {
+        initMatchesPage();
+    } else if (path.includes("dashboard.html")) {
+        initDashboardPage();
+    } else if (path.includes("admin.html")) {
+        initAdminPage();
+    } else {
+        initHomePage();
+    }
+});
+
+
+// Render multi-user account switcher badge in navigation bar
+function renderNavbarUser() {
+    let currentUser = getCurrentUser();
+    let rawUsers = (typeof getUsers === 'function') ? getUsers() : [];
+    // Strict filter: Only real registered users (exclude legacy demo accounts)
+    let allUsers = rawUsers.filter(u => u.useremail && u.useremail.toLowerCase() !== "ira.sodhi@example.com" && u.useremail.toLowerCase() !== "rohan.verma@example.com");
+
+    let userDisplay = document.getElementById("nav-user-display");
+    if (!userDisplay) return;
+
+    let isLight = document.documentElement.classList.contains("light-theme");
+    let themeIcon = isLight ? "bi-moon-stars" : "bi-sun";
+    let themeTitle = isLight ? "Switch to Dark Mode" : "Switch to Light Mode";
+
+    if (!currentUser) {
+        userDisplay.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                <button type="button" class="btn btn-theme-toggle" onclick="toggleTheme()" title="${themeTitle}">
+                    <i class="${themeIcon}"></i>
+                </button>
+                <a class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" href="login.html">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+                </a>
+            </div>
+        `;
+        return;
+    }
+
+    // Ensure active currentUser is present in allUsers
+    if (!allUsers.some(u => u.useremail && u.useremail.toLowerCase() === currentUser.useremail.toLowerCase())) {
+        allUsers.push(currentUser);
+    }
+
+    let userOptionsHtml = allUsers.map(u => {
+        let isCurrent = u.useremail && currentUser.useremail && u.useremail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim();
+        return `
+            <li>
+                <a class="dropdown-item d-flex align-items-center justify-content-between py-2 ${isCurrent ? 'bg-light fw-bold text-primary' : ''}" href="#" onclick="switchAccount('${u.useremail}')">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-primary-subtle text-primary fw-bold me-2 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                            ${u.username ? u.username.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : 'U'}
+                        </div>
+                        <div>
+                            <div class="small leading-tight">${u.username}</div>
+                            <div class="text-muted extra-small">${u.useremail}</div>
+                        </div>
+                    </div>
+                    ${isCurrent ? '<span class="badge bg-primary rounded-pill ms-2" style="font-size: 0.65rem;">Active</span>' : ''}
+                </a>
+            </li>
+        `;
+    }).join('');
+
+    let initials = currentUser.username ? currentUser.username.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : 'U';
+    let notifications = getNotifications(currentUser.useremail);
+    let unreadChatCount = (typeof getUnreadChatCount === 'function') ? getUnreadChatCount(currentUser.useremail) : 0;
+    let count = notifications.length + unreadChatCount;
+
+    userDisplay.innerHTML = `
+        <div class="d-flex align-items-center gap-3">
+            <button type="button" class="btn btn-theme-toggle" onclick="toggleTheme()" title="${themeTitle}">
+                <i class="${themeIcon}"></i>
+            </button>
+
+            <a href="dashboard.html" class="position-relative text-decoration-none text-muted nav-notification-bell" title="View Notifications & Chats in Dashboard">
+                <i class="bi bi-bell"></i>
+                ${count > 0 ? `
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.2rem 0.35rem;">
+                        ${count}
+                    </span>
+                ` : ''}
+            </a>
+
+            <div class="dropdown">
+                <button class="btn p-0 border-0 bg-transparent dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown">
+                    <div class="avatar-circle-nav shadow-sm">
+                        ${initials}
+                    </div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="min-width: 260px;">
+                    <li class="px-3 py-2 bg-light rounded-3 mb-2 border">
+                        <small class="text-muted d-block text-uppercase extra-small fw-bold">Active Account</small>
+                        <strong class="text-dark small d-block">${currentUser.username}</strong>
+                        <span class="text-muted extra-small d-block text-truncate">${currentUser.useremail}</span>
+                        <div class="mt-1 d-flex flex-wrap gap-1">
+                            ${currentUser.studentId ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle extra-small" style="font-size: 0.65rem;"><i class="bi bi-card-text me-1 text-primary"></i>${currentUser.studentId}</span>` : ''}
+                            ${currentUser.department ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle extra-small" style="font-size: 0.65rem;"><i class="bi bi-mortarboard me-1 text-primary"></i>${currentUser.department}</span>` : ''}
+                        </div>
+                    </li>
+                    <li class="px-2 pb-1"><small class="text-muted fw-bold extra-small text-uppercase tracking-wider">Switch Saved Account</small></li>
+                    ${userOptionsHtml}
+                    <li><hr class="dropdown-divider my-2"></li>
+                    <li>
+                        <a class="dropdown-item small rounded-2 py-1.5" href="login.html">
+                            <i class="bi bi-person-plus text-success me-2"></i>Add Student Account
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item small text-danger fw-bold rounded-2 py-1.5" href="#" onclick="handleLogout()">
+                            <i class="bi bi-box-arrow-right me-2"></i>Log Out
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
+// Switch account helper
+function switchAccount(email) {
+    let u = switchUser(email);
+    if (u) {
+        // Clear any old item ID from URL so new user's own report loads
+        if (window.location.pathname.includes("matches.html")) {
+            window.location.href = "matches.html";
+        } else {
+            window.location.reload();
+        }
+    }
+}
+
+// Logout helper — clears session but keeps campusfind_users intact
+function handleLogout() {
+    if (typeof clearCurrentSession === 'function') {
+        clearCurrentSession();
+    } else {
+        localStorage.removeItem("campusfind_current_user");
+        localStorage.removeItem("current_user");
+        localStorage.setItem("isLoggedIn", "false");
+    }
+    window.location.href = "login.html";
+}
+
+// -------------------------------------------------------------
+// 1. HOME PAGE LOGIC
+// -------------------------------------------------------------
+function initHomePage() {
+    let reports = getReports();
+    let claims = getClaims();
+
+    // Calculate real data target counts
+    let targetTotal = reports.length;
+    let targetLost = reports.filter(r => r.type === "lost").length;
+    let targetFound = reports.filter(r => r.type === "found").length;
+    let targetRecovered = claims.filter(c => c.status === "Approved" || c.status === "Resolved").length;
+
+    // Setup IntersectionObserver for Live Statistics Section
+    let statsSection = document.getElementById("stats-section");
+    if (statsSection) {
+        let observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    statsSection.classList.add("is-visible");
+                    
+                    // Trigger Staggered Vanilla JS Count-Up Animations for Real Data
+                    setTimeout(() => animateCountUp("stat-total", targetTotal), 0);
+                    setTimeout(() => animateCountUp("stat-lost", targetLost), 120);
+                    setTimeout(() => animateCountUp("stat-found", targetFound), 240);
+                    setTimeout(() => animateCountUp("stat-recovered", targetRecovered), 360);
+                    
+                    observer.unobserve(statsSection);
+                }
+            });
+        }, { threshold: 0.2 });
+
+        observer.observe(statsSection);
+    } else {
+        // Fallback if section element not found directly
+        let totalEl = document.getElementById("stat-total");
+        let lostEl = document.getElementById("stat-lost");
+        let foundEl = document.getElementById("stat-found");
+        let recoveredEl = document.getElementById("stat-recovered");
+
+        if (totalEl) totalEl.innerText = targetTotal;
+        if (lostEl) lostEl.innerText = targetLost;
+        if (foundEl) foundEl.innerText = targetFound;
+        if (recoveredEl) recoveredEl.innerText = targetRecovered;
+    }
+
+    // Initialize How It Works Sequential Process Timeline Animation
+    initHowItWorksAnimation();
+
+    // Setup IntersectionObserver for Last Section Entrance Animation
+    let recentSection = document.getElementById("recent-reports-section");
+    if (recentSection) {
+        let recentObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    recentSection.classList.add("is-visible");
+                    recentObserver.unobserve(recentSection);
+                }
+            });
+        }, { threshold: 0.15 });
+        recentObserver.observe(recentSection);
+    }
+
+    renderRecentCards(reports);
+
+    // Filter Listeners
+    let searchIn = document.getElementById("home-search-input");
+    let typeSelect = document.getElementById("home-type-filter");
+    let catSelect = document.getElementById("home-category-filter");
+
+    let filterCards = () => {
+        let q = searchIn ? searchIn.value.toLowerCase().trim() : "";
+        let t = typeSelect ? typeSelect.value : "all";
+        let c = catSelect ? catSelect.value : "all";
+
+        let filtered = reports.filter(item => {
+            let matchQ = item.itemName.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
+            let matchT = t === "all" || item.type === t;
+            let matchC = c === "all" || item.category === c;
+            return matchQ && matchT && matchC;
+        });
+
+        renderRecentCards(filtered);
+    };
+
+    if (searchIn) searchIn.oninput = filterCards;
+    if (typeSelect) typeSelect.onchange = filterCards;
+    if (catSelect) catSelect.onchange = filterCards;
+
+    // Initialize Custom Themed Dropdowns (#151329 / #6B3FBF / #6D28D9)
+    setupCustomSelect("home-type-filter");
+    setupCustomSelect("home-category-filter");
+}
+
+function renderRecentCards(list) {
+    let container = document.getElementById("recent-reports-grid");
+    if (!container) return;
+
+    if (list.length === 0) {
+        container.innerHTML = `<div class="col-12 text-center py-4 text-muted">No items found matching filter.</div>`;
+        return;
+    }
+
+    let currentUser = getCurrentUser();
+
+    container.innerHTML = "";
+    list.slice(0, 8).forEach(item => {
+        let isMine = currentUser && item.postedByEmail && currentUser.useremail && item.postedByEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim();
+
+        // Image or Placeholder logo
+        let imageHtml = "";
+        if (item.image && item.image.trim() !== "" && !item.image.includes("placeholder")) {
+            imageHtml = `<img src="${item.image}" class="card-img-top w-100 h-100 object-fit-cover" alt="${escapeHtml(item.itemName)}">`;
+        } else {
+            let placeholderIcon = "bi-tag";
+            if (item.category === "Electronics") placeholderIcon = "bi-laptop";
+            else if (item.category === "Bags") placeholderIcon = "bi-backpack";
+            else if (item.category === "Wallets") placeholderIcon = "bi-wallet2";
+            
+            imageHtml = `
+                <div class="card-img-placeholder d-flex align-items-center justify-content-center w-100 h-100" style="background-color: rgba(255, 255, 255, 0.02);">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; border: 1px solid var(--border-color); background-color: rgba(255, 255, 255, 0.03);">
+                        <i class="bi ${placeholderIcon} text-muted fs-3"></i>
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML += `
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div class="card h-100 report-card-premium shadow-lg border-0 cursor-pointer" onclick="openItemDetailsModal('${item.id}')" style="cursor: pointer;">
+                    <div class="card-img-wrapper position-relative overflow-hidden">
+                        ${imageHtml}
+                        <div class="card-img-overlay-gradient"></div>
+                        <div class="position-absolute top-0 start-0 m-2.5" style="z-index: 5;">
+                            <span class="badge ${item.type === 'lost' ? 'badge-type-lost' : 'badge-type-found'} rounded-pill px-2.5 py-1">
+                                ${item.type.toUpperCase()}
+                            </span>
+                        </div>
+                        <div class="position-absolute top-0 end-0 m-2.5" style="z-index: 5;">
+                            <span class="badge badge-verified rounded-pill px-2.5 py-1">
+                                <i class="bi bi-patch-check-fill me-1"></i>Verified
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body p-3.5 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="card-category-tag mb-1">
+                                ${item.category}
+                            </div>
+                            <h5 class="fw-bold card-item-title mb-1.5 text-truncate" title="${escapeHtml(item.itemName)}">
+                                ${escapeHtml(item.itemName)}
+                            </h5>
+                            <p class="card-text card-description mb-3">
+                                ${escapeHtml(item.description)}
+                            </p>
+                            <div class="d-flex align-items-center justify-content-between card-meta-row extra-small mb-3">
+                                <span><i class="bi bi-geo-alt-fill text-cyan me-1"></i>${item.zone}</span>
+                                <span><i class="bi bi-calendar-event-fill text-amber me-1"></i>${formatDate(item.date)}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-view-full-info w-100 fw-bold">
+                            View Full Info <i class="bi bi-arrow-right ms-1.5 btn-arrow-icon"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function openItemDetailsModal(itemId) {
+    let reports = getReports();
+    let item = reports.find(r => r.id === itemId);
+    if (!item) return;
+
+    let titleEl = document.getElementById("item-modal-title");
+    let bodyEl = document.getElementById("item-modal-body");
+
+    if (titleEl) {
+        titleEl.innerHTML = `
+            <span class="badge ${item.type === 'lost' ? 'bg-danger' : 'bg-success'} me-2">${item.type.toUpperCase()} ITEM</span>
+            ${escapeHtml(item.itemName)}
+        `;
+    }
+
+    if (bodyEl) {
+        let imageHtml = "";
+        if (item.image && item.image.trim() !== "" && !item.image.includes("placeholder")) {
+            imageHtml = `<img src="${item.image}" class="w-100 rounded-3 shadow-sm border border-secondary-subtle" style="max-height: 260px; object-fit: cover;">`;
+        } else {
+            imageHtml = `
+                <div class="p-5 text-center info-box-cream rounded-3 border">
+                    <i class="bi bi-bag-check fs-1 text-primary d-block mb-2"></i>
+                    <span class="info-box-label small">No photo uploaded</span>
+                </div>
+            `;
+        }
+
+        bodyEl.innerHTML = `
+            <div class="row g-4">
+                <div class="col-md-5 text-center">
+                    ${imageHtml}
+                    <div class="mt-3 p-2.5 info-box-cream rounded-3 shadow-sm text-center extra-small">
+                        <i class="bi bi-shield-check text-success me-1"></i>
+                        <span class="info-box-label me-1">Report ID:</span>
+                        <strong class="info-box-main">${item.id}</strong>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-pill fw-bold">
+                            <i class="bi bi-tag me-1"></i>Category: ${item.category}
+                        </span>
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1.5 rounded-pill fw-bold">
+                            <i class="bi bi-geo-alt me-1"></i>Zone: ${item.zone}
+                        </span>
+                        ${item.color ? `
+                            <span class="badge bg-secondary-subtle text-light border border-secondary-subtle px-3 py-1.5 rounded-pill fw-bold">
+                                <i class="bi bi-palette me-1"></i>Color: ${item.color}
+                            </span>
+                        ` : ''}
+                    </div>
+
+                    <h4 class="fw-bold text-heading mb-3">${escapeHtml(item.itemName)}</h4>
+
+                    <div class="p-3 info-box-cream rounded-3 shadow-sm mb-3">
+                        <small class="info-box-label text-uppercase fw-bold extra-small d-block mb-1" style="letter-spacing: 0.05em;">FULL DESCRIPTION</small>
+                        <p class="info-box-main small mb-0 fw-medium" style="line-height: 1.6;">${escapeHtml(item.description)}</p>
+                    </div>
+
+                    <div class="p-3 info-box-cream rounded-3 shadow-sm mb-4">
+                        <div class="d-flex justify-content-between small py-1.5 border-bottom" style="border-color: rgba(82, 101, 121, 0.15) !important;">
+                            <span class="info-box-label"><i class="bi bi-person me-1 text-primary"></i>Reported By</span>
+                            <strong class="info-box-main">${escapeHtml(item.postedBy)}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between small py-1.5 border-bottom" style="border-color: rgba(82, 101, 121, 0.15) !important;">
+                            <span class="info-box-label"><i class="bi bi-calendar-event me-1 text-warning"></i>Report Date</span>
+                            <strong class="info-box-main">${formatDate(item.date)}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between small py-1.5">
+                            <span class="info-box-label"><i class="bi bi-patch-check me-1 text-success"></i>Current Status</span>
+                            <span class="badge bg-warning text-dark rounded-pill px-2.5 py-0.5 fw-bold">${item.status || 'Searching'}</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="matches.html?id=${item.id}" class="btn btn-primary fw-bold flex-fill py-2">
+                            <i class="bi bi-cpu me-1"></i>Run Match Engine
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary fw-bold px-4" data-bs-dismiss="modal">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    let modalEl = document.getElementById("itemDetailsModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+
+// -------------------------------------------------------------
+// 2. REPORT ITEM FORM LOGIC
+// -------------------------------------------------------------
+function initReportPage() {
+    let form = document.getElementById("report-form");
+    if (!form) return;
+
+    let lostBtn = document.getElementById("btn-type-lost");
+    let foundBtn = document.getElementById("btn-type-found");
+    let typeInput = document.getElementById("report-type-input");
+    let hiddenContainer = document.getElementById("hidden-details-container");
+    let hiddenInput = document.getElementById("hiddenDetails");
+
+    function renderInstructions(type) {
+        let card = document.getElementById("instruction-card");
+        if (!card) return;
+
+        if (type === "found") {
+            card.className = "alert alert-success border-0 border-start border-4 border-success mb-4 p-4 shadow-sm rounded-3";
+            card.innerHTML = `
+                <h5 class="fw-bold mb-3 d-flex align-items-center text-success">
+                    <i class="bi bi-info-circle-fill me-2"></i> Found Item Reporting Instructions
+                </h5>
+                <ul class="mb-0 ps-3 small" style="list-style-type: disc; display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-body);">
+                    <li><strong>Accurate Logging:</strong> Choose the category, color, and location zone that best describe where you found the item.</li>
+                    <li><strong>Withhold Public Proof:</strong> Do not put unique identifying details (e.g., serial numbers, stickers, screen lock wallpapers) in the public description. Keep them private.</li>
+                    <li><strong>Review Ownership Proof:</strong> The owner will submit proof of these hidden details via their dashboard. Check their responses carefully before approving.</li>
+                    <li><strong>Safe Handover Spot:</strong> Once approved, schedule the handover meeting at a secure campus public location (e.g., Library Desk, Sports Reception).</li>
+                    <li><strong>Verification Checklist:</strong> Always request the claimant to present their college student ID card during the physical handover.</li>
+                </ul>
+            `;
+        } else {
+            card.className = "alert alert-primary border-0 border-start border-4 border-primary mb-4 p-4 shadow-sm rounded-3";
+            card.innerHTML = `
+                <h5 class="fw-bold mb-3 d-flex align-items-center text-primary">
+                    <i class="bi bi-info-circle-fill me-2"></i> Lost Item Reporting Instructions
+                </h5>
+                <ul class="mb-0 ps-3 small" style="list-style-type: disc; display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-body);">
+                    <li><strong>Select Category:</strong> Choose the appropriate category that best describes your lost item.</li>
+                    <li><strong>Provide Details:</strong> Enter accurate characteristics like primary colors, dates, and zones as they appear on your identification or device.</li>
+                    <li><strong>Hidden Identifying Details:</strong> Under "Hidden Details", write distinct secrets (e.g., "Dell sticker on top-right, scratch on back") to verify your ownership to the founder.</li>
+                    <li><strong>Verification Process:</strong> Found matches will require you to submit proof of these hidden details for founder approval.</li>
+                    <li><strong>Contact Support:</strong> If you encounter any issues or suspicious claims, contact our student support team for assistance.</li>
+                </ul>
+            `;
+        }
+    }
+
+    function setReportType(type) {
+        if (!typeInput) return;
+        typeInput.value = type;
+        if (type === "found") {
+            if (foundBtn) foundBtn.classList.add("active-found");
+            if (lostBtn) lostBtn.classList.remove("active-lost");
+            if (hiddenContainer) hiddenContainer.classList.add("d-none");
+            if (hiddenInput) hiddenInput.value = "";
+        } else {
+            if (lostBtn) lostBtn.classList.add("active-lost");
+            if (foundBtn) foundBtn.classList.remove("active-found");
+            if (hiddenContainer) hiddenContainer.classList.remove("d-none");
+        }
+        renderInstructions(type);
+    }
+
+    // Check URL parameters or active pathname to determine type
+    let urlParams = new URLSearchParams(window.location.search);
+    let presetType = urlParams.get("type");
+    if (presetType === "found" || window.location.pathname.includes("report-found.html")) {
+        setReportType("found");
+    } else if (presetType === "lost" || window.location.pathname.includes("report.html")) {
+        setReportType("lost");
+    } else {
+        let defaultType = typeInput ? typeInput.value : "lost";
+        setReportType(defaultType);
+    }
+
+    if (lostBtn) {
+        lostBtn.onclick = () => setReportType("lost");
+    }
+    if (foundBtn) {
+        foundBtn.onclick = () => setReportType("found");
+    }
+
+    form.onsubmit = function(e) {
+        e.preventDefault();
+
+        // ── Inline feedback ─────────────────────────────────────────
+        let feedbackEl = document.getElementById("report-feedback-msg");
+        if (!feedbackEl) {
+            feedbackEl = document.createElement("div");
+            feedbackEl.id = "report-feedback-msg";
+            feedbackEl.style.marginBottom = "1rem";
+            // Place it BEFORE the form element so it's always visible
+            form.parentNode.insertBefore(feedbackEl, form);
+        }
+        feedbackEl.className = "d-none";
+        feedbackEl.innerHTML = "";
+
+        function showError(msg) {
+            feedbackEl.className = "alert alert-danger border-0 shadow-sm";
+            feedbackEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>' + msg;
+        }
+
+        function showSuccess(msg) {
+            feedbackEl.className = "alert alert-success border-0 shadow-sm";
+            feedbackEl.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>' + msg;
+        }
+
+        // ── Auth check: try every possible key ─────────────────────
+        // Try the new key first, then fall back to the old JSON blob key
+        let activeUser = null;
+
+        // Method 1: new campusfind_current_user → campusfind_users
+        try {
+            let sessionEmail = localStorage.getItem("campusfind_current_user");
+            if (sessionEmail) {
+                let usersRaw = localStorage.getItem("campusfind_users");
+                let usersArr = usersRaw ? JSON.parse(usersRaw) : [];
+                activeUser = Array.isArray(usersArr)
+                    ? usersArr.find(u => u.useremail && u.useremail.toLowerCase().trim() === sessionEmail.toLowerCase().trim()) || null
+                    : null;
+            }
+        } catch(ex) { /* ignore */ }
+
+        // Method 2: legacy "current_user" JSON blob
+        if (!activeUser) {
+            try {
+                let raw = localStorage.getItem("current_user");
+                if (raw && raw !== "null") {
+                    let parsed = JSON.parse(raw);
+                    if (parsed && parsed.useremail) activeUser = parsed;
+                }
+            } catch(ex) { /* ignore */ }
+        }
+
+        // Method 3: call getCurrentUser() as a final fallback
+        if (!activeUser && typeof getCurrentUser === "function") {
+            activeUser = getCurrentUser();
+        }
+
+        if (!activeUser) {
+            showError('You are not signed in. Please <a href="login.html" class="fw-bold alert-link">sign in</a> to submit a report.');
+            return;
+        }
+
+        // ── Collect field values ────────────────────────────────────
+        let itemNameEl    = document.getElementById("itemName");
+        let categoryEl    = document.getElementById("category");
+        let colorEl       = document.getElementById("color");
+        let zoneEl        = document.getElementById("zone");
+        let dateEl        = document.getElementById("date");
+        let descEl        = document.getElementById("description");
+        let phoneEl       = document.getElementById("contactPhone");
+
+        let itemName    = itemNameEl    ? itemNameEl.value.trim()    : "";
+        let cat         = categoryEl    ? categoryEl.value           : "";
+        let color       = colorEl       ? colorEl.value              : "";
+        let zone        = zoneEl        ? zoneEl.value               : "";
+        let date        = dateEl        ? dateEl.value               : "";
+        let description = descEl        ? descEl.value.trim()        : "";
+        let phone       = phoneEl       ? phoneEl.value.trim()       : "";
+        let reportType  = typeInput     ? typeInput.value            : "lost";
+        let hiddenVal   = (reportType === "lost" && hiddenInput) ? hiddenInput.value.trim() : "";
+
+        // ── Required field validation ───────────────────────────────
+        if (!itemName)    { showError("Item Name is required.");          return; }
+        if (!cat)         { showError("Please select a Category.");       return; }
+        if (!color)       { showError("Please select a Primary Color.");  return; }
+        if (!zone)        { showError("Please select a Campus Zone.");    return; }
+        if (!date)        { showError("Please select the Date.");         return; }
+        if (!description) { showError("Item Description is required.");   return; }
+
+        // ── Image ───────────────────────────────────────────────────
+        let itemImg = uploadedImageBase64 || getDefaultImage(cat);
+
+        // ── Build report object ─────────────────────────────────────
+        let newReport = {
+            id:            "REP-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+            type:          reportType,
+            itemName:      itemName,
+            category:      cat,
+            color:         color,
+            zone:          zone,
+            date:          date,
+            description:   description,
+            hiddenDetails: hiddenVal,
+            postedBy:      activeUser.username  || "Student",
+            postedByEmail: activeUser.useremail || "",
+            contactPhone:  phone || activeUser.contactPhone || "",
+            image:         itemImg,
+            status:        "Searching"
+        };
+
+        // ── Persist to campus_reports ───────────────────────────────
+        try {
+            let existing = [];
+            let raw = localStorage.getItem("campus_reports");
+            if (raw) existing = JSON.parse(raw);
+            if (!Array.isArray(existing)) existing = [];
+            existing.unshift(newReport);
+            localStorage.setItem("campus_reports", JSON.stringify(existing));
+        } catch (storageErr) {
+            showError("Storage error: could not save report. " + storageErr.message);
+            return;
+        }
+
+        uploadedImageBase64 = null;
+
+        // ── Verify save ─────────────────────────────────────────────
+        try {
+            let check = JSON.parse(localStorage.getItem("campus_reports") || "[]");
+            let found = Array.isArray(check) ? check.find(r => r.id === newReport.id) : null;
+            if (!found) {
+                showError("Report could not be verified after saving. Please try again.");
+                return;
+            }
+        } catch(ex) { /* if parsing fails, trust the save went through */ }
+
+        // ── Success → redirect ──────────────────────────────────────
+        showSuccess('Report for "' + escapeHtml(newReport.itemName) + '" submitted by ' + escapeHtml(activeUser.username || "you") + '! Redirecting...');
+        setTimeout(function() {
+            window.location.href = "matches.html?id=" + newReport.id;
+        }, 900);
+    };
+}
+
+// -------------------------------------------------------------
+// 3. MATCHES PAGE LOGIC
+// -------------------------------------------------------------
+function initMatchesPage() {
+    let reports = getReports();
+    let urlParams = new URLSearchParams(window.location.search);
+    let urlTargetId = urlParams.get("id");
+    let currentUser = getCurrentUser();
+
+    // Find all reports belonging to the active logged-in user
+    let myReports = [];
+    let otherReports = [];
+
+    reports.forEach(r => {
+        let isMine = currentUser && r.postedByEmail && currentUser.useremail && r.postedByEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim();
+        if (isMine) {
+            myReports.push(r);
+        } else {
+            otherReports.push(r);
+        }
+    });
+
+    let targetReport = null;
+
+    if (urlTargetId) {
+        let requestedReport = reports.find(r => r.id === urlTargetId);
+        if (requestedReport) {
+            let isMine = currentUser && requestedReport.postedByEmail && currentUser.useremail && requestedReport.postedByEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim();
+            if (isMine) {
+                // Logged-in user clicked their own report -> put it on top!
+                targetReport = requestedReport;
+            } else {
+                // Logged-in user clicked another user's report (e.g. Ira clicked Rohan's lost charger).
+                // If logged-in user (Ira) has a report of the opposite type (e.g. Found item),
+                // put IRA'S report on top as the target, so Rohan's item is the candidate below to notify/claim!
+                let myOppositeReport = myReports.find(r => r.type !== requestedReport.type);
+                if (myOppositeReport) {
+                    targetReport = myOppositeReport;
+                } else if (myReports.length > 0) {
+                    // Always ensure logged in user's report is on top if they have reports
+                    targetReport = myReports[0];
+                } else {
+                    targetReport = requestedReport;
+                }
+            }
+        }
+    }
+
+    // Default to logged-in user's first report if no valid target found
+    if (!targetReport && myReports.length > 0) {
+        targetReport = myReports[0];
+    }
+
+    // Populate Report Selector Dropdown with clean optgroups
+    let selectEl = document.getElementById("target-report-select");
+    if (selectEl) {
+        selectEl.innerHTML = "";
+
+        if (myReports.length > 0) {
+            let myOptGroup = `<optgroup label="⭐ My Reports (${currentUser ? currentUser.username : 'You'})">`;
+            myReports.forEach(r => {
+                myOptGroup += `
+                    <option value="${r.id}" ${targetReport && r.id === targetReport.id ? 'selected' : ''}>
+                        [${r.type.toUpperCase()}] ${r.itemName} (My Report)
+                    </option>
+                `;
+            });
+            myOptGroup += `</optgroup>`;
+            selectEl.innerHTML += myOptGroup;
+        }
+
+        if (otherReports.length > 0) {
+            let otherOptGroup = `<optgroup label="🏫 Other Campus Reports">`;
+            otherReports.forEach(r => {
+                otherOptGroup += `
+                    <option value="${r.id}" ${targetReport && r.id === targetReport.id ? 'selected' : ''}>
+                        [${r.type.toUpperCase()}] ${r.itemName} (by ${r.postedBy})
+                    </option>
+                `;
+            });
+            otherOptGroup += `</optgroup>`;
+            selectEl.innerHTML += otherOptGroup;
+        }
+
+        selectEl.onchange = (e) => {
+            if (e.target.value) window.location.href = "matches.html?id=" + e.target.value;
+        };
+    }
+
+    // If active user has no reports yet and hasn't selected another campus report:
+    if (!targetReport && myReports.length === 0) {
+        renderNoUserReportsState(currentUser);
+        return;
+    }
+
+    if (targetReport) {
+        renderTargetBanner(targetReport, currentUser);
+        renderMatchCardsList(targetReport, reports);
+    }
+}
+
+// Empty state when newly logged in user has not created reports yet
+function renderNoUserReportsState(currentUser) {
+    let banner = document.getElementById("target-item-banner");
+    let container = document.getElementById("matches-grid");
+    let countEl = document.getElementById("matches-count");
+
+    if (countEl) countEl.innerText = "0";
+
+    let userName = currentUser ? currentUser.username : "Student";
+    let userEmail = currentUser ? currentUser.useremail : "";
+
+    if (banner) {
+        banner.innerHTML = `
+            <div class="card p-4 border-0 shadow-sm mb-4 rounded-3 bg-white text-center">
+                <div class="py-4 max-w-lg mx-auto">
+                    <div class="badge bg-primary-subtle text-primary mb-2 px-3 py-1.5 rounded-pill fw-bold">
+                        <i class="bi bi-person-circle me-1"></i>Active User: ${userName} (${userEmail})
+                    </div>
+                    <h3 class="fw-bold mb-2">No Reports Submitted by ${userName} Yet</h3>
+                    <p class="text-muted small mb-4">
+                        You are currently logged in as <strong>${userName}</strong>. Submit a Lost or Found item report to run our matching algorithm against other campus items, or select a campus report from the dropdown above to inspect matches.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <a href="report.html" class="btn btn-lost">
+                            <i class="bi bi-plus-circle me-1"></i>Post a Lost Item
+                        </a>
+                        <a href="report-found.html" class="btn btn-found">
+                            <i class="bi bi-plus-circle me-1"></i>Post a Found Item
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (container) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5 text-muted bg-white rounded-3 border">
+                <i class="bi bi-cpu fs-1 d-block mb-3 text-primary opacity-50"></i>
+                <h5 class="fw-bold text-dark">Ready to Match Your Items</h5>
+                <p class="small text-muted mb-0">Once you post an item report as <strong>${userName}</strong>, calculated probability matches from other students will appear here automatically.</p>
+            </div>
+        `;
+    }
+}
+
+function renderTargetBanner(item, currentUser) {
+    let banner = document.getElementById("target-item-banner");
+    if (!banner) return;
+
+    let isMyReport = currentUser && item.postedByEmail && currentUser.useremail && item.postedByEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim();
+
+    banner.innerHTML = `
+        <div class="card p-4 border-0 shadow-sm mb-4 rounded-3 bg-white">
+            <div class="row align-items-center">
+                <div class="col-md-2 text-center">
+                    <img src="${item.image || getDefaultImage(item.category)}" class="img-fluid rounded-3" style="max-height: 100px; object-fit: cover;">
+                </div>
+                <div class="col-md-7">
+                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                        <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">${item.type.toUpperCase()}</span>
+                        ${isMyReport ? `
+                            <span class="badge bg-primary text-white"><i class="bi bi-person-check-fill me-1"></i>My Report (${currentUser ? currentUser.username : 'You'})</span>
+                        ` : `
+                            <span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>Reported by: <strong>${item.postedBy}</strong></span>
+                        `}
+                    </div>
+                    <h4 class="fw-bold mb-1">${item.itemName}</h4>
+                    <p class="small text-muted mb-0">Zone: ${item.zone} | Color: ${item.color} | Date: ${item.date}</p>
+                    ${!isMyReport ? `
+                        <div class="extra-small text-muted fst-italic mt-1">
+                            <i class="bi bi-info-circle me-1"></i>Viewing matches for campus report submitted by <strong>${item.postedBy}</strong>.
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="col-md-3 text-end">
+                    <a href="report.html" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-circle me-1"></i>Post New Item</a>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderMatchCardsList(targetReport, reports) {
+    let container = document.getElementById("matches-grid");
+    if (!container) return;
+
+    let matches = findMatches(targetReport, reports);
+
+    let countEl = document.getElementById("matches-count");
+    if (countEl) countEl.innerText = matches.length;
+
+    if (matches.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5 text-muted bg-white rounded-3 border">
+                <i class="bi bi-search fs-2 d-block mb-2 text-primary"></i>
+                <h5 class="fw-bold text-dark">No Opposite-Type Matches Found</h5>
+                <p class="small mb-0">Create another report of opposite type (Lost vs Found) to view matches.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = "";
+    matches.forEach(m => {
+        let item = m.candidate;
+        let b = m.breakdown;
+
+        let isCandidateFound = item.type === "found";
+        let btnText = isCandidateFound ? `<i class="bi bi-shield-lock me-1"></i>Claim Item (Provide Hidden Details)` : `<i class="bi bi-bell-fill me-1"></i>Notify Owner (I Found This Item)`;
+        let btnClass = isCandidateFound ? "btn-primary" : "btn-success";
+
+        container.innerHTML += `
+            <div class="col-12 mb-4">
+                <div class="card p-4 shadow-sm border-0 rounded-3">
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <img src="${item.image || getDefaultImage(item.category)}" class="w-100 rounded-3" style="height: 170px; object-fit: cover;">
+                        </div>
+                        <div class="col-md-5">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">${item.type.toUpperCase()}</span>
+                                <span class="badge bg-light text-dark border"><i class="bi bi-person-fill text-primary me-1"></i>Posted by: <strong>${item.postedBy}</strong></span>
+                            </div>
+                            <h4 class="fw-bold mb-1">${item.itemName}</h4>
+                            <p class="small text-muted mb-2">Category: ${item.category} | Zone: ${item.zone} | Date: ${item.date}</p>
+                            <p class="small text-muted mb-3">${item.description}</p>
+                            
+                            <div class="bg-light p-3 rounded-3 border">
+                                <strong class="small d-block mb-1 text-uppercase text-muted">Why This Matched:</strong>
+                                <ul class="list-unstyled mb-0 small">
+                                    ${m.reasons.map(r => `<li><i class="bi bi-check-circle-fill text-success me-1"></i>${r}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4 border-start ps-md-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-dark">Calculated Score</span>
+                                    <span class="badge bg-primary fs-5">🎯 ${m.score}% Match</span>
+                                </div>
+                                <div class="p-2 bg-light rounded border mb-3 text-center small text-muted">
+                                    <strong>Formula:</strong> ${b.category.pts} + ${b.color.pts} + ${b.location.pts} + ${b.date.pts} + ${b.description.pts} = <strong>${m.totalPts} / 100 pts</strong>
+                                </div>
+
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small fw-semibold">
+                                        <span>Category (25% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.category.pts} / 25 pts</span>
+                                    </div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.category.pts / 25) * 100}%"></div></div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small fw-semibold">
+                                        <span>Color (20% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.color.pts} / 20 pts</span>
+                                    </div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.color.pts / 20) * 100}%"></div></div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small fw-semibold">
+                                        <span>Zone (25% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.location.pts} / 25 pts</span>
+                                    </div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.location.pts / 25) * 100}%"></div></div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small fw-semibold">
+                                        <span>Date (15% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.date.pts} / 15 pts</span>
+                                    </div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.date.pts / 15) * 100}%"></div></div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small fw-semibold">
+                                        <span>Description (15% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.description.pts} / 15 pts</span>
+                                    </div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.description.pts / 15) * 100}%"></div></div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-3 flex-wrap">
+                                <button class="btn ${btnClass} fw-bold flex-fill" onclick="openClaimModal('${targetReport.id}', '${item.id}')">
+                                    ${btnText}
+                                </button>
+                                <button class="btn btn-chat-contact fw-bold flex-shrink-0" onclick="openOrCreateChat('${targetReport.id}', '${item.id}', ${m.score})" title="Open private match chat">
+                                    <i class="bi bi-chat-dots-fill me-1"></i>Contact Finder
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// -------------------------------------------------------------
+// 4. INTERACTIVE CLAIM & CONTACT MODAL FLOW
+// -------------------------------------------------------------
+function openClaimModal(targetReportId, candidateItemId) {
+    let reports = getReports();
+    let targetReport = reports.find(r => r.id === targetReportId);
+    let candidateItem = reports.find(r => r.id === candidateItemId);
+
+    if (!candidateItem && targetReportId) {
+        candidateItem = reports.find(r => r.id === targetReportId);
+    }
+    if (!candidateItem) return;
+
+    let currentUser = getCurrentUser();
+    let modalEl = document.getElementById("claimModal");
+    let modalBody = document.getElementById("claim-modal-body");
+
+    if (!modalEl || !modalBody) return;
+
+    // Check action type based on the candidate item being interacted with:
+    // If candidate item is a LOST item -> Finder is notifying the Lost Item Owner!
+    // If candidate item is a FOUND item -> Owner is submitting a claim to the Finder!
+    let isCandidateLost = candidateItem.type === "lost";
+
+    if (isCandidateLost) {
+        // CASE: Finder notifying Lost Item Owner ("I Found Your Item!")
+        let lostReport = candidateItem;
+        let ownerEmail = lostReport.postedByEmail;
+        let ownerName = lostReport.postedBy;
+
+        let isSelfMatch = currentUser && ownerEmail && currentUser.useremail && ownerEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim();
+
+        if (isSelfMatch) {
+            modalBody.innerHTML = `
+                <div class="alert alert-warning border-0 shadow-sm mb-3">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> Self-Reported Lost Item</h6>
+                    <p class="small mb-2">This lost item report (<strong>${lostReport.itemName}</strong>) belongs to your active account (<strong>${currentUser.username}</strong>).</p>
+                    <p class="small mb-0">To test finding and notifying the owner, switch to another account using the top navbar.</p>
+                </div>
+                <button type="button" class="btn btn-secondary w-100 fw-bold" data-bs-dismiss="modal">Close</button>
+            `;
+        } else {
+            modalBody.innerHTML = `
+                <div class="mb-3">
+                    <span class="badge badge-lost me-2">LOST ITEM</span>
+                    <h5 class="fw-bold text-dark mb-1 fs-5">${lostReport.itemName}</h5>
+                    <div class="p-2 bg-light rounded border mt-2 small text-dark">
+                        <i class="bi bi-person-circle text-primary me-1"></i>Owner who lost item: <strong>${ownerName}</strong> (${ownerEmail})
+                    </div>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 border mb-3 small text-muted">
+                    <strong>Lost Item Description:</strong> ${lostReport.description}
+                    ${targetReport && targetReport.type === 'found' ? `<div class="mt-2 text-primary"><strong>Your Matching Found Report:</strong> ${targetReport.itemName} (${targetReport.zone})</div>` : ''}
+                </div>
+
+                <form id="notify-owner-form" onsubmit="handleNotifyOwnerSubmit(event, '${lostReport.id}', '${targetReport ? targetReport.id : ''}')">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Your Name (Finder)</label>
+                        <input type="text" id="finder-name-input" class="form-control form-control-sm" value="${currentUser ? currentUser.username : ''}" placeholder="Your full name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Your Contact Phone / WhatsApp (Optional)</label>
+                        <input type="tel" id="finder-phone-input" class="form-control form-control-sm" value="${currentUser && currentUser.contactPhone ? currentUser.contactPhone : '+91 98123 45678'}" placeholder="+91 98123 45678">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Notification Message for Owner (${ownerName})</label>
+                        <textarea id="found-notice-message" rows="3" class="form-control form-control-sm" required>Hi ${ownerName}, I found an item matching your lost report "${lostReport.itemName}"! Please get in touch with me so we can arrange to return it.</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-bold btn-sm py-2">
+                        <i class="bi bi-bell-fill me-1"></i>Send Notification to Owner (${ownerName})
+                    </button>
+                </form>
+
+                <div id="unlocked-contact-info" class="mt-3"></div>
+            `;
+        }
+    } else {
+        // CASE: Submitting claim to the person who FOUND the item (the Finder / Founder)
+        let foundReport = candidateItem;
+        let finderEmail = foundReport.postedByEmail;
+        let finderName = foundReport.postedBy;
+
+        let isSelfMatch = currentUser && finderEmail && currentUser.useremail && finderEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim();
+
+        if (isSelfMatch) {
+            modalBody.innerHTML = `
+                <div class="alert alert-warning border-0 shadow-sm mb-3">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> Self-Reported Found Item</h6>
+                    <p class="small mb-2">You reported finding this item under your active account (<strong>${currentUser.username}</strong>).</p>
+                    <p class="small mb-0">To test claiming this item as the owner, switch to another account using the top navbar.</p>
+                </div>
+                <button type="button" class="btn btn-secondary w-100 fw-bold" data-bs-dismiss="modal">Close</button>
+            `;
+        } else {
+            modalBody.innerHTML = `
+                <div class="mb-3">
+                    <span class="badge badge-found me-2">FOUND ITEM</span>
+                    <h5 class="fw-bold text-dark mb-1 fs-5">${foundReport.itemName}</h5>
+                    <div class="p-2 bg-light rounded border mt-2 small text-dark">
+                        <i class="bi bi-person-circle text-primary me-1"></i>Founder holding this item: <strong>${finderName}</strong> (${finderEmail})
+                    </div>
+                </div>
+                
+                <div class="p-3 bg-light rounded-3 border mb-3 small text-muted">
+                    <strong>Found Item Details:</strong> ${foundReport.description}
+                </div>
+
+                <form id="claim-submit-form" onsubmit="handleClaimSubmit(event, '${foundReport.id}')">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Your Name (Claimant / Person Who Lost)</label>
+                        <input type="text" id="claimant-name-input" class="form-control form-control-sm" value="${currentUser ? currentUser.username : ''}" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">
+                            <i class="bi bi-shield-lock-fill text-primary me-1"></i>Provide Hidden Identifying Details <span class="text-danger">*</span>
+                        </label>
+                        <textarea id="provided-proof" rows="3" class="form-control form-control-sm" placeholder="e.g. Dell XPS charger inside, initials IS engraved, keychain design, screen lock wallpaper, serial number..." required></textarea>
+                        <small class="text-muted" style="font-size: 0.75rem;">Sent directly to Founder <strong>${finderName}</strong>. The founder will verify your hidden details, approve the claim, and schedule the handover meeting. (Claimants cannot schedule meetings directly).</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold btn-sm py-2">
+                        <i class="bi bi-shield-lock me-1"></i>Submit Hidden Details to Founder for Approval
+                    </button>
+                </form>
+
+                <div id="unlocked-contact-info" class="mt-3"></div>
+            `;
+        }
+    }
+
+    let bsModal = new bootstrap.Modal(modalEl);
+    bsModal.show();
+}
+
+function handleClaimSubmit(event, foundReportId) {
+    event.preventDefault();
+    let reports = getReports();
+    let item = reports.find(r => r.id === foundReportId);
+    let proof = document.getElementById("provided-proof").value.trim();
+    let claimantName = document.getElementById("claimant-name-input").value.trim();
+
+    if (!item) return;
+
+    let currentUser = getCurrentUser();
+    let claimantEmail = currentUser ? currentUser.useremail : "claimant@example.com";
+    let claimId = "CLM-" + Math.floor(1000 + Math.random() * 9000);
+
+    // Save claim record into localStorage with "Pending Founder Approval" status
+    saveClaim({
+        claimId: claimId,
+        itemId: item.id,
+        itemName: item.itemName,
+        claimedBy: claimantName,
+        claimedByEmail: claimantEmail,
+        reporter: item.postedBy,
+        reporterEmail: item.postedByEmail, // The FINDER / FOUNDER who holds the item!
+        providedProof: proof,
+        status: "Pending Founder Approval",
+        date: new Date().toLocaleDateString()
+    });
+
+    // Send Notification directly to Founder (item.postedByEmail)
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: item.postedByEmail, // SENT TO THE FINDER / FOUNDER!
+        senderName: claimantName,
+        senderEmail: claimantEmail,
+        itemId: item.id,
+        itemName: item.itemName,
+        message: `🔐 Hidden Details Submitted! ${claimantName} submitted hidden details to claim your found item "${item.itemName}". Please review details on your Dashboard to approve and schedule the meeting.`,
+        date: new Date().toLocaleString(),
+        type: "claim_request",
+        claimId: claimId
+    });
+
+    // Display confirmation & Founder's contact details to claimant
+    let outputArea = document.getElementById("unlocked-contact-info");
+    outputArea.innerHTML = `
+        <div class="alert alert-success border-0 shadow-sm mb-0">
+            <h6 class="fw-bold mb-2"><i class="bi bi-check-circle-fill me-1"></i> Hidden Details Sent to Founder!</h6>
+            <p class="small mb-3">Your hidden identifying details have been sent to Founder <strong>${item.postedBy}</strong>. They will verify your proof on their Dashboard and schedule the campus handover meeting.</p>
+            <div class="p-3 bg-white rounded border small text-dark mb-3">
+                <strong class="d-block text-primary mb-2"><i class="bi bi-person-lines-fill me-1"></i>Founder Contact Details:</strong>
+                <div class="mb-1"><strong>Name:</strong> ${item.postedBy}</div>
+                <div class="mb-1"><strong>Email:</strong> <a href="mailto:${item.postedByEmail}">${item.postedByEmail}</a></div>
+                <div class="mb-1"><strong>Phone / WhatsApp:</strong> ${item.contactPhone || '+91 98123 45678'}</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="dashboard.html" class="btn btn-sm btn-success fw-bold flex-fill">
+                    <i class="bi bi-speedometer2 me-1"></i>Go to Dashboard
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    `;
+
+    let formEl = document.getElementById("claim-submit-form");
+    if (formEl) formEl.style.display = "none";
+}
+
+function handleNotifyOwnerSubmit(event, lostReportId, matchingFoundReportId) {
+    event.preventDefault();
+    let reports = getReports();
+    let item = reports.find(r => r.id === lostReportId);
+    let messageText = document.getElementById("found-notice-message").value.trim();
+    let finderNameInput = document.getElementById("finder-name-input");
+    let finderPhoneInput = document.getElementById("finder-phone-input");
+
+    if (!item) return;
+
+    let currentUser = getCurrentUser();
+    let finderName = finderNameInput ? finderNameInput.value.trim() : (currentUser ? currentUser.username : "A student");
+    let finderEmail = currentUser ? currentUser.useremail : "finder@example.com";
+    let finderPhone = finderPhoneInput ? finderPhoneInput.value.trim() : "+91 98123 45678";
+
+    // Send notification directly to Lost Item Owner
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: item.postedByEmail, // SENT DIRECTLY TO THE USER WHO LOST THE ITEM!
+        senderName: finderName,
+        senderEmail: finderEmail,
+        senderPhone: finderPhone,
+        itemId: item.id,
+        itemName: item.itemName,
+        message: `🎉 Good News! ${finderName} reported finding an item matching your lost report "${item.itemName}": "${messageText}"`,
+        matchingFoundId: matchingFoundReportId || null,
+        type: "owner_notification",
+        date: new Date().toLocaleString()
+    });
+
+    let outputArea = document.getElementById("unlocked-contact-info");
+    outputArea.innerHTML = `
+        <div class="alert alert-success border-0 shadow-sm mb-0">
+            <h6 class="fw-bold mb-2"><i class="bi bi-check-circle-fill me-1"></i> Notification Sent to Owner!</h6>
+            <p class="small mb-3">We have notified <strong>${item.postedBy}</strong> (<em>${item.postedByEmail}</em>) that you found an item matching their report. They can view this in their Dashboard notifications and provide their hidden details for verification.</p>
+            <div class="p-3 bg-white rounded border small text-dark mb-3">
+                <strong class="d-block text-primary mb-2"><i class="bi bi-person-lines-fill me-1"></i>Owner Contact Details:</strong>
+                <div class="mb-1"><strong>Name:</strong> ${item.postedBy}</div>
+                <div class="mb-1"><strong>Email:</strong> <a href="mailto:${item.postedByEmail}">${item.postedByEmail}</a></div>
+                <div class="mb-1"><strong>Phone / WhatsApp:</strong> ${item.contactPhone || '+91 98765 43210'}</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="dashboard.html" class="btn btn-sm btn-primary fw-bold flex-fill">
+                    <i class="bi bi-speedometer2 me-1"></i>Go to Dashboard
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    `;
+
+    let formEl = document.getElementById("notify-owner-form");
+    if (formEl) formEl.style.display = "none";
+}
+
+// -------------------------------------------------------------
+// SECURE MATCH CHAT - Helper to open/create chat
+// -------------------------------------------------------------
+function openOrCreateChat(report1Id, report2Id, score = 90) {
+    let currentUser = getCurrentUser();
+    if (!currentUser) {
+        alert("Please sign in to start a private chat with the finder or lost item owner.");
+        window.location.href = "login.html";
+        return;
+    }
+
+    let reports = getReports();
+    let rep1 = reports.find(r => r.id === report1Id);
+    let rep2 = reports.find(r => r.id === report2Id);
+
+    if (!rep1 || !rep2) {
+        alert("Could not load report details for this match.");
+        return;
+    }
+
+    let lostReport = rep1.type === "lost" ? rep1 : rep2;
+    let foundReport = rep1.type === "found" ? rep1 : rep2;
+
+    // Check if chat already exists for this pair
+    let existingChat = getChats().find(c => 
+        (c.lostItemId === lostReport.id && c.foundItemId === foundReport.id) ||
+        (c.lostItemId === foundReport.id && c.foundItemId === lostReport.id)
+    );
+
+    if (existingChat) {
+        window.location.href = `chat.html?chatId=${existingChat.chatId}`;
+        return;
+    }
+
+    // Create new chat
+    let chatId = "CHAT-" + Math.floor(100000 + Math.random() * 900000);
+    let newChat = {
+        chatId: chatId,
+        lostItemId: lostReport.id,
+        foundItemId: foundReport.id,
+        lostUserEmail: lostReport.postedByEmail,
+        finderEmail: foundReport.postedByEmail,
+        lostItemName: lostReport.itemName,
+        foundItemName: foundReport.itemName,
+        lostZone: lostReport.zone,
+        foundZone: foundReport.zone,
+        matchScore: score || 90,
+        status: "Verification Pending",
+        recoveryDetails: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        messages: [
+            {
+                id: "MSG-" + Date.now(),
+                senderId: "SYSTEM",
+                senderName: "FindIt System",
+                text: `🔒 Private match chat initiated for ${lostReport.itemName} (${score}% Match). Use this chat to verify ownership details and arrange item recovery securely.`,
+                type: "system",
+                timestamp: new Date().toISOString(),
+                read: true
+            }
+        ]
+    };
+
+    saveChat(newChat);
+
+    // Notify the other user about the new chat
+    let recipientEmail = (currentUser.useremail.toLowerCase() === lostReport.postedByEmail.toLowerCase()) 
+        ? foundReport.postedByEmail 
+        : lostReport.postedByEmail;
+
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: recipientEmail,
+        senderName: currentUser.username,
+        senderEmail: currentUser.useremail,
+        itemId: lostReport.id,
+        itemName: lostReport.itemName,
+        message: `💬 New match chat started by ${currentUser.username} for "${lostReport.itemName}" (${score}% Match)!`,
+        chatId: chatId,
+        type: "chat_start",
+        date: new Date().toLocaleString()
+    });
+
+    window.location.href = `chat.html?chatId=${chatId}`;
+}
+
+// -------------------------------------------------------------
+// 5. DASHBOARD LOGIC (NOTIFICATIONS & MEETING SCHEDULING)
+// -------------------------------------------------------------
+function initDashboardPage() {
+    let currentUser = getCurrentUser();
+    let nameEl = document.getElementById("dash-user-name");
+    if (nameEl) nameEl.innerText = currentUser.username;
+
+    // Render Notifications Feed Sidebar
+    renderNotificationsFeed(currentUser.useremail);
+
+    // Render Found Item Alerts (Lost item owner responds with hidden details)
+    renderFoundNotices(currentUser.useremail);
+
+    // Render Received Claims Needing Founder Approval
+    renderReceivedClaims(currentUser.useremail);
+
+    // Render Sent Claims & Founder Meeting Status
+    renderSubmittedClaims(currentUser.useremail);
+
+    // Render My Submitted Reports
+    renderMyReports(currentUser.useremail);
+
+    // Setup Meeting Location change listener to show/hide custom input
+    let meetingLocationSelect = document.getElementById("meeting-location");
+    if (meetingLocationSelect) {
+        meetingLocationSelect.addEventListener("change", function() {
+            let customContainer = document.getElementById("custom-location-container");
+            let customInput = document.getElementById("custom-meeting-location");
+            if (customContainer && customInput) {
+                if (meetingLocationSelect.value === "Other") {
+                    customContainer.classList.remove("d-none");
+                    customInput.required = true;
+                } else {
+                    customContainer.classList.add("d-none");
+                    customInput.required = false;
+                    customInput.value = "";
+                }
+            }
+        });
+    }
+}
+
+// Render Found Item Alerts prominently in the main dashboard column
+function renderFoundNotices(userEmail) {
+    let container = document.getElementById("found-notices-container");
+    let badgeEl = document.getElementById("found-notices-badge");
+    if (!container) return;
+
+    let notifs = getNotifications(userEmail);
+    // Find all notifications that are owner alerts (someone found an item matching your lost report)
+    let foundNotices = notifs.filter(n => n.type === "owner_notification" || (n.message && n.message.includes("Good News")));
+
+    if (badgeEl) {
+        badgeEl.innerText = `${foundNotices.length} Alert${foundNotices.length === 1 ? '' : 's'}`;
+        badgeEl.className = foundNotices.length > 0 ? "badge bg-warning text-dark border rounded-pill px-2.5 py-1 fw-bold" : "badge bg-secondary-subtle text-secondary border rounded-pill px-2.5 py-1";
+    }
+
+    if (foundNotices.length === 0) {
+        container.innerHTML = `<p class="text-muted small py-2 mb-0">No found item alerts received from finders yet.</p>`;
+        return;
+    }
+
+    let allClaims = getClaims();
+
+    container.innerHTML = "";
+    foundNotices.forEach(n => {
+        let finderPhone = n.senderPhone || "+91 98123 45678";
+        let finderEmail = n.senderEmail || "finder@example.com";
+        let finderName = n.senderName || "Founder";
+        let itemName = n.itemName || "Lost Item";
+        let noticeMsg = n.message;
+
+        // Check if claimant has already submitted hidden details for this alert
+        let existingClaim = allClaims.find(c => 
+            c.claimedByEmail && userEmail && c.claimedByEmail.toLowerCase().trim() === userEmail.toLowerCase().trim() &&
+            c.reporterEmail && finderEmail && c.reporterEmail.toLowerCase().trim() === finderEmail.toLowerCase().trim() &&
+            (c.itemId === n.itemId || c.itemName === itemName)
+        );
+
+        let actionHtml = "";
+        if (existingClaim) {
+            if (existingClaim.status === "Approved & Meeting Scheduled" && existingClaim.meetingDetails) {
+                actionHtml = `
+                    <div class="w-100 p-2 bg-success bg-opacity-10 text-success rounded border small fw-bold">
+                        <i class="bi bi-check2-circle me-1"></i>Approved by Founder! Meeting at ${existingClaim.meetingDetails.location} | ${existingClaim.meetingDetails.time}
+                    </div>
+                `;
+            } else if (existingClaim.status === "More Info Requested") {
+                actionHtml = `
+                    <div class="w-100 p-2 bg-warning bg-opacity-10 text-dark rounded border small">
+                        <div class="fw-bold text-warning-emphasis mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Founder (${finderName}) requested more details:</div>
+                        <div class="mb-2">"${existingClaim.founderFeedback || 'Please provide more details'}"</div>
+                        <button type="button" class="btn btn-sm btn-warning text-dark fw-bold" onclick="openUpdateDetailsModal('${existingClaim.claimId}')">
+                            <i class="bi bi-pencil-square me-1"></i>Provide Additional / Correct Details
+                        </button>
+                    </div>
+                `;
+            } else if (existingClaim.status === "Rejected") {
+                actionHtml = `
+                    <div class="w-100 p-2 bg-danger bg-opacity-10 text-danger rounded border small">
+                        <i class="bi bi-x-circle-fill me-1"></i><strong>Claim Rejected:</strong> ${existingClaim.rejectionReason || 'Details did not match'}
+                    </div>
+                `;
+            } else {
+                actionHtml = `
+                    <div class="w-100 p-2 bg-warning bg-opacity-10 text-dark rounded border small">
+                        <i class="bi bi-hourglass-split text-warning me-1"></i><strong>Hidden Details Submitted:</strong> "${existingClaim.providedProof}". Awaiting Founder (${finderName}) to verify & schedule meeting.
+                    </div>
+                `;
+            }
+        } else {
+            actionHtml = `
+                <button type="button" class="btn btn-sm btn-primary fw-bold ms-auto" onclick="openProvideHiddenDetailsModal('${n.id}')">
+                    <i class="bi bi-shield-lock me-1"></i>Provide Hidden Details to Founder
+                </button>
+            `;
+        }
+
+        container.innerHTML += `
+            <div class="card p-3 mb-3 border border-warning-subtle shadow-sm rounded-3 bg-light-subtle">
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                    <span class="badge bg-warning text-dark fw-bold">
+                        <i class="bi bi-bell-fill me-1"></i>Founder Found Your Item!
+                    </span>
+                    <small class="text-muted"><i class="bi bi-clock"></i> ${n.date}</small>
+                </div>
+
+                <h6 class="fw-bold mb-1 text-dark">
+                    <i class="bi bi-search-heart text-primary me-1"></i>Lost Item: <span class="text-primary">${itemName}</span>
+                </h6>
+                
+                <p class="small text-muted mb-2">
+                    <strong>Founder:</strong> ${finderName} (${finderEmail})
+                </p>
+
+                <div class="p-3 bg-white rounded border mb-3 small text-dark">
+                    <div class="text-muted extra-small text-uppercase fw-bold mb-1">Message from Founder (${finderName}):</div>
+                    <div class="text-dark">${noticeMsg}</div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <a href="tel:${finderPhone}" class="btn btn-sm btn-outline-success fw-semibold">
+                        <i class="bi bi-telephone-fill me-1"></i>Call (${finderPhone})
+                    </a>
+                    <a href="mailto:${finderEmail}?subject=Regarding Found Item: ${encodeURIComponent(itemName)}" class="btn btn-sm btn-outline-primary fw-semibold">
+                        <i class="bi bi-envelope-fill me-1"></i>Email Founder
+                    </a>
+                    ${actionHtml}
+                </div>
+            </div>
+        `;
+    });
+}
+
+function openProvideHiddenDetailsModal(notifId) {
+    let notifs = JSON.parse(localStorage.getItem("campus_notifications")) || [];
+    let notif = notifs.find(n => n.id === notifId);
+    if (!notif) return;
+
+    let notifIdInput = document.getElementById("handover-notif-id");
+    let emailInput = document.getElementById("handover-finder-email");
+    let detailsInput = document.getElementById("handover-hidden-details");
+    let phoneInput = document.getElementById("handover-claimant-phone");
+    
+    let currentUser = getCurrentUser();
+
+    if (notifIdInput) notifIdInput.value = notif.id;
+    if (emailInput) emailInput.value = notif.senderEmail || "";
+    if (detailsInput) detailsInput.value = "";
+    if (phoneInput && currentUser) phoneInput.value = currentUser.contactPhone || "+91 98765 43210";
+    
+    let finderNameEl = document.getElementById("handover-finder-name");
+    let finderNameLabel = document.getElementById("handover-finder-name-label");
+    let itemNameEl = document.getElementById("handover-item-name");
+    
+    if (finderNameEl) finderNameEl.innerText = notif.senderName || "Founder";
+    if (finderNameLabel) finderNameLabel.innerText = notif.senderName || "Founder";
+    if (itemNameEl) itemNameEl.innerText = `"${notif.itemName || 'Lost Item'}"`;
+
+    let modalEl = document.getElementById("provideHiddenDetailsModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+function handleProvideHiddenDetailsSubmit(event) {
+    event.preventDefault();
+    let notifId = document.getElementById("handover-notif-id").value;
+    let finderEmail = document.getElementById("handover-finder-email").value;
+    let hiddenDetails = document.getElementById("handover-hidden-details").value.trim();
+    let claimantPhone = document.getElementById("handover-claimant-phone") ? document.getElementById("handover-claimant-phone").value.trim() : "";
+
+    if (!hiddenDetails) {
+        alert("Please enter the hidden identifying details to prove your ownership.");
+        return;
+    }
+
+    let currentUser = getCurrentUser();
+    let notifs = JSON.parse(localStorage.getItem("campus_notifications")) || [];
+    let notif = notifs.find(n => n.id === notifId);
+    let itemName = notif ? notif.itemName : "Lost Item";
+    let claimId = "CLM-" + Math.floor(1000 + Math.random() * 9000);
+
+    // Save claim entry with "Pending Founder Approval" status
+    saveClaim({
+        claimId: claimId,
+        itemId: notif ? notif.itemId : "ITEM-" + Date.now(),
+        itemName: itemName,
+        claimedBy: currentUser ? currentUser.username : "Owner",
+        claimedByEmail: currentUser ? currentUser.useremail : "",
+        claimantPhone: claimantPhone || (currentUser ? currentUser.contactPhone : ""),
+        reporter: notif ? notif.senderName : "Finder",
+        reporterEmail: finderEmail,
+        providedProof: hiddenDetails,
+        status: "Pending Founder Approval",
+        date: new Date().toLocaleDateString()
+    });
+
+    // Notify Founder that hidden details have been submitted for verification
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: finderEmail,
+        senderName: currentUser ? currentUser.username : "Owner",
+        senderEmail: currentUser ? currentUser.useremail : "",
+        senderPhone: claimantPhone,
+        itemName: itemName,
+        message: `🔐 Hidden Details Submitted! ${currentUser ? currentUser.username : 'Owner'} submitted hidden details to claim "${itemName}": "${hiddenDetails}". Please review on your Dashboard to approve and schedule the meeting.`,
+        date: new Date().toLocaleString(),
+        type: "claim_request",
+        claimId: claimId
+    });
+
+    alert("Hidden details submitted to Founder (" + finderEmail + ")!\nThe Founder will verify your details and schedule the handover meeting.");
+
+    let modalEl = document.getElementById("provideHiddenDetailsModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    window.location.reload();
+}
+
+function renderSubmittedClaims(userEmail) {
+    let container = document.getElementById("submitted-claims-container");
+    if (!container) return;
+
+    let claims = getClaims();
+    let sent = claims.filter(c => c.claimedByEmail && userEmail && c.claimedByEmail.toLowerCase().trim() === userEmail.toLowerCase().trim());
+
+    if (sent.length === 0) {
+        container.innerHTML = `<p class="text-muted small py-2 mb-0">No claim requests submitted yet.</p>`;
+        return;
+    }
+
+    container.innerHTML = "";
+    sent.forEach(c => {
+        let isApproved = c.status === "Approved & Meeting Scheduled";
+        let isRejected = c.status === "Rejected";
+        let isMoreInfo = c.status === "More Info Requested";
+        
+        let badgeClass = isApproved ? "bg-success" : (isRejected ? "bg-danger" : (isMoreInfo ? "bg-warning text-dark" : "bg-warning text-dark"));
+        let badgeIcon = isApproved ? "bi-check-circle" : (isRejected ? "bi-x-circle" : (isMoreInfo ? "bi-question-circle" : "bi-clock"));
+
+        container.innerHTML += `
+            <div class="card p-3 mb-3 border shadow-sm rounded-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge ${badgeClass}">
+                        <i class="bi ${badgeIcon} me-1"></i>${c.status}
+                    </span>
+                    <small class="text-muted"><i class="bi bi-clock"></i> ${c.date}</small>
+                </div>
+                <h6 class="fw-bold mb-1">Item: ${c.itemName}</h6>
+                <p class="small text-muted mb-1"><strong>Founder Holding Item:</strong> ${c.reporter} (${c.reporterEmail})</p>
+                <div class="p-2 bg-light rounded border mb-2 small text-muted">
+                    <strong class="text-dark"><i class="bi bi-shield-lock text-primary me-1"></i>My Submitted Hidden Details:</strong> "${c.providedProof}"
+                </div>
+
+                ${isApproved && c.meetingDetails ? `
+                    <div class="p-3 bg-success bg-opacity-10 text-success rounded border small">
+                        <div class="fw-bold fs-6 mb-1"><i class="bi bi-geo-alt-fill me-1"></i>Meeting Scheduled by Founder</div>
+                        <div><strong>Location:</strong> ${c.meetingDetails.location}</div>
+                        <div><strong>Time:</strong> ${c.meetingDetails.time}</div>
+                        ${c.meetingDetails.note ? `<div class="mt-1 text-muted"><strong>Instructions:</strong> ${c.meetingDetails.note}</div>` : ''}
+                    </div>
+                ` : isMoreInfo ? `
+                    <div class="p-3 bg-warning bg-opacity-10 rounded border small">
+                        <div class="fw-bold text-warning-emphasis mb-1">
+                            <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Founder (${c.reporter}) Requested Additional / Correct Details:
+                        </div>
+                        <div class="p-2 bg-white rounded border mb-2 text-dark">
+                            "${c.founderFeedback || 'Please provide more specific details.'}"
+                        </div>
+                        <button class="btn btn-sm btn-warning text-dark fw-bold w-100" onclick="openUpdateDetailsModal('${c.claimId}')">
+                            <i class="bi bi-pencil-square me-1"></i>Provide Additional / Correct Details
+                        </button>
+                    </div>
+                ` : isRejected ? `
+                    <div class="p-3 bg-danger bg-opacity-10 text-danger rounded border small">
+                        <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>Claim Rejected by Founder (${c.reporter})</div>
+                        <div class="text-dark"><strong>Reason:</strong> ${c.rejectionReason || 'The hidden details provided did not match the item found.'}</div>
+                    </div>
+                ` : `
+                    <div class="p-2 bg-light rounded border small text-muted mb-2">
+                        <i class="bi bi-hourglass-split text-warning me-1"></i>
+                        <strong>Awaiting Founder Approval:</strong> Founder <strong>${c.reporter}</strong> is reviewing your hidden details. Once approved, the Founder will schedule the meeting location and time.
+                    </div>
+                `}
+
+                <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+                    <span class="extra-small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Secure Encrypted Match</span>
+                    <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openOrCreateChat('${c.itemId}', '${c.itemId}')">
+                        <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function renderNotificationsFeed(userEmail) {
+    let container = document.getElementById("notifications-container");
+    let clearBtn = document.getElementById("btn-clear-notifications");
+    if (!container) return;
+
+    let notifs = getNotifications(userEmail);
+
+    if (clearBtn) {
+        clearBtn.disabled = notifs.length === 0;
+        clearBtn.style.opacity = notifs.length === 0 ? "0.5" : "1";
+    }
+
+    if (notifs.length === 0) {
+        container.innerHTML = `
+            <div class="p-4 text-muted text-center small">
+                <i class="bi bi-bell-slash fs-3 d-block text-secondary mb-2 opacity-50"></i>
+                No notifications for this account yet.<br>
+                <span class="extra-small text-muted">When another student reports finding your item or submits hidden details, it will appear here.</span>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = "";
+    notifs.forEach(n => {
+        let isChatMsg = n.type === "chat_message" || n.type === "chat_start" || n.chatId;
+        let isOwnerAlert = n.type === "owner_notification" || (n.message && n.message.includes("Good News"));
+        let isApproved = n.type === "claim_approved" || (n.message && n.message.includes("Claim Approved"));
+        let isMoreInfo = n.type === "more_info_requested" || (n.message && n.message.includes("More Info Needed"));
+        let isRejected = n.type === "claim_rejected" || (n.message && n.message.includes("Claim Rejected"));
+        
+        let badgeText = isChatMsg ? "New Chat Message" : (isOwnerAlert ? "Item Found Alert" : (isApproved ? "Claim Approved" : (isMoreInfo ? "More Info Needed" : (isRejected ? "Claim Rejected" : "Hidden Details Received"))));
+        let badgeClass = isChatMsg ? "bg-primary text-white" : (isOwnerAlert ? "bg-warning text-dark" : (isApproved ? "bg-success text-white" : (isMoreInfo ? "bg-warning text-dark" : (isRejected ? "bg-danger text-white" : "bg-info text-dark"))));
+
+        container.innerHTML += `
+            <div class="p-3 mb-2 rounded-3 border shadow-sm position-relative" style="background-color: #120f26; border-color: rgba(168, 85, 247, 0.25) !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
+                    <span class="badge ${badgeClass} extra-small fw-bold px-2.5 py-1">${badgeText}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <small class="text-muted extra-small"><i class="bi bi-clock me-1"></i>${n.date}</small>
+                        <button type="button" class="btn btn-sm btn-success text-white py-0.5 px-2.5 rounded-pill extra-small fw-bold shadow-sm" onclick="handleMarkNotificationRead('${n.id}', '${n.chatId || ''}')" title="Mark as Read & Open Chat">
+                            <i class="bi bi-check-circle-fill me-1"></i>Read
+                        </button>
+                        <button type="button" class="btn btn-link text-secondary p-0 lh-1 hover-danger ms-1" onclick="handleDeleteSingleNotification('${n.id}')" title="Delete notification" style="font-size: 0.9rem;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="small mb-2 text-light fw-medium" style="line-height: 1.4;">${escapeHtml(n.message)}</p>
+                
+                ${n.chatId ? `
+                    <div class="mt-2 pt-2 border-top border-secondary-subtle d-flex justify-content-between align-items-center">
+                        <span class="extra-small text-muted"><i class="bi bi-shield-lock-fill text-success me-1"></i>Private Match Chat</span>
+                        <a href="chat.html?chatId=${n.chatId}" class="btn btn-sm btn-primary fw-bold py-1 px-3 extra-small rounded-pill" onclick="deleteNotification('${n.id}')">
+                            💬 Open Chat <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                ` : (n.senderPhone || n.senderEmail ? `
+                    <div class="small text-muted border-top border-secondary-subtle pt-2 mt-2 extra-small d-flex flex-wrap gap-2">
+                        ${n.senderPhone ? `<span><i class="bi bi-telephone-fill text-primary me-1"></i>${n.senderPhone}</span>` : ''}
+                        ${n.senderEmail ? `<span><i class="bi bi-envelope-fill text-primary me-1"></i><a href="mailto:${n.senderEmail}" class="text-info">${n.senderEmail}</a></span>` : ''}
+                    </div>
+                ` : '')}
+            </div>
+        `;
+    });
+}
+
+function handleMarkNotificationRead(notifId, chatId) {
+    let currentUser = getCurrentUser();
+    if (!currentUser || !currentUser.useremail) return;
+
+    deleteNotification(notifId);
+    renderNotificationsFeed(currentUser.useremail);
+    renderFoundNotices(currentUser.useremail);
+    renderNavbarUser();
+
+    if (chatId) {
+        window.location.href = `chat.html?chatId=${chatId}`;
+    }
+}
+
+
+function handleClearAllNotifications() {
+    let currentUser = getCurrentUser();
+    if (!currentUser || !currentUser.useremail) return;
+
+    let notifs = getNotifications(currentUser.useremail);
+    if (notifs.length === 0) {
+        alert("No notifications to delete.");
+        return;
+    }
+
+    if (confirm(`Delete all ${notifs.length} notification(s)?`)) {
+        clearNotifications(currentUser.useremail);
+        renderNotificationsFeed(currentUser.useremail);
+        renderFoundNotices(currentUser.useremail);
+        renderNavbarUser(); // Update top navbar unread count badge instantly!
+    }
+}
+
+function handleDeleteSingleNotification(notifId) {
+    let currentUser = getCurrentUser();
+    if (!currentUser || !currentUser.useremail) return;
+
+    deleteNotification(notifId);
+    renderNotificationsFeed(currentUser.useremail);
+    renderFoundNotices(currentUser.useremail);
+    renderNavbarUser(); // Update top navbar unread count badge instantly!
+}
+
+function renderReceivedClaims(userEmail) {
+    let container = document.getElementById("received-claims-container");
+    if (!container) return;
+
+    let claims = getClaims();
+    let received = claims.filter(c => c.reporterEmail && userEmail && c.reporterEmail.toLowerCase().trim() === userEmail.toLowerCase().trim());
+
+    if (received.length === 0) {
+        container.innerHTML = `<p class="text-muted small py-2 mb-0">No claim requests received for your found items yet.</p>`;
+        return;
+    }
+
+    container.innerHTML = "";
+    received.forEach(c => {
+        let isPending = c.status === "Pending Founder Approval" || c.status === "Pending Approval";
+        let isMoreInfo = c.status === "More Info Requested";
+        let isApproved = c.status === "Approved & Meeting Scheduled";
+        let isRejected = c.status === "Rejected";
+
+        let badgeClass = isApproved ? "bg-success" : (isRejected ? "bg-danger" : (isMoreInfo ? "bg-warning text-dark" : "bg-warning text-dark"));
+
+        container.innerHTML += `
+            <div class="card p-3 mb-3 border shadow-sm rounded-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge ${badgeClass}">
+                        ${isApproved ? '<i class="bi bi-check-circle me-1"></i>' : (isRejected ? '<i class="bi bi-x-circle me-1"></i>' : '<i class="bi bi-clock me-1"></i>')}${c.status}
+                    </span>
+                    <small class="text-muted"><i class="bi bi-clock"></i> ${c.date}</small>
+                </div>
+                <h6 class="fw-bold mb-1">Item: ${c.itemName}</h6>
+                <p class="small text-muted mb-2"><strong>Claimant (Lost Item Owner):</strong> ${c.claimedBy} (${c.claimedByEmail})</p>
+                
+                <!-- Submitted Hidden Details Box for Founder Verification -->
+                <div class="p-3 bg-light rounded-3 border mb-3 small">
+                    <strong class="text-dark d-block mb-1">
+                        <i class="bi bi-shield-lock-fill text-primary me-1"></i>Submitted Hidden Identifying Details:
+                    </strong>
+                    <div class="p-2 bg-white rounded border text-dark fw-medium">
+                        "${c.providedProof}"
+                    </div>
+                    <small class="text-muted mt-1 d-block">
+                        <i class="bi bi-info-circle me-1"></i>Verify that these hidden details match the item in your possession before approving.
+                    </small>
+                </div>
+
+                ${isMoreInfo ? `
+                    <div class="p-2.5 bg-warning bg-opacity-10 text-dark rounded border small mb-3">
+                        <i class="bi bi-hourglass-split text-warning me-1"></i>
+                        <strong>You requested more info:</strong> "${c.founderFeedback || 'Please provide more details'}". Awaiting claimant response.
+                    </div>
+                ` : ''}
+                
+                ${(isPending || isMoreInfo) ? `
+                    <!-- 3 Options for Founder: Accept, Request More Info, Reject -->
+                    <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+                        <button class="btn btn-sm btn-success fw-bold flex-fill py-1.5" onclick="openScheduleModal('${c.claimId}')">
+                            <i class="bi bi-check2-circle me-1"></i>1. Accept & Schedule
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning text-dark fw-bold flex-fill py-1.5" onclick="openRequestInfoModal('${c.claimId}')">
+                            <i class="bi bi-question-circle me-1"></i>2. Request More Info
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger fw-bold flex-fill py-1.5" onclick="openRejectModal('${c.claimId}')">
+                            <i class="bi bi-x-circle me-1"></i>3. Reject Claim
+                        </button>
+                    </div>
+                ` : isApproved ? `
+                    <div class="p-2.5 bg-success bg-opacity-10 text-success rounded border small">
+                        <div class="fw-bold mb-1"><i class="bi bi-geo-alt-fill me-1"></i>Meeting Scheduled: ${c.meetingDetails ? c.meetingDetails.location : 'Campus Reception'} | ${c.meetingDetails ? c.meetingDetails.time : ''}</div>
+                        ${c.meetingDetails && c.meetingDetails.note ? `<div class="fw-normal text-muted">Instructions: ${c.meetingDetails.note}</div>` : ''}
+                    </div>
+                ` : `
+                    <div class="p-2.5 bg-danger bg-opacity-10 text-danger rounded border small">
+                        <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>Claim Rejected</div>
+                        <div class="text-dark">Reason: ${c.rejectionReason || 'Details did not match'}</div>
+                    </div>
+                `}
+
+                <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+                    <span class="extra-small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Secure Encrypted Match</span>
+                    <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openOrCreateChat('${c.itemId}', '${c.itemId}')">
+                        <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// -------------------------------------------------------------
+// Founder Option 1: Accept & Schedule Meeting
+// -------------------------------------------------------------
+function openScheduleModal(claimId) {
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    let claimIdInput = document.getElementById("modal-claim-id");
+    if (claimIdInput) claimIdInput.value = claimId;
+
+    // Reset location select and custom location input
+    let meetingLocationSelect = document.getElementById("meeting-location");
+    if (meetingLocationSelect) {
+        meetingLocationSelect.value = "";
+    }
+    let customContainer = document.getElementById("custom-location-container");
+    let customInput = document.getElementById("custom-meeting-location");
+    if (customContainer) customContainer.classList.add("d-none");
+    if (customInput) {
+        customInput.value = "";
+        customInput.required = false;
+    }
+
+    let displayBox = document.getElementById("modal-claimant-details-display");
+    if (displayBox) {
+        displayBox.innerHTML = `
+            <div class="mb-1"><strong>Item:</strong> <span class="text-primary fw-bold">${claim.itemName}</span></div>
+            <div class="mb-1"><strong>Claimant:</strong> ${claim.claimedBy} (${claim.claimedByEmail})</div>
+            <div class="p-2 bg-white rounded border mt-2">
+                <strong class="text-dark">Submitted Hidden Details:</strong>
+                <div class="text-primary fw-bold mt-1">"${claim.providedProof}"</div>
+            </div>
+        `;
+    }
+
+    let modalEl = document.getElementById("scheduleMeetingModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+function handleScheduleSubmit(event) {
+    event.preventDefault();
+    let claimId = document.getElementById("modal-claim-id").value;
+    let location = document.getElementById("meeting-location").value;
+    if (location === "Other") {
+        location = document.getElementById("custom-meeting-location").value.trim();
+        if (!location) {
+            alert("Please enter a custom meeting location.");
+            return;
+        }
+    }
+    let time = document.getElementById("meeting-time").value;
+    let note = document.getElementById("meeting-note").value;
+
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    let meetingDetails = { location: location, time: time, note: note };
+
+    // Update claim status to "Approved & Meeting Scheduled"
+    updateClaimStatus(claimId, "Approved & Meeting Scheduled", { meetingDetails: meetingDetails });
+
+    // Send notification back to Claimant (Person who lost the item)
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: claim.claimedByEmail,
+        senderName: claim.reporter,
+        senderEmail: claim.reporterEmail,
+        itemName: claim.itemName,
+        message: `🎉 Claim Approved! Founder ${claim.reporter} verified your hidden details for "${claim.itemName}". Meeting scheduled at: ${location} on ${time}. Instructions: ${note}`,
+        date: new Date().toLocaleString(),
+        type: "claim_approved",
+        claimId: claimId
+    });
+
+    alert("Meeting scheduled successfully! Notification sent to claimant (" + claim.claimedBy + ").");
+
+    let modalEl = document.getElementById("scheduleMeetingModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    window.location.reload();
+}
+
+// -------------------------------------------------------------
+// Founder Option 2: Request More Information / Correct Details
+// -------------------------------------------------------------
+function openRequestInfoModal(claimId) {
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    let claimIdInput = document.getElementById("modal-request-info-claim-id");
+    if (claimIdInput) claimIdInput.value = claimId;
+
+    let displayBox = document.getElementById("modal-request-info-display");
+    if (displayBox) {
+        displayBox.innerHTML = `
+            <div class="mb-1"><strong>Item:</strong> <span class="text-primary fw-bold">${claim.itemName}</span></div>
+            <div class="mb-1"><strong>Claimant:</strong> ${claim.claimedBy} (${claim.claimedByEmail})</div>
+            <div class="p-2 bg-white rounded border mt-2">
+                <strong class="text-dark">Current Hidden Details:</strong>
+                <div class="text-dark mt-1">"${claim.providedProof}"</div>
+            </div>
+        `;
+    }
+
+    let msgInput = document.getElementById("request-info-message");
+    if (msgInput) msgInput.value = "";
+
+    let modalEl = document.getElementById("requestInfoModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+function handleRequestInfoSubmit(event) {
+    event.preventDefault();
+    let claimId = document.getElementById("modal-request-info-claim-id").value;
+    let message = document.getElementById("request-info-message").value.trim();
+
+    if (!message) {
+        alert("Please specify what details are missing or needed.");
+        return;
+    }
+
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    // Update claim status to "More Info Requested"
+    updateClaimStatus(claimId, "More Info Requested", { founderFeedback: message });
+
+    // Send notification to Claimant
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: claim.claimedByEmail,
+        senderName: claim.reporter,
+        senderEmail: claim.reporterEmail,
+        itemName: claim.itemName,
+        message: `⚠️ More Info Needed! Founder ${claim.reporter} requested additional details for "${claim.itemName}": "${message}". Please update details on your Dashboard.`,
+        date: new Date().toLocaleString(),
+        type: "more_info_requested",
+        claimId: claimId
+    });
+
+    alert("Request for more information sent to " + claim.claimedBy + "!");
+
+    let modalEl = document.getElementById("requestInfoModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    window.location.reload();
+}
+
+// -------------------------------------------------------------
+// Founder Option 3: Reject Claim
+// -------------------------------------------------------------
+function openRejectModal(claimId) {
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    let claimIdInput = document.getElementById("modal-reject-claim-id");
+    if (claimIdInput) claimIdInput.value = claimId;
+
+    let displayBox = document.getElementById("modal-reject-display");
+    if (displayBox) {
+        displayBox.innerHTML = `
+            <div class="mb-1"><strong>Item:</strong> <span class="text-primary fw-bold">${claim.itemName}</span></div>
+            <div class="mb-1"><strong>Claimant:</strong> ${claim.claimedBy} (${claim.claimedByEmail})</div>
+            <div class="p-2 bg-white rounded border mt-2">
+                <strong class="text-dark">Submitted Hidden Details:</strong>
+                <div class="text-danger fw-medium mt-1">"${claim.providedProof}"</div>
+            </div>
+        `;
+    }
+
+    let modalEl = document.getElementById("rejectClaimModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+function handleRejectClaimSubmit(event) {
+    event.preventDefault();
+    let claimId = document.getElementById("modal-reject-claim-id").value;
+    let reason = document.getElementById("reject-reason").value.trim();
+
+    if (!reason) {
+        alert("Please enter a reason for rejecting this claim.");
+        return;
+    }
+
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    // Update claim status to "Rejected"
+    updateClaimStatus(claimId, "Rejected", { rejectionReason: reason });
+
+    // Send notification to Claimant
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: claim.claimedByEmail,
+        senderName: claim.reporter,
+        senderEmail: claim.reporterEmail,
+        itemName: claim.itemName,
+        message: `❌ Claim Rejected! Founder ${claim.reporter} declined your claim for "${claim.itemName}". Reason: "${reason}"`,
+        date: new Date().toLocaleString(),
+        type: "claim_rejected",
+        claimId: claimId
+    });
+
+    alert("Claim rejected. Notification sent to " + claim.claimedBy + ".");
+
+    let modalEl = document.getElementById("rejectClaimModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    window.location.reload();
+}
+
+// -------------------------------------------------------------
+// Claimant Resubmission: Update Hidden Details After More Info Request
+// -------------------------------------------------------------
+function openUpdateDetailsModal(claimId) {
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    let claimIdInput = document.getElementById("modal-update-claim-id");
+    if (claimIdInput) claimIdInput.value = claimId;
+
+    let displayBox = document.getElementById("modal-update-feedback-display");
+    if (displayBox) {
+        displayBox.innerHTML = `
+            <div class="mb-1"><strong>Founder (${claim.reporter}) Asked:</strong></div>
+            <div class="fw-medium text-dark">"${claim.founderFeedback || 'Please provide more details.'}"</div>
+            <div class="mt-2 text-muted extra-small">Your previous details: "${claim.providedProof}"</div>
+        `;
+    }
+
+    let inputEl = document.getElementById("update-hidden-details-text");
+    if (inputEl) inputEl.value = "";
+
+    let modalEl = document.getElementById("updateHiddenDetailsModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+function handleUpdateDetailsSubmit(event) {
+    event.preventDefault();
+    let claimId = document.getElementById("modal-update-claim-id").value;
+    let newDetails = document.getElementById("update-hidden-details-text").value.trim();
+
+    if (!newDetails) {
+        alert("Please enter the additional / correct hidden details.");
+        return;
+    }
+
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    // Update claim status back to "Pending Founder Approval" with new details
+    updateClaimStatus(claimId, "Pending Founder Approval", { providedProof: newDetails });
+
+    // Send notification to Founder
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: claim.reporterEmail,
+        senderName: claim.claimedBy,
+        senderEmail: claim.claimedByEmail,
+        itemName: claim.itemName,
+        message: `🔄 Hidden Details Updated! ${claim.claimedBy} provided updated hidden details for "${claim.itemName}": "${newDetails}". Please review to Accept, Reject, or Request Info.`,
+        date: new Date().toLocaleString(),
+        type: "claim_request",
+        claimId: claimId
+    });
+
+    alert("Updated details submitted to Founder (" + claim.reporter + ")! They will re-verify your claim.");
+
+    let modalEl = document.getElementById("updateHiddenDetailsModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    window.location.reload();
+}
+
+function renderMyReports(userEmail) {
+    let container = document.getElementById("my-lost-container");
+    if (!container) return;
+
+    let reports = getReports();
+    let myReports = reports.filter(r => r.postedByEmail && userEmail && r.postedByEmail.toLowerCase().trim() === userEmail.toLowerCase().trim());
+
+    if (myReports.length === 0) {
+        container.innerHTML = `<p class="text-muted py-2 mb-0">No reports submitted yet.</p>`;
+        return;
+    }
+
+    container.innerHTML = "";
+    myReports.forEach(item => {
+        container.innerHTML += `
+            <div class="card p-3 mb-3 border shadow-sm rounded-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'} mb-1">${item.type.toUpperCase()}</span>
+                        <h6 class="fw-bold mb-0">${item.itemName}</h6>
+                        <small class="text-muted">Zone: ${item.zone} | Date: ${item.date}</small>
+                    </div>
+                    <div>
+                        <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-primary me-2">View Matches</a>
+                        <button class="btn btn-sm btn-outline-danger" onclick="removeReport('${item.id}')">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function removeReport(id) {
+    if (confirm("Delete this report?")) {
+        deleteReport(id);
+        window.location.reload();
+    }
+}
+
+// -------------------------------------------------------------
+// 6. ADMIN LOGIC
+// -------------------------------------------------------------
+function initAdminPage() {
+    let reports = getReports();
+    let tbody = document.getElementById("admin-table-body");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+    reports.forEach(r => {
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${r.id}</strong></td>
+                <td><span class="badge ${r.type === 'lost' ? 'badge-lost' : 'badge-found'}">${r.type.toUpperCase()}</span></td>
+                <td>${r.itemName}</td>
+                <td><span class="badge bg-light text-dark border">${r.postedBy}</span></td>
+                <td>${r.zone}</td>
+                <td>${r.date}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeReport('${r.id}')"><i class="bi bi-trash"></i> Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    let resetBtn = document.getElementById("btn-reset-sample-data");
+    if (resetBtn) {
+        resetBtn.onclick = () => {
+            if (confirm("Reset dataset back to sample default items?")) {
+                resetData();
+                window.location.reload();
+            }
+        };
+    }
+}
+
+function getDefaultImage(cat) {
+    if (cat === "Bags") return "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80";
+    if (cat === "Electronics") return "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=600&q=80";
+    if (cat === "Wallets") return "https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=600&q=80";
+    return "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=600&q=80";
+}
+
+// Theme Toggle Helper Functions
+function toggleTheme() {
+    let isLight = document.documentElement.classList.toggle("light-theme");
+    localStorage.setItem("theme", isLight ? "light" : "dark");
+    
+    // Update icons and tooltips across the page
+    updateThemeToggleIcons();
+}
+
+function updateThemeToggleIcons() {
+    let isLight = document.documentElement.classList.contains("light-theme");
+    let toggles = document.querySelectorAll(".btn-theme-toggle");
+    toggles.forEach(btn => {
+        let icon = btn.querySelector("i");
+        if (icon) {
+            if (isLight) {
+                icon.className = "bi bi-moon-stars";
+                btn.title = "Switch to Dark Mode";
+            } else {
+                icon.className = "bi bi-sun";
+                btn.title = "Switch to Light Mode";
+            }
+        }
+    });
+}
+
+// Date Formatter Helper
+function formatDate(dateStr) {
+    if (!dateStr) return "";
+    try {
+        let parts = dateStr.split("-");
+        if (parts.length === 3) {
+            let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            let year = parts[0];
+            let month = months[parseInt(parts[1], 10) - 1] || parts[1];
+            let day = parseInt(parts[2], 10);
+            return `${month} ${day}, ${year}`;
+        }
+        return dateStr;
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+// Smooth Vanilla JS Number Count-Up Animation (Real Application Data)
+function animateCountUp(elementId, targetValue) {
+    let el = document.getElementById(elementId);
+    if (!el) return;
+    
+    let target = parseInt(targetValue, 10) || 0;
+    if (target === 0) {
+        el.innerText = "0";
+        return;
+    }
+
+    let duration = 1200; // ms
+    let startTime = null;
+
+    function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        let progress = Math.min((timestamp - startTime) / duration, 1);
+        
+        // Ease out quadratic progression curve
+        let easeOutProgress = progress * (2 - progress);
+        let current = Math.floor(easeOutProgress * target);
+        
+        el.innerText = current;
+
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        } else {
+            el.innerText = target;
+        }
+    }
+
+    window.requestAnimationFrame(step);
+}
+
+// -------------------------------------------------------------
+// HOW IT WORKS — SEQUENTIAL PROCESS TIMELINE ANIMATION
+// -------------------------------------------------------------
+function initHowItWorksAnimation() {
+    let section = document.getElementById("how-it-works-section");
+    if (!section) return;
+
+    let observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                section.classList.add("is-visible");
+
+                // Timed Sequential Process Workflow Sequence:
+                // Heading: 0ms
+                // Step 01 Report: 300ms
+                // Line 01 Draw: 900ms
+                // Step 02 Smart Match: 1300ms
+                // Line 02 Draw: 1900ms
+                // Step 03 Verify: 2300ms
+                // Line 03 Draw: 2900ms
+                // Step 04 Recover: 3300ms
+
+                setTimeout(() => {
+                    let col1 = document.getElementById("step-col-1");
+                    if (col1) col1.classList.add("step-active");
+                }, 300);
+
+                setTimeout(() => {
+                    let line1 = document.getElementById("timeline-line-1");
+                    if (line1) line1.classList.add("line-active");
+                }, 900);
+
+                setTimeout(() => {
+                    let col2 = document.getElementById("step-col-2");
+                    if (col2) col2.classList.add("step-active");
+                }, 1300);
+
+                setTimeout(() => {
+                    let line2 = document.getElementById("timeline-line-2");
+                    if (line2) line2.classList.add("line-active");
+                }, 1900);
+
+                setTimeout(() => {
+                    let col3 = document.getElementById("step-col-3");
+                    if (col3) col3.classList.add("step-active");
+                }, 2300);
+
+                setTimeout(() => {
+                    let line3 = document.getElementById("timeline-line-3");
+                    if (line3) line3.classList.add("line-active");
+                }, 2900);
+
+                setTimeout(() => {
+                    let col4 = document.getElementById("step-col-4");
+                    if (col4) col4.classList.add("step-active");
+                }, 3300);
+
+                observer.unobserve(section);
+            }
+        });
+    }, { threshold: 0.2 });
+
+    observer.observe(section);
+}
+
+// -------------------------------------------------------------
+// LIGHTWEIGHT CUSTOM THEMED DROPDOWN COMPONENT (#151329 / #6B3FBF)
+// -------------------------------------------------------------
+function setupCustomSelect(selectId) {
+    let nativeSelect = document.getElementById(selectId);
+    if (!nativeSelect) return;
+
+    if (nativeSelect.dataset.customized === "true") return;
+    nativeSelect.dataset.customized = "true";
+
+    nativeSelect.style.display = "none";
+
+    let wrapper = document.createElement("div");
+    wrapper.className = "custom-select-wrapper";
+
+    nativeSelect.parentNode.insertBefore(wrapper, nativeSelect);
+    wrapper.appendChild(nativeSelect);
+
+    let trigger = document.createElement("div");
+    trigger.className = "custom-select-trigger";
+    
+    let currentOpt = nativeSelect.options[nativeSelect.selectedIndex] || nativeSelect.options[0];
+    let triggerText = document.createElement("span");
+    triggerText.className = "trigger-text";
+    triggerText.innerText = currentOpt ? currentOpt.text : "";
+
+    let chevron = document.createElement("i");
+    chevron.className = "bi bi-chevron-down chevron-icon";
+
+    trigger.appendChild(triggerText);
+    trigger.appendChild(chevron);
+    wrapper.appendChild(trigger);
+
+    let menu = document.createElement("div");
+    menu.className = "custom-select-menu";
+
+    Array.from(nativeSelect.options).forEach(opt => {
+        let optionItem = document.createElement("div");
+        optionItem.className = `custom-select-option ${opt.selected ? 'is-selected' : ''}`;
+        optionItem.innerText = opt.text;
+        optionItem.dataset.value = opt.value;
+
+        optionItem.addEventListener("click", (e) => {
+            e.stopPropagation();
+            
+            nativeSelect.value = opt.value;
+            triggerText.innerText = opt.text;
+
+            menu.querySelectorAll(".custom-select-option").forEach(el => el.classList.remove("is-selected"));
+            optionItem.classList.add("is-selected");
+
+            wrapper.classList.remove("is-open");
+
+            nativeSelect.dispatchEvent(new Event("change"));
+        });
+
+        menu.appendChild(optionItem);
+    });
+
+    wrapper.appendChild(menu);
+
+    trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        document.querySelectorAll(".custom-select-wrapper.is-open").forEach(w => {
+            if (w !== wrapper) w.classList.remove("is-open");
+        });
+        wrapper.classList.toggle("is-open");
+    });
+}
+
+// Global click listener to close open custom select menus when clicking outside
+document.addEventListener("click", () => {
+    document.querySelectorAll(".custom-select-wrapper.is-open").forEach(w => w.classList.remove("is-open"));
+});
+

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FindIt Secure Match Chat - Campus Lost & Found</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="chat">
+
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-menu me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <a class="navbar-brand" href="index.html"><img src="images/campusfind-logo.png" alt="CampusFind Logo" class="brand-logo-img">
+                    CampusFind
+                </a>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <a href="dashboard.html" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-none d-md-inline-block">
+                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                </a>
+                <div id="nav-user-display"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Slide-out Left Sidebar Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fw-bold d-flex align-items-center gap-2" id="sidebarMenuLabel">
+                <span class="brand-icon" style="width:32px; height:32px; font-size:0.95rem;"><i class="bi bi-search-heart"></i></span>
+                Menu
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="sidebar-nav">
+                <a class="nav-link" href="index.html"><i class="bi bi-house-door me-2"></i>Home</a>
+                <a class="nav-link" href="report.html"><i class="bi bi-plus-square me-2"></i>Report Item</a>
+                <a class="nav-link" href="matches.html"><i class="bi bi-cpu me-2"></i>Match Engine</a>
+                <a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a class="nav-link text-warning" href="admin.html"><i class="bi bi-shield-lock me-2"></i>Admin</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="py-4">
+        <div class="container">
+
+            <!-- Chat Access Error Banner (Hidden by default) -->
+            <div id="chat-error-container" class="d-none">
+                <div class="alert alert-danger shadow-sm border-0 rounded-4 p-4 text-center">
+                    <i class="bi bi-shield-lock-fill fs-1 text-danger d-block mb-3"></i>
+                    <h4 class="fw-bold">Access Restricted</h4>
+                    <p class="mb-3">This match chat is private and can only be accessed by the lost item owner and finder.</p>
+                    <a href="dashboard.html" class="btn btn-primary fw-bold px-4 rounded-pill">Return to Dashboard</a>
+                </div>
+            </div>
+
+            <!-- Chat Main Row -->
+            <div id="chat-main-container" class="row g-4">
+                
+                <!-- Left Sidebar: Compact Match Info Area -->
+                <div class="col-lg-4 col-md-5">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-card h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-pill fw-bold extra-small">
+                                    <i class="bi bi-shield-lock-fill me-1"></i>SECURE MATCH CHAT
+                                </span>
+                                <span id="sidebar-match-score" class="badge bg-primary fs-6 fw-bold">94% Match</span>
+                            </div>
+
+                            <div class="text-center py-3 border-bottom mb-3">
+                                <div class="stat-icon-wrapper text-primary mx-auto mb-2 shadow-sm" style="width: 56px; height: 56px; font-size: 1.5rem;">
+                                    <i class="bi bi-bag-check-fill"></i>
+                                </div>
+                                <h5 id="sidebar-item-name" class="fw-bold text-heading mb-1">Black Backpack</h5>
+                                <div id="sidebar-status-badge" class="badge bg-warning text-dark rounded-pill px-3 py-1 fw-bold">
+                                    Verification Pending
+                                </div>
+                            </div>
+
+                            <!-- Match Details Summary -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between small py-2 border-bottom">
+                                    <span class="text-muted"><i class="bi bi-geo-alt me-1 text-danger"></i>Lost Location</span>
+                                    <strong id="sidebar-lost-zone" class="text-light">CSE Block</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small py-2 border-bottom">
+                                    <span class="text-muted"><i class="bi bi-geo-alt-fill me-1 text-success"></i>Found Location</span>
+                                    <strong id="sidebar-found-zone" class="text-light">Library</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small py-2 border-bottom">
+                                    <span class="text-muted"><i class="bi bi-person me-1 text-info"></i>Lost Owner</span>
+                                    <strong id="sidebar-lost-owner" class="text-light">Ishani</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small py-2 border-bottom">
+                                    <span class="text-muted"><i class="bi bi-person-check me-1 text-warning"></i>Finder</span>
+                                    <strong id="sidebar-finder-name" class="text-light">Rahul</strong>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-pill fw-bold mb-3" onclick="openMatchDetailsModal()">
+                                <i class="bi bi-info-circle me-1"></i>View Match Details
+                            </button>
+                        </div>
+
+                        <!-- Privacy Reminder Note -->
+                        <div class="p-3 chat-privacy-box rounded-3 border extra-small text-muted">
+                            <i class="bi bi-lock-fill text-success me-1"></i>
+                            <strong>Privacy Safeguard:</strong> Personal contact info (phone/email/hidden answers) is not automatically disclosed. Use this chat to communicate safely.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Main Area: Chat Box -->
+                <div class="col-lg-8 col-md-7">
+                    <div class="card border-0 shadow-sm rounded-4 bg-card d-flex flex-column" style="height: 680px;">
+                        
+                        <!-- Chat Header -->
+                        <div class="p-3 px-4 border-bottom chat-pane-header d-flex justify-content-between align-items-center rounded-top-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; font-size: 1.1rem;">
+                                    🔒
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-heading">FindIt Match Chat</h6>
+                                    <small class="text-muted extra-small">
+                                        <span id="chat-header-item">Black Backpack</span> · 
+                                        <span id="chat-header-finder">Finder: Rahul</span>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span id="chat-header-status" class="badge bg-warning text-dark rounded-pill px-3 py-1 fw-bold extra-small">
+                                    Verification Pending
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Finder-Only Action Panel (Approve / Reject / Request More Info) -->
+                        <div id="finder-action-bar" class="p-3 border-bottom bg-primary-subtle text-primary border-primary-subtle d-none">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="extra-small fw-bold">
+                                    <i class="bi bi-shield-check me-1"></i>Finder Action Panel:
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button type="button" class="btn btn-sm btn-success fw-bold py-1 px-2.5 extra-small" onclick="finderApproveOwnership()">
+                                        ✓ Approve Ownership
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger fw-bold py-1 px-2.5 extra-small" onclick="finderRejectClaim()">
+                                        ✕ Reject Claim
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold py-1 px-2.5 extra-small" onclick="finderRequestMoreInfo()">
+                                        ? Request More Info
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recovery Arranged / Item Recovered Header Banner -->
+                        <div id="recovery-status-bar" class="p-3 border-bottom d-none">
+                            <!-- Populated dynamically by chat.js -->
+                        </div>
+
+                        <!-- Scrollable Message Body -->
+                        <div id="chat-messages-container" class="flex-grow-1 p-4 overflow-auto d-flex flex-column gap-3">
+                            <!-- Messages populated by chat.js -->
+                        </div>
+
+                        <!-- Quick Action Chips -->
+                        <div class="p-2.5 px-3 border-top chat-chips-container d-flex gap-2 overflow-auto" style="white-space: nowrap;">
+                            <button type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Ask About Item')">
+                                💬 Ask About Item
+                            </button>
+                            <button type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Request Verification')">
+                                🔍 Request Verification
+                            </button>
+                            <button type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Arrange Recovery')">
+                                📍 Arrange Recovery
+                            </button>
+                            <button type="button" class="btn btn-sm btn-chat-chip-danger rounded-pill extra-small fw-bold" onclick="sendQuickChip('Report Suspicious Claim')">
+                                ⚠️ Report Suspicious
+                            </button>
+                        </div>
+
+                        <!-- Input Bar -->
+                        <div class="p-3 border-top chat-input-container rounded-bottom-4">
+                            <form id="chat-form" onsubmit="handleSendMessage(event)" class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-outline-secondary border-0 text-muted" title="Attachment helper" onclick="sendQuickChip('Share Verification Photo')">
+                                    <i class="bi bi-paperclip fs-5"></i>
+                                </button>
+                                <input type="text" id="chat-input" class="form-control bg-input border-secondary-subtle text-light rounded-pill px-3 py-2" placeholder="Type a message..." required autocomplete="off">
+                                <button type="submit" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; padding: 0;">
+                                    <i class="bi bi-send-fill fs-6"></i>
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: View Match Details -->
+    <div class="modal fade" id="matchDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 bg-card">
+                <div class="modal-header border-bottom border-secondary-subtle">
+                    <h5 class="modal-title fw-bold text-heading">
+                        <i class="bi bi-cpu text-primary me-2"></i>Match Factors & Breakdown
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="match-details-modal-body">
+                    <!-- Populated by chat.js -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Arrange Recovery -->
+    <div class="modal fade" id="arrangeRecoveryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 bg-card">
+                <div class="modal-header border-bottom border-secondary-subtle">
+                    <h5 class="modal-title fw-bold text-heading">
+                        <i class="bi bi-geo-alt-fill text-primary me-2"></i>Arrange Handover Recovery
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="recovery-form" onsubmit="handleConfirmRecoveryPlan(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-light">Meeting Point / Handover Location</label>
+                            <select id="recovery-location" class="form-select bg-input border-secondary-subtle text-light" required>
+                                <option value="Student Help Desk">Student Help Desk (Main Block)</option>
+                                <option value="Library Reception Counter">Library Reception Counter</option>
+                                <option value="Campus Security Main Office">Campus Security Main Office</option>
+                                <option value="Cafeteria Information Desk">Cafeteria Information Desk</option>
+                                <option value="Department Office">Department Office</option>
+                            </select>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small text-light">Date</label>
+                                <input type="date" id="recovery-date" class="form-control bg-input border-secondary-subtle text-light" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small text-light">Time</label>
+                                <input type="time" id="recovery-time" class="form-control bg-input border-secondary-subtle text-light" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-light">Special Instructions (Optional)</label>
+                            <textarea id="recovery-notes" rows="2" class="form-control bg-input border-secondary-subtle text-light" placeholder="e.g. Please bring student ID card for verification."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-2 rounded-3">
+                            <i class="bi bi-calendar-check me-1"></i>Confirm Recovery Plan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-muted">
+            © 2026 Campus Lost & Found System. FindIt Secure Match Chat.
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/matching.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/chat.js"></script>
+</body>
+</html>

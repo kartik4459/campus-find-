@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Campus Lost & Found</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="dashboard">
+
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <!-- Hamburger menu button -->
+                <button class="btn btn-menu me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <a class="navbar-brand" href="index.html"><img src="images/campusfind-logo.png" alt="CampusFind Logo" class="brand-logo-img">
+                    CampusFind
+                </a>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <a href="index.html" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-none d-md-inline-block">
+                    <i class="bi bi-house-door me-1"></i> Home
+                </a>
+                <a href="index.html" class="btn btn-sm btn-outline-secondary rounded-circle d-inline-flex d-md-none" style="width: 36px; height: 36px; align-items: center; justify-content: center; padding: 0;">
+                    <i class="bi bi-house-door fs-5"></i>
+                </a>
+                <!-- Dynamic User Account Status Badge -->
+                <div id="nav-user-display">
+                    <!-- Dynamic user panel rendered via app.js -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Slide-out Left Sidebar Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fw-bold d-flex align-items-center gap-2" id="sidebarMenuLabel">
+                <span class="brand-icon" style="width:32px; height:32px; font-size:0.95rem; animation:none;"><i class="bi bi-search-heart"></i></span>
+                Menu
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="sidebar-nav">
+                <a class="nav-link" href="index.html"><i class="bi bi-house-door me-2"></i>Home</a>
+                <a class="nav-link" href="report.html"><i class="bi bi-plus-square me-2"></i>Report Item</a>
+                <a class="nav-link" href="matches.html"><i class="bi bi-cpu me-2"></i>Match Engine</a>
+                <a class="nav-link active" href="dashboard.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a class="nav-link text-warning" href="admin.html"><i class="bi bi-shield-lock me-2"></i>Admin</a>
+            </div>
+            
+            <div class="p-3 bg-light rounded-3 border mt-4 small text-muted">
+                <div class="fw-bold mb-1 text-primary"><i class="bi bi-lightning-charge me-1"></i>Algorithm Active</div>
+                Multi-attribute comparison matches items across zones, categories, colors, dates, and descriptions in real time.
+            </div>
+        </div>
+    </div>
+
+    <main class="py-5">
+        <div class="container">
+            <!-- Welcome Header -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">Welcome back, <span id="dash-user-name" class="text-primary">Student</span> 👋</h2>
+                    <p class="text-muted mb-0">Verify hidden details, approve claims, and schedule handover meetings.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="report.html" class="btn btn-lost btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Report Lost
+                    </a>
+                    <a href="report-found.html" class="btn btn-found btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Report Found
+                    </a>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Notifications Column -->
+                <div class="col-lg-4">
+                    <div class="bg-white rounded-3 border shadow-sm p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="bi bi-bell-fill text-warning me-2"></i>Notifications
+                            </h5>
+                            <button id="btn-clear-notifications" class="btn btn-sm btn-outline-danger py-1 px-2.5 small fw-semibold" onclick="handleClearAllNotifications()" title="Delete all notifications">
+                                <i class="bi bi-trash3 me-1"></i>Delete All
+                            </button>
+                        </div>
+                        <div id="notifications-container" class="rounded border p-2" style="max-height: 380px; overflow-y: auto;">
+                            <!-- Dynamic rendering via app.js -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Claims & Reports Main Section -->
+                <div class="col-lg-8">
+                    <!-- Found Item Alerts Received -->
+                    <div class="bg-white rounded-3 border shadow-sm p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="bi bi-bell-fill text-warning me-2"></i>Found Item Alerts (Provide Hidden Details to Founder)
+                            </h5>
+                            <span class="badge bg-warning-subtle text-dark border rounded-pill px-2.5 py-1" id="found-notices-badge">0 Alerts</span>
+                        </div>
+                        <div id="found-notices-container">
+                            <!-- Dynamic -->
+                        </div>
+                    </div>
+
+                    <!-- Received Claims Needing Approval (For Founders) -->
+                    <div class="bg-white rounded-3 border shadow-sm p-4 mb-4">
+                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-shield-check text-success me-2"></i>Claim Requests Received (Verify Hidden Details & Schedule Meeting)</h5>
+                        <div id="received-claims-container">
+                            <!-- Dynamic -->
+                        </div>
+                    </div>
+
+                    <!-- Sent Claims & Handover Status -->
+                    <div class="bg-white rounded-3 border shadow-sm p-4 mb-4">
+                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-send-check text-primary me-2"></i>My Sent Claim Requests & Meeting Details</h5>
+                        <div id="submitted-claims-container">
+                            <!-- Dynamic -->
+                        </div>
+                    </div>
+
+                    <!-- My Active Reports -->
+                    <div class="bg-white rounded-3 border shadow-sm p-4">
+                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-collection me-2 text-primary"></i>My Submitted Reports</h5>
+                        <div id="my-lost-container">
+                            <!-- Dynamic -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Schedule Meeting Modal (Founder Approves Claim & Sets Meeting) -->
+    <div class="modal fade" id="scheduleMeetingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-success text-white border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-calendar-check me-2"></i>Approve Claim & Schedule Meeting
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Claimant's Hidden Details Review Box -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase tracking-wider">
+                            <i class="bi bi-shield-lock text-primary me-1"></i>Claimant's Submitted Hidden Details
+                        </label>
+                        <div id="modal-claimant-details-display" class="p-3 bg-light rounded-3 border small text-dark">
+                            <!-- Populated dynamically via openScheduleModal in app.js -->
+                        </div>
+                    </div>
+
+                    <form id="schedule-form" onsubmit="handleScheduleSubmit(event)">
+                        <input type="hidden" id="modal-claim-id">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Meeting Campus Location <span class="text-danger">*</span></label>
+                            <select id="meeting-location" class="form-select" required>
+                                <option value="">Select Meeting Spot...</option>
+                                <option value="Library Ground Floor Reception">Library Ground Floor Reception</option>
+                                <option value="Main Block Cafeteria Entrance">Main Block Cafeteria Entrance</option>
+                                <option value="Student Security Gate 1">Student Security Gate 1</option>
+                                <option value="Sports Complex Reception Desk">Sports Complex Reception Desk</option>
+                                <option value="Admin Block Help Desk">Admin Block Help Desk</option>
+                                <option value="Other">Other (Custom Location)...</option>
+                            </select>
+                        </div>
+
+                        <!-- Custom Location Input (Hidden by default) -->
+                        <div class="mb-3 d-none" id="custom-location-container">
+                            <label class="form-label fw-semibold">Enter Custom Meeting Location <span class="text-danger">*</span></label>
+                            <input type="text" id="custom-meeting-location" class="form-control" placeholder="e.g. Near Science Block Fountain">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Meeting Date & Time <span class="text-danger">*</span></label>
+                            <input type="text" id="meeting-time" class="form-control" placeholder="e.g. Today at 4:30 PM" required value="Today at 4:30 PM">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Instructions for Claimant</label>
+                            <textarea id="meeting-note" rows="2" class="form-control" placeholder="e.g. Please bring your college student ID card for verification.">Please bring your college student ID card for verification.</textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+                            <i class="bi bi-check2-circle me-1"></i>Approve Claim & Send Schedule to Claimant
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Provide Hidden Details Modal (Person Who Lost Item Submits Proof of Ownership to Founder) -->
+    <div class="modal fade" id="provideHiddenDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-shield-lock me-2"></i>Provide Hidden Details to Founder
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-primary bg-primary-subtle text-primary-emphasis border-0 shadow-sm mb-3 small">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Founder <strong id="handover-finder-name">Founder</strong> found an item matching your lost report <strong id="handover-item-name">Lost Item</strong>. Provide your hidden identifying details below to prove ownership.
+                    </div>
+
+                    <form id="hidden-details-form" onsubmit="handleProvideHiddenDetailsSubmit(event)">
+                        <input type="hidden" id="handover-notif-id">
+                        <input type="hidden" id="handover-finder-email">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-shield-lock-fill text-primary me-1"></i>Hidden Identifying Details <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="handover-hidden-details" rows="3" class="form-control" placeholder="e.g. Unique keychains, scratches on bottom, screen lock wallpaper, Dell charger inside bag, engraving..." required></textarea>
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                Only details known to the true owner. Sent directly to Founder <span id="handover-finder-name-label" class="fw-bold"></span>.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Your Contact Phone / WhatsApp (Optional)</label>
+                            <input type="tel" id="handover-claimant-phone" class="form-control form-control-sm" placeholder="+91 98765 43210">
+                        </div>
+
+                        <div class="p-2.5 bg-light rounded-3 border mb-3 small text-muted">
+                            <i class="bi bi-lock-fill text-primary me-1"></i>
+                            <strong>Handover Meeting Rule:</strong> The Founder holding the item will verify your hidden details, approve your claim, and schedule the handover meeting spot. Persons who lost items cannot schedule meetings directly.
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+                            <i class="bi bi-send-check me-1"></i>Submit Hidden Details to Founder for Approval
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request More Information Modal (Founder asks for additional / correct details) -->
+    <div class="modal fade" id="requestInfoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-warning text-dark border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-question-circle me-2"></i>Request More Info / Correct Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning bg-warning-subtle text-dark border-0 shadow-sm mb-3 small">
+                        <i class="bi bi-info-circle-fill text-warning me-1"></i>
+                        If the claimant provided insufficient, vague, or incorrect details, ask them for specific identifying details to verify their ownership.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase tracking-wider">
+                            <i class="bi bi-person text-primary me-1"></i>Claimant & Current Details
+                        </label>
+                        <div id="modal-request-info-display" class="p-3 bg-light rounded-3 border small text-dark"></div>
+                    </div>
+
+                    <form id="request-info-form" onsubmit="handleRequestInfoSubmit(event)">
+                        <input type="hidden" id="modal-request-info-claim-id">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-chat-left-dots text-primary me-1"></i>Instructions / Question for Claimant <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="request-info-message" rows="3" class="form-control" placeholder="e.g. The details provided do not match or are incomplete. Please describe the stickers on the back or the screen lock wallpaper..." required></textarea>
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                The claimant will be notified to provide updated details directly from their dashboard.
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning text-dark w-100 fw-bold py-2">
+                            <i class="bi bi-send-check me-1"></i>Send Request for More Info to Claimant
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Claim Modal (Founder rejects claim when details do not match) -->
+    <div class="modal fade" id="rejectClaimModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-danger text-white border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-x-circle me-2"></i>Reject Claim
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger bg-danger-subtle text-danger-emphasis border-0 shadow-sm mb-3 small">
+                        <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>
+                        Reject this claim if the person is clearly not the true owner or if details completely contradict the item.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase tracking-wider">
+                            <i class="bi bi-person text-primary me-1"></i>Claim Summary
+                        </label>
+                        <div id="modal-reject-display" class="p-3 bg-light rounded-3 border small text-dark"></div>
+                    </div>
+
+                    <form id="reject-claim-form" onsubmit="handleRejectClaimSubmit(event)">
+                        <input type="hidden" id="modal-reject-claim-id">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-chat-square-text text-danger me-1"></i>Reason for Rejection <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="reject-reason" rows="2" class="form-control" placeholder="e.g. The provided hidden details do not match the item found." required>The provided hidden details do not match the item found.</textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-danger w-100 fw-bold py-2">
+                            <i class="bi bi-x-circle me-1"></i>Confirm Rejection & Notify Claimant
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Hidden Details Modal (Claimant updates details after Founder requests more info) -->
+    <div class="modal fade" id="updateHiddenDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-warning text-dark border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-pencil-square me-2"></i>Update Hidden Details for Founder
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase tracking-wider">
+                            <i class="bi bi-chat-quote text-warning me-1"></i>Founder's Feedback / Request
+                        </label>
+                        <div id="modal-update-feedback-display" class="p-3 bg-warning-subtle text-dark rounded-3 border small"></div>
+                    </div>
+
+                    <form id="update-details-form" onsubmit="handleUpdateDetailsSubmit(event)">
+                        <input type="hidden" id="modal-update-claim-id">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-shield-lock-fill text-primary me-1"></i>Provide Additional / Correct Details <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="update-hidden-details-text" rows="3" class="form-control" placeholder="Provide more specific identifying details..." required></textarea>
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                These updated details will be sent back to the Founder for re-verification.
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning text-dark w-100 fw-bold py-2">
+                            <i class="bi bi-send-check me-1"></i>Resubmit Updated Details to Founder
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-muted">
+            © 2026 Campus Lost & Found System. Claim & Schedule Management.
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/matching.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

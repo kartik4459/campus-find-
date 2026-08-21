@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Lost & Found Matching System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="home">
+
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <!-- Hamburger menu button -->
+                <button class="btn btn-menu me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <a class="navbar-brand" href="index.html">
+                    <img src="images/campusfind-logo.png" alt="CampusFind Logo" class="brand-logo-img">
+                    CampusFind
+                </a>
+            </div>
+            
+            <!-- Dynamic User Account Status Badge -->
+            <div id="nav-user-display">
+                <!-- Dynamic user panel rendered via app.js -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- Slide-out Left Sidebar Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fw-bold d-flex align-items-center gap-2" id="sidebarMenuLabel">
+                <span class="brand-icon" style="width:32px; height:32px; font-size:0.95rem; animation:none;"><i class="bi bi-search-heart"></i></span>
+                Menu
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="sidebar-nav">
+                <a class="nav-link active" href="index.html"><i class="bi bi-house-door me-2"></i>Home</a>
+                <a class="nav-link" href="report.html"><i class="bi bi-plus-square me-2"></i>Report Item</a>
+                <a class="nav-link" href="matches.html"><i class="bi bi-cpu me-2"></i>Match Engine</a>
+                <a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a class="nav-link text-warning" href="admin.html"><i class="bi bi-shield-lock me-2"></i>Admin</a>
+            </div>
+            
+            <div class="p-3 bg-light rounded-3 border mt-4 small text-muted">
+                <div class="fw-bold mb-1 text-primary"><i class="bi bi-lightning-charge me-1"></i>Algorithm Active</div>
+                Multi-attribute comparison matches items across zones, categories, colors, dates, and descriptions in real time.
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero-section py-5">
+            <div class="container">
+                <div class="row align-items-center g-5">
+                    <!-- Left Side: Copy and Stats -->
+                    <!-- Left Side: Copy and CTAs -->
+                    <div class="col-lg-6 text-start">
+                        <div class="hero-badge mb-3">
+                            <i class="bi bi-stars text-teal"></i> Multi-Attribute Matching Algorithm
+                        </div>
+                        <h1 class="hero-title fw-bold">
+                            Lost Something on Campus?<br>
+                            <span>Find it faster with intelligent matching.</span>
+                        </h1>
+                        <p class="hero-subtitle mb-4">
+                            FindIt compares category, color, campus zone, dates, and description details to connect lost and found items automatically.
+                        </p>
+
+                        <div class="d-flex flex-wrap gap-3 mb-3">
+                            <a href="report.html" class="btn btn-primary fw-bold px-4 py-2.5 rounded-pill shadow-sm">
+                                <i class="bi bi-exclamation-triangle-fill me-1.5"></i>Report Lost Item
+                            </a>
+                            <a href="report-found.html" class="btn btn-success fw-bold px-4 py-2.5 rounded-pill shadow-sm">
+                                <i class="bi bi-check-circle-fill me-1.5"></i>Report Found Item
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Right Side: Personalized CSS 3D "My Match Space" (Floating directly on hero background) -->
+                    <div class="col-lg-6 position-relative">
+                        <div class="mb-2 d-flex justify-content-between align-items-center" id="match-space-header-bar">
+                            <div id="match-space-nav"></div>
+                            <span class="badge bg-teal text-white rounded-pill px-3 py-1.5 fw-bold extra-small shadow-sm ms-auto" id="match-space-user-title">
+                                <i class="bi bi-diagram-3-fill me-1"></i>MY MATCH SPACE
+                            </span>
+                        </div>
+
+                        <!-- 3D Perspective Stage -->
+                        <div id="my-match-space-stage" class="match-space-stage">
+                            <!-- Background Ambient 3D Particles -->
+                            <div id="match-space-particles" class="match-space-particles"></div>
+
+                            <div id="match-space-world" class="match-space-world">
+                                <!-- SVG Connecting Lines Layer -->
+                                <svg id="match-space-lines" class="match-space-lines"></svg>
+                                
+                                <!-- 3D Nodes Container -->
+                                <div id="match-space-nodes" class="match-space-nodes"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Stats Banner Section -->
+        <section class="stats-banner-section py-5" id="stats-section">
+            <div class="container">
+                <div class="text-center mb-5 stats-header-anim">
+                    <p class="text-uppercase fw-bold extra-small mb-1 stats-badge-text">
+                        <i class="bi bi-activity me-1"></i>LIVE STATISTICS
+                    </p>
+                    <h2 class="fw-bold text-heading mb-0" style="font-size: 1.8rem; letter-spacing: -0.01em;">
+                        Campus Activity at a Glance
+                    </h2>
+                </div>
+                <div class="row g-4 justify-content-center">
+                    <!-- Total Reports -->
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="stat-card-glass shadow-lg" style="--anim-delay: 0ms;">
+                            <div class="stat-icon-container stat-icon-purple shadow-sm">
+                                <i class="bi bi-pie-chart-fill fs-4"></i>
+                            </div>
+                            <h3 class="stat-number text-purple" id="stat-total">0</h3>
+                            <div class="stat-label">TOTAL REPORTS</div>
+                        </div>
+                    </div>
+                    <!-- Lost Items -->
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="stat-card-glass shadow-lg" style="--anim-delay: 120ms;">
+                            <div class="stat-icon-container stat-icon-cyan shadow-sm">
+                                <i class="bi bi-search fs-4"></i>
+                            </div>
+                            <h3 class="stat-number text-cyan" id="stat-lost">0</h3>
+                            <div class="stat-label">LOST ITEMS</div>
+                        </div>
+                    </div>
+                    <!-- Found Items -->
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="stat-card-glass shadow-lg" style="--anim-delay: 240ms;">
+                            <div class="stat-icon-container stat-icon-emerald shadow-sm">
+                                <i class="bi bi-box-seam-fill fs-4"></i>
+                            </div>
+                            <h3 class="stat-number text-emerald" id="stat-found">0</h3>
+                            <div class="stat-label">FOUND ITEMS</div>
+                        </div>
+                    </div>
+                    <!-- Items Recovered -->
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="stat-card-glass shadow-lg" style="--anim-delay: 360ms;">
+                            <div class="stat-icon-container stat-icon-amber shadow-sm">
+                                <i class="bi bi-shield-check fs-4"></i>
+                            </div>
+                            <h3 class="stat-number text-amber" id="stat-recovered">0</h3>
+                            <div class="stat-label">ITEMS RECOVERED</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section — Connected Process Timeline -->
+        <section class="how-it-works-section py-5 border-top border-bottom" id="how-it-works-section">
+            <div class="container">
+                <!-- Section Header -->
+                <div class="text-center mb-5 how-header-anim">
+                    <p class="text-uppercase fw-bold extra-small mb-1 text-teal" style="letter-spacing: 0.15em;">
+                        <i class="bi bi-diagram-3 me-1"></i>PROCESS WORKFLOW
+                    </p>
+                    <h2 class="fw-bold text-heading mb-2" style="font-size: 2.1rem; letter-spacing: -0.01em;">
+                        How FindIt Works
+                    </h2>
+                    <p class="text-muted mx-auto mb-0" style="max-width: 540px; font-size: 0.95rem;">
+                        Four simple steps connecting lost and found items on campus with intelligent attribute matching.
+                    </p>
+                </div>
+
+                <!-- Connected Timeline Grid -->
+                <div class="timeline-container">
+                    <div class="row g-4 justify-content-between align-items-stretch position-relative">
+
+                        <!-- Step 01: Report -->
+                        <div class="col-lg-3 col-md-6 timeline-step-col" id="step-col-1">
+                            <div class="timeline-step-card step-theme-purple shadow-lg">
+                                <div class="step-badge-number">01</div>
+                                <div class="step-icon-wrapper shadow-sm">
+                                    <i class="bi bi-file-earmark-plus-fill"></i>
+                                </div>
+                                <h4 class="step-title">Report</h4>
+                                <p class="step-description">Tell us what you lost or found and add important details.</p>
+                            </div>
+                        </div>
+
+                        <!-- Connecting Line 1 -->
+                        <div class="timeline-line-wrapper timeline-line-1" id="timeline-line-1">
+                            <div class="timeline-line-track"></div>
+                            <div class="timeline-line-fill"></div>
+                            <div class="timeline-glow-dot"></div>
+                        </div>
+
+                        <!-- Step 02: Smart Match (Highlighted Core Feature) -->
+                        <div class="col-lg-3 col-md-6 timeline-step-col" id="step-col-2">
+                            <div class="timeline-step-card step-theme-featured shadow-lg">
+                                <div class="featured-core-tag"><i class="bi bi-stars me-1"></i>Core Feature</div>
+                                <div class="step-badge-number">02</div>
+                                <div class="step-icon-wrapper shadow-sm">
+                                    <i class="bi bi-cpu-fill"></i>
+                                </div>
+                                <h4 class="step-title">Smart Match</h4>
+                                <p class="step-description">FindIt compares multiple attributes to identify relevant matches.</p>
+                            </div>
+                        </div>
+
+                        <!-- Connecting Line 2 -->
+                        <div class="timeline-line-wrapper timeline-line-2" id="timeline-line-2">
+                            <div class="timeline-line-track"></div>
+                            <div class="timeline-line-fill"></div>
+                            <div class="timeline-glow-dot"></div>
+                        </div>
+
+                        <!-- Step 03: Verify -->
+                        <div class="col-lg-3 col-md-6 timeline-step-col" id="step-col-3">
+                            <div class="timeline-step-card step-theme-cyan shadow-lg">
+                                <div class="step-badge-number">03</div>
+                                <div class="step-icon-wrapper shadow-sm">
+                                    <i class="bi bi-shield-check-fill"></i>
+                                </div>
+                                <h4 class="step-title">Verify</h4>
+                                <p class="step-description">The finder reviews the possible match and verifies ownership.</p>
+                            </div>
+                        </div>
+
+                        <!-- Connecting Line 3 -->
+                        <div class="timeline-line-wrapper timeline-line-3" id="timeline-line-3">
+                            <div class="timeline-line-track"></div>
+                            <div class="timeline-line-fill"></div>
+                            <div class="timeline-glow-dot"></div>
+                        </div>
+
+                        <!-- Step 04: Recover -->
+                        <div class="col-lg-3 col-md-6 timeline-step-col" id="step-col-4">
+                            <div class="timeline-step-card step-theme-emerald shadow-lg">
+                                <div class="step-badge-number">04</div>
+                                <div class="step-icon-wrapper shadow-sm">
+                                    <i class="bi bi-box-seam-fill"></i>
+                                </div>
+                                <h4 class="step-title">Recover</h4>
+                                <p class="step-description">Once verified, connect privately and arrange a safe recovery.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Items Search & Recent Feed -->
+        <section class="py-5 recent-reports-section" id="recent-reports-section">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center flex-wrap mb-4 gap-3 recent-header-anim">
+                    <div>
+                        <h2 class="fw-bold mb-1">Recent Campus Reports</h2>
+                        <p class="text-muted mb-0">Browse items reported by students</p>
+                    </div>
+                    <a href="matches.html" class="btn btn-outline-primary fw-semibold">
+                        Open Match Engine <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+
+                <!-- Filters Bar -->
+                <div class="row g-3 mb-4 p-3 bg-white rounded-3 border shadow-sm recent-filters-anim">
+                    <div class="col-md-5">
+                        <input type="text" id="home-search-input" class="form-control" placeholder="Search item name or keyword...">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="home-type-filter" class="form-select">
+                            <option value="all">All Types (Lost & Found)</option>
+                            <option value="lost">Lost Items Only</option>
+                            <option value="found">Found Items Only</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="home-category-filter" class="form-select">
+                            <option value="all">All Categories</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Bags">Bags</option>
+                            <option value="Wallets">Wallets</option>
+                            <option value="ID Cards">ID Cards</option>
+                            <option value="Keys">Keys</option>
+                            <option value="Books">Books</option>
+                            <option value="Accessories">Accessories</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Reports Grid -->
+                <div class="row g-4" id="recent-reports-grid">
+                    <!-- Dynamic rendering via app.js -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: View Full Item Details -->
+    <div class="modal fade" id="itemDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4 bg-card">
+                <div class="modal-header border-bottom border-secondary-subtle">
+                    <h5 class="modal-title fw-bold text-heading d-flex align-items-center gap-2" id="item-modal-title">
+                        <i class="bi bi-info-circle text-primary me-1"></i>Item Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="item-modal-body">
+                    <!-- Populated dynamically by app.js -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-muted">
+            © 2026 Campus Lost & Found System. Built with Modular JavaScript & LocalStorage.
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/matching.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/matchSpace.js"></script>
+</body>
+</html>

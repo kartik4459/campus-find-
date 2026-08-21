@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - Campus Lost & Found</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- BACKGROUND WEBSITE LANDING PAGE (Visible under dark blurred overlay) -->
+  <div class="website-backdrop-wrapper" aria-hidden="true" style="pointer-events: none; filter: blur(4px); opacity: 0.5;">
+    <nav class="navbar navbar-custom">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">
+          <img src="images/campusfind-logo.png" alt="CampusFind Logo" class="brand-logo-img">
+          CampusFind
+        </a>
+      </div>
+    </nav>
+    <section class="hero-section py-5">
+      <div class="container">
+        <div class="row align-items-center g-5">
+          <div class="col-lg-6 text-start">
+            <div class="hero-badge mb-3">
+              <i class="bi bi-stars text-teal"></i> Multi-Attribute Matching Algorithm
+            </div>
+            <h1 class="hero-title fw-bold">
+              Lost Something on Campus?<br>
+              <span>Find it faster with intelligent matching.</span>
+            </h1>
+            <p class="hero-subtitle mb-4">
+              FindIt compares category, color, campus zone, dates, and description details to connect lost and found items automatically.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- AUTHENTICATION MODAL OVERLAY -->
+  <div class="auth-modal-overlay">
+    <div class="auth-modal-card card shadow-lg border-0">
+      
+      <!-- Close Button × -->
+      <a href="index.html" class="auth-modal-close" title="Close Overlay">&times;</a>
+
+      <!-- Top Accent Header Banner -->
+      <div class="auth-header text-center text-white p-4" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(6, 182, 212, 0.15) 100%); border-bottom: 1px solid rgba(168, 85, 247, 0.25);">
+        <div class="auth-avatar-icon mx-auto mb-2 shadow" style="width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);">
+          <i class="bi bi-shield-lock-fill fs-2 text-white"></i>
+        </div>
+        <h4 class="fw-bold mb-1 text-white">Create your account</h4>
+        <p class="mb-0 text-muted small">Join Campus Lost & Found</p>
+      </div>
+
+      <div class="card-body p-4">
+        <!-- Alert container for validation feedback -->
+        <div id="alert-box" class="d-none alert border-0 shadow-sm mb-4"></div>
+
+        <form id="signupForm" onsubmit="handleSubmit(event)" novalidate>
+          
+          <!-- Full Name Field -->
+          <div class="mb-3">
+            <label for="name" class="form-label fw-semibold small mb-1">Full Name <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input
+                type="text"
+                id="name"
+                class="form-control"
+                placeholder="e.g. Alex Morgan"
+                required
+              >
+            </div>
+          </div>
+
+          <!-- Email Field -->
+          <div class="mb-3">
+            <label for="email" class="form-label fw-semibold small mb-1">Email Address <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input
+                type="email"
+                id="email"
+                class="form-control"
+                placeholder="alex@example.com"
+                required
+              >
+            </div>
+          </div>
+
+          <!-- Phone & Student ID Row -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="phone" class="form-label fw-semibold small mb-1">Phone Number <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                <input
+                  type="tel"
+                  id="phone"
+                  class="form-control"
+                  placeholder="e.g. +91 98765 43210"
+                  required
+                >
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label for="studentId" class="form-label fw-semibold small mb-1">Student ID <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+                <input
+                  type="text"
+                  id="studentId"
+                  class="form-control"
+                  placeholder="STU-2026-0891"
+                  required
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Department Select -->
+          <div class="mb-3">
+            <label for="department" class="form-label fw-semibold small mb-1">Department / Course <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-mortarboard"></i></span>
+              <select id="department" class="form-select" required>
+                <option value="">Select Department...</option>
+                <option value="Computer Science">Computer Science & IT</option>
+                <option value="Engineering">Engineering (Mech/Elec/Civil)</option>
+                <option value="Business & MBA">Business & Administration</option>
+                <option value="Sciences">Natural Sciences</option>
+                <option value="Humanities & Arts">Humanities & Arts</option>
+                <option value="Medicine">Medicine & Health Sciences</option>
+                <option value="Other">Other Course</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="mb-2">
+            <label for="password" class="form-label fw-semibold small mb-1">Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input
+                type="password"
+                id="password"
+                class="form-control"
+                placeholder="e.g. Alex@2026!"
+                oninput="checkPasswordStrength(this.value)"
+                required
+              >
+              <button type="button" class="input-group-text" onclick="togglePasswordVisibility('password', this)">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Password Strength Visualizer & Checklist -->
+          <div id="password-strength-box" class="p-3 rounded-3 border mb-3" style="background: rgba(255, 255, 255, 0.03); border-color: rgba(168, 85, 247, 0.2) !important;">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="extra-small fw-bold text-uppercase text-muted tracking-wide">
+                <i class="bi bi-shield-check me-1 text-primary"></i> Password Security Requirements
+              </span>
+              <span id="strength-label" class="extra-small fw-bold text-danger">Too Weak</span>
+            </div>
+            <div class="progress mb-2" style="height: 5px; background: rgba(255,255,255,0.1);">
+              <div id="strength-bar" class="progress-bar bg-danger" style="width: 0%;"></div>
+            </div>
+            <ul class="list-unstyled mb-0 extra-small">
+              <li id="req-length" class="text-muted mb-1"><i class="bi bi-circle me-1"></i> Minimum 8 characters long</li>
+              <li id="req-letter" class="text-muted mb-1"><i class="bi bi-circle me-1"></i> At least 1 letter (a-z, A-Z)</li>
+              <li id="req-number" class="text-muted mb-1"><i class="bi bi-circle me-1"></i> At least 1 number (0-9)</li>
+              <li id="req-special" class="text-muted"><i class="bi bi-circle me-1"></i> At least 1 special character (@, $, !, %, *, #, etc.)</li>
+            </ul>
+          </div>
+
+          <!-- Confirm Password Field -->
+          <div class="mb-3">
+            <label for="confirmPassword" class="form-label fw-semibold small mb-1">Confirm Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+              <input
+                type="password"
+                id="confirmPassword"
+                class="form-control"
+                placeholder="Re-enter your password"
+                required
+              >
+              <button type="button" class="input-group-text" onclick="togglePasswordVisibility('confirmPassword', this)">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="agreeTerms" required checked>
+            <label class="form-check-label small text-muted" for="agreeTerms">
+              I agree to the <a href="#" class="text-teal text-decoration-none">Terms of Service</a> and <a href="#" class="text-teal text-decoration-none">Privacy Policy</a>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-bold py-2.5 shadow-sm mb-3" style="background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%); border: none;">
+            Create Account <i class="bi bi-arrow-right ms-1"></i>
+          </button>
+
+          <div class="text-center pt-2">
+            <p class="text-muted small mb-0">
+              Already have an account? <a href="login.html" class="fw-bold text-teal text-decoration-none">Sign in here</a>
+            </p>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script>
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon  = btn.querySelector("i");
+      if (input.type === "password") {
+        input.type     = "text";
+        icon.className = "bi bi-eye-slash";
+      } else {
+        input.type     = "password";
+        icon.className = "bi bi-eye";
+      }
+    }
+
+    function checkPasswordStrength(password) {
+      const hasMinLength = password.length >= 8;
+      const hasLetter    = /[a-zA-Z]/.test(password);
+      const hasNumber    = /[0-9]/.test(password);
+      const hasSpecial   = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+      updateReqItem("req-length",  hasMinLength);
+      updateReqItem("req-letter",  hasLetter);
+      updateReqItem("req-number",  hasNumber);
+      updateReqItem("req-special", hasSpecial);
+
+      let score = (hasMinLength ? 1 : 0) + (hasLetter ? 1 : 0) + (hasNumber ? 1 : 0) + (hasSpecial ? 1 : 0);
+      const bar   = document.getElementById("strength-bar");
+      const label = document.getElementById("strength-label");
+      if (!bar || !label) return false;
+
+      if (score === 0) {
+        bar.style.width = "0%";   bar.className = "progress-bar bg-danger";
+        label.innerText = "Too Weak"; label.className = "extra-small fw-bold text-danger";
+      } else if (score <= 2) {
+        bar.style.width = "40%";  bar.className = "progress-bar bg-warning";
+        label.innerText = "Moderate"; label.className = "extra-small fw-bold text-warning";
+      } else if (score === 3) {
+        bar.style.width = "75%";  bar.className = "progress-bar bg-info";
+        label.innerText = "Good"; label.className = "extra-small fw-bold text-info";
+      } else {
+        bar.style.width = "100%"; bar.className = "progress-bar bg-success";
+        label.innerText = "Strong ✓"; label.className = "extra-small fw-bold text-success";
+      }
+      return hasMinLength && hasLetter && hasNumber && hasSpecial;
+    }
+
+    function updateReqItem(id, met) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const icon = el.querySelector("i");
+      if (met) {
+        el.className = "text-success fw-semibold mb-1";
+        if (icon) icon.className = "bi bi-check-circle-fill me-1";
+      } else {
+        el.className = "text-muted mb-1";
+        if (icon) icon.className = "bi bi-circle me-1";
+      }
+    }
+
+    function handleSubmit(event) {
+      event.preventDefault();
+
+      const name            = document.getElementById("name").value.trim();
+      const email           = document.getElementById("email").value.trim().toLowerCase();
+      const phone           = document.getElementById("phone").value.trim();
+      const studentId       = document.getElementById("studentId").value.trim();
+      const department      = document.getElementById("department").value;
+      const password        = document.getElementById("password").value.trim();
+      const confirmPassword = document.getElementById("confirmPassword").value.trim();
+      const alertBox        = document.getElementById("alert-box");
+
+      // Reset
+      alertBox.className = "d-none";
+      alertBox.innerHTML = "";
+
+      function showError(msg) {
+        alertBox.className = "alert alert-danger border-0 shadow-sm mb-4 d-block";
+        alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> ' + msg;
+      }
+
+      // Required fields
+      if (!name || !email || !phone || !studentId || !department || !password) {
+        showError("Please fill in all required fields.");
+        return;
+      }
+
+      // Email format
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError("Please enter a valid email address.");
+        return;
+      }
+
+      // Phone format
+      if (!/^\+?[0-9\s\-]{8,}$/.test(phone)) {
+        showError("Please enter a valid phone number (at least 8 digits).");
+        return;
+      }
+
+      // Student ID length
+      if (studentId.length < 4) {
+        showError("Student ID must be at least 4 characters long.");
+        return;
+      }
+
+      // Duplicate email check
+      if (typeof findUserByEmail === "function" && findUserByEmail(email)) {
+        alertBox.className = "alert alert-warning border-0 shadow-sm mb-4 d-block";
+        alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> An account with email <strong>' + escapeHtml(email) + '</strong> already exists. Please <a href="login.html" class="fw-bold alert-link">sign in here</a>.';
+        return;
+      }
+
+      // Duplicate student ID check
+      if (typeof findUserByStudentId === "function" && findUserByStudentId(studentId)) {
+        alertBox.className = "alert alert-warning border-0 shadow-sm mb-4 d-block";
+        alertBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Student ID <strong>' + escapeHtml(studentId) + '</strong> is already registered. Please <a href="login.html" class="fw-bold alert-link">sign in here</a>.';
+        return;
+      }
+
+      // Password strength
+      if (!checkPasswordStrength(password)) {
+        showError("Password does not meet security rules. Ensure min 8 characters, 1 letter, 1 number, and 1 special character.");
+        return;
+      }
+
+      // Passwords match
+      if (password !== confirmPassword) {
+        showError("Passwords do not match. Please verify.");
+        return;
+      }
+
+      // Build user object
+      const user = {
+        username:     name,
+        useremail:    email,
+        userpassword: password,
+        contactPhone: phone,
+        studentId:    studentId,
+        department:   department
+      };
+
+      // Persist to campusfind_users and start session
+      if (typeof saveUser          === "function") saveUser(user);
+      if (typeof setCurrentSession === "function") setCurrentSession(user.useremail);
+
+      alertBox.className = "alert alert-success border-0 shadow-sm mb-4 d-block";
+      alertBox.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Account created for <strong>' + escapeHtml(name) + '</strong>! Redirecting...';
+
+      setTimeout(function() { window.location.href = "index.html"; }, 800);
+    }
+  </script>
+</body>
+</html>
