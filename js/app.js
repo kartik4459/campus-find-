@@ -452,6 +452,24 @@ function initReportPage() {
     let typeInput = document.getElementById("report-type-input");
     let hiddenContainer = document.getElementById("hidden-details-container");
     let hiddenInput = document.getElementById("hiddenDetails");
+    let categoryEl = document.getElementById("category");
+    let colorEl = document.getElementById("color");
+    let categoryOtherEl = document.getElementById("category-other");
+    let colorOtherEl = document.getElementById("color-other");
+
+    function toggleOtherInput(selectEl, otherInputEl) {
+        if (!selectEl || !otherInputEl) return;
+
+        let isOther = selectEl.value === "Other";
+        otherInputEl.classList.toggle("d-none", !isOther);
+        otherInputEl.required = isOther;
+        if (!isOther) otherInputEl.value = "";
+    }
+
+    if (categoryEl) categoryEl.addEventListener("change", () => toggleOtherInput(categoryEl, categoryOtherEl));
+    if (colorEl) colorEl.addEventListener("change", () => toggleOtherInput(colorEl, colorOtherEl));
+    toggleOtherInput(categoryEl, categoryOtherEl);
+    toggleOtherInput(colorEl, colorOtherEl);
 
     function renderInstructions(type) {
         let card = document.getElementById("instruction-card");
@@ -587,8 +605,6 @@ function initReportPage() {
 
         // ── Collect field values ────────────────────────────────────
         let itemNameEl    = document.getElementById("itemName");
-        let categoryEl    = document.getElementById("category");
-        let colorEl       = document.getElementById("color");
         let zoneEl        = document.getElementById("zone");
         let dateEl        = document.getElementById("date");
         let descEl        = document.getElementById("description");
@@ -597,6 +613,8 @@ function initReportPage() {
         let itemName    = itemNameEl    ? itemNameEl.value.trim()    : "";
         let cat         = categoryEl    ? categoryEl.value           : "";
         let color       = colorEl       ? colorEl.value              : "";
+        if (cat === "Other") cat = categoryOtherEl ? categoryOtherEl.value.trim() : "";
+        if (color === "Other") color = colorOtherEl ? colorOtherEl.value.trim() : "";
         let zone        = zoneEl        ? zoneEl.value               : "";
         let date        = dateEl        ? dateEl.value               : "";
         let description = descEl        ? descEl.value.trim()        : "";
