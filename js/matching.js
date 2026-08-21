@@ -11,7 +11,19 @@ let WEIGHTS = {
 };
 
 // Common stop words to exclude during text matching
-let stopWords = ["a", "an", "the", "and", "or", "in", "on", "at", "to", "for", "of", "with", "my", "lost", "found", "near", "left", "please", "is", "was"];
+let stopWords = [
+    "a", "an", "the",
+    "and", "or", "but",
+    "in", "on", "at", "near",
+    "to", "from", "for", "of", "with",
+    "my", "me", "i", "mine",
+    "lost", "found", "missing",
+    "left", "please", "help", "find",
+    "is", "was", "were", "are", "am",
+    "it", "this", "that",
+    "has", "have", "had",
+    "there", "here"
+];
 
 // Campus zone distance map
 let zoneMap = {
@@ -154,10 +166,18 @@ function findMatches(targetItem, allReports) {
 
     let oppositeType = targetItem.type === "lost" ? "found" : "lost";
     
-    let candidates = allReports.filter(r => 
-        r.type === oppositeType && 
-        r.id !== targetItem.id
+  let currentUser = getCurrentUser();
+let currentUserEmail = currentUser?.useremail?.trim().toLowerCase();
+
+let candidates = allReports.filter(r => {
+    let reportOwnerEmail = r.postedByEmail?.trim().toLowerCase();
+
+    return (
+        r.type === oppositeType &&
+        r.id !== targetItem.id &&
+        reportOwnerEmail !== currentUserEmail
     );
+});
 
     let results = candidates.map(c => calculateMatchScore(targetItem, c));
     
