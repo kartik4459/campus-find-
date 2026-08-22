@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost & Found Map — CampusFind</title>
+    <meta name="description" content="Browse lost and found items on campus, view their last known location on the interactive campus map, and report a newly found item with a precise map pin.">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Shared Site Styles (theme, navbar, footer, variables) -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Lost & Found scoped styles (.lf-* namespace only) -->
+    <link rel="stylesheet" href="css/lostFound.css">
+</head>
+<body data-page="lost-found">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         NAVBAR  (identical markup to all other pages)
+    ════════════════════════════════════════════════════════════════════════ -->
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <!-- Hamburger menu -->
+                <button class="btn btn-menu me-3" type="button"
+                        data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu"
+                        aria-controls="sidebarMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <a class="navbar-brand" href="index.html">
+                    <img src="images/campusfind-logo.png" alt="CampusFind Logo" class="brand-logo-img">
+                    CampusFind
+                </a>
+            </div>
+
+            <!-- Navbar right: home shortcut + user badge -->
+            <div class="d-flex align-items-center gap-2">
+                <a href="index.html"
+                   class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-none d-md-inline-block">
+                    <i class="bi bi-house-door me-1"></i> Home
+                </a>
+                <a href="index.html"
+                   class="btn btn-sm btn-outline-secondary rounded-circle d-inline-flex d-md-none"
+                   style="width:36px;height:36px;align-items:center;justify-content:center;padding:0;">
+                    <i class="bi bi-house-door fs-5"></i>
+                </a>
+                <div id="nav-user-display">
+                    <!-- Dynamic user panel rendered via app.js (loaded at bottom) -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         OFFCANVAS SIDEBAR  (identical markup; Lost & Found link is active)
+    ════════════════════════════════════════════════════════════════════════ -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu"
+         aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fw-bold d-flex align-items-center gap-2"
+                id="sidebarMenuLabel">
+                <span class="brand-icon"
+                      style="width:32px;height:32px;font-size:0.95rem;animation:none;">
+                    <i class="bi bi-search-heart"></i>
+                </span>
+                Menu
+            </h5>
+            <button type="button" class="btn-close text-reset"
+                    data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="sidebar-nav">
+                <a class="nav-link" href="index.html">
+                    <i class="bi bi-house-door me-2"></i>Home
+                </a>
+                <a class="nav-link" href="report.html">
+                    <i class="bi bi-plus-square me-2"></i>Report Item
+                </a>
+                <a class="nav-link" href="matches.html">
+                    <i class="bi bi-cpu me-2"></i>Match Engine
+                </a>
+                <a class="nav-link" href="dashboard.html">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </a>
+                <!-- Lost & Found Map — active on this page -->
+                <a class="nav-link active" href="lost-found.html">
+                    <i class="bi bi-geo-alt me-2"></i>Lost &amp; Found Map
+                </a>
+                <a class="nav-link text-warning" href="admin.html">
+                    <i class="bi bi-shield-lock me-2"></i>Admin
+                </a>
+            </div>
+
+            <div class="p-3 bg-light rounded-3 border mt-4 small text-muted">
+                <div class="fw-bold mb-1 text-primary">
+                    <i class="bi bi-lightning-charge me-1"></i>Algorithm Active
+                </div>
+                Multi-attribute comparison matches items across zones, categories,
+                colors, dates, and descriptions in real time.
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         MAIN CONTENT
+    ════════════════════════════════════════════════════════════════════════ -->
+    <main>
+
+        <!-- ── Page Header ──────────────────────────────────────────────── -->
+        <div class="lf-page-header">
+            <div class="container">
+                <div class="lf-page-badge">
+                    <i class="bi bi-geo-alt-fill"></i> Interactive Campus Map
+                </div>
+                <h1 class="lf-page-title">
+                    Lost &amp; Found <span>Map</span>
+                </h1>
+                <p class="lf-page-subtitle">
+                    Browse reported items and their last known locations on campus.
+                    Found something? Drop a pin and file a quick report.
+                </p>
+            </div>
+        </div>
+
+        <!-- ── Mode Toggle ──────────────────────────────────────────────── -->
+        <div class="container">
+            <div class="lf-mode-toggle" role="tablist">
+                <button class="lf-mode-btn lf-mode-active-lost"
+                        id="lf-btn-mode-lost"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="lf-panel-lost">
+                    <span class="lf-mode-icon">🔎</span>
+                    I Lost Something
+                </button>
+                <button class="lf-mode-btn"
+                        id="lf-btn-mode-found"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="lf-panel-found">
+                    <span class="lf-mode-icon">📍</span>
+                    I Found Something
+                </button>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             MODE A — I LOST SOMETHING
+        ═══════════════════════════════════════════════════════════════════ -->
+        <div id="lf-panel-lost" class="lf-panel lf-panel-active container pb-5"
+             role="tabpanel" aria-labelledby="lf-btn-mode-lost">
+
+            <div class="row g-4">
+
+                <!-- Left column: Search + Items list -->
+                <div class="col-lg-5">
+                    <div class="lf-section-label">
+                        <i class="bi bi-list-ul"></i> Reported Items
+                    </div>
+
+                    <!-- Filter bar -->
+                    <div class="lf-filter-bar">
+                        <input type="text"
+                               id="lf-search-input"
+                               class="form-control"
+                               placeholder="Search by name, keyword, location…"
+                               autocomplete="off">
+                        <select id="lf-cat-filter" class="form-select">
+                            <option value="all">All Categories</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Bags">Bags</option>
+                            <option value="Wallets">Wallets</option>
+                            <option value="ID Cards">ID Cards</option>
+                            <option value="Keys">Keys</option>
+                            <option value="Books">Books</option>
+                            <option value="Accessories">Accessories</option>
+                        </select>
+                        <span class="lf-result-count" id="lf-result-count">0 items</span>
+                    </div>
+
+                    <!-- Cards grid (scrollable) -->
+                    <div class="lf-cards-grid" id="lf-cards-grid">
+                        <!-- Populated by lostFound.js -->
+                    </div>
+
+                    <!-- Hotspot detail panel (shows when pin clicked) -->
+                    <div class="lf-detail-panel" id="lf-detail-panel">
+                        <!-- Populated by lostFound.js -->
+                    </div>
+                </div>
+
+                <!-- Right column: Interactive Map -->
+                <div class="col-lg-7">
+                    <div class="lf-section-label">
+                        <i class="bi bi-map"></i> Campus Map — Last Reported Locations
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="lf-legend">
+                        <span class="lf-legend-item">
+                            <span class="lf-legend-dot lf-dot-found"></span> Found &amp; Awaiting Pickup
+                        </span>
+                        <span class="lf-legend-item">
+                            <span class="lf-legend-dot lf-dot-lost"></span> Reported Lost
+                        </span>
+                        <span class="lf-legend-item">
+                            <span class="lf-legend-dot lf-dot-claimed"></span> Claimed / Resolved
+                        </span>
+                    </div>
+
+                    <!-- Map section -->
+                    <div class="lf-map-section" id="lf-map-section-lost">
+                        <!-- Toolbar -->
+                        <div class="lf-map-toolbar">
+                            <div class="lf-map-title">
+                                <i class="bi bi-map-fill"></i> Campus Map
+                            </div>
+                            <div class="lf-map-hint">
+                                <i class="bi bi-hand-index-thumb"></i>
+                                Click a pin for details &nbsp;|&nbsp;
+                                <i class="bi bi-zoom-in"></i> Scroll to zoom
+                            </div>
+                            <!-- Zoom controls -->
+                            <div class="lf-zoom-controls">
+                                <button class="lf-zoom-btn" id="lf-zoom-in"
+                                        title="Zoom In">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                                <button class="lf-zoom-btn" id="lf-zoom-out"
+                                        title="Zoom Out">
+                                    <i class="bi bi-dash-lg"></i>
+                                </button>
+                                <button class="lf-zoom-btn" id="lf-zoom-reset"
+                                        title="Reset View">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Map viewport -->
+                        <div class="lf-map-viewport" id="lf-map-viewport">
+                            <!-- Scaled/panned inner wrapper -->
+                            <div class="lf-map-inner" id="lf-map-inner">
+                                <!-- Placing-mode banner -->
+                                <div class="lf-placing-banner" id="lf-placing-banner">
+                                    <i class="bi bi-crosshair2 me-1"></i>
+                                    Click anywhere on the map to drop a pin
+                                </div>
+                                <!-- Campus map image -->
+                                <img src="images/map2.jpg"
+                                     alt="Campus Map — showing all buildings, roads, and zones"
+                                     class="lf-map-img"
+                                     id="lf-map-img"
+                                     draggable="false">
+                                <!-- Hotspot pins injected here by lostFound.js -->
+                            </div>
+                        </div>
+                    </div><!-- /lf-map-section -->
+                </div><!-- /col-lg-7 -->
+
+            </div><!-- /row -->
+        </div><!-- /lf-panel-lost -->
+
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             MODE B — I FOUND SOMETHING
+        ═══════════════════════════════════════════════════════════════════ -->
+        <div id="lf-panel-found" class="lf-panel container pb-5"
+             role="tabpanel" aria-labelledby="lf-btn-mode-found">
+
+            <div class="row g-4">
+
+                <!-- Left column: Report Form -->
+                <div class="col-lg-5">
+                    <div class="lf-section-label">
+                        <i class="bi bi-file-earmark-plus"></i> Report a Found Item
+                    </div>
+
+                    <div class="lf-form-card">
+                        <div class="lf-form-title">
+                            <i class="bi bi-hand-thumbs-up-fill text-success me-2"></i>
+                            Tell us what you found
+                        </div>
+                        <p class="lf-form-subtitle">
+                            Fill in the details below, then place a pin on the map to mark
+                            exactly where you found it.
+                        </p>
+
+                        <!-- Item Name -->
+                        <div class="mb-3">
+                            <label class="form-label" for="lf-found-name">
+                                Item Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   id="lf-found-name"
+                                   class="form-control"
+                                   placeholder="e.g. Black Leather Wallet"
+                                   maxlength="80"
+                                   autocomplete="off">
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-3">
+                            <label class="form-label" for="lf-found-cat">
+                                Category <span class="text-danger">*</span>
+                            </label>
+                            <select id="lf-found-cat" class="form-select">
+                                <option value="all">— Select a category —</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Bags">Bags</option>
+                                <option value="Wallets">Wallets</option>
+                                <option value="ID Cards">ID Cards</option>
+                                <option value="Keys">Keys</option>
+                                <option value="Books">Books</option>
+                                <option value="Accessories">Accessories</option>
+                            </select>
+                        </div>
+
+                        <!-- Location Description -->
+                        <div class="mb-3">
+                            <label class="form-label" for="lf-found-loc">
+                                Location Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   id="lf-found-loc"
+                                   class="form-control"
+                                   placeholder="e.g. Library – 2nd Floor, Cafeteria…"
+                                   maxlength="80"
+                                   autocomplete="off">
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label class="form-label" for="lf-found-desc">
+                                Description <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="lf-found-desc"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Colour, brand, any distinctive marks or contents…"
+                                      maxlength="300"></textarea>
+                        </div>
+
+                        <!-- Place Pin button + coords display -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Map Pin <span class="text-danger">*</span>
+                            </label>
+                            <div>
+                                <button class="lf-place-btn" id="lf-place-btn" type="button">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                    Place Hotspot on Map
+                                </button>
+                            </div>
+                            <div class="lf-pin-coords-display" id="lf-pin-coords">
+                                <i class="bi bi-geo-alt"></i>
+                                No pin placed yet — click "Place Hotspot on Map" first.
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <button class="lf-submit-btn" id="lf-submit-btn" type="button">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Submit Report
+                        </button>
+                    </div>
+
+                    <!-- Tips card -->
+                    <div class="p-3 bg-light rounded-3 border small text-muted">
+                        <div class="fw-bold mb-1" style="color:var(--primary-color);">
+                            <i class="bi bi-lightbulb-fill me-1"></i>Tips for a good report
+                        </div>
+                        <ul class="mb-0 ps-3" style="line-height:1.8;">
+                            <li>Be specific — colour, brand, any writing or scratches.</li>
+                            <li>If you found something valuable, hand it to the nearest security desk.</li>
+                            <li>The pin shows <strong>where you found it</strong>, not your location.</li>
+                            <li>The original owner sees your report and can claim via the Match Engine.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Right column: Map (shared DOM nodes, duplicated so both panels have one) -->
+                <div class="col-lg-7">
+                    <div class="lf-section-label">
+                        <i class="bi bi-map"></i> Place Pin — Where Did You Find It?
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="lf-legend">
+                        <span class="lf-legend-item">
+                            <span class="lf-legend-dot lf-dot-found"></span> Found &amp; Awaiting Pickup
+                        </span>
+                        <span class="lf-legend-item">
+                            <span class="lf-legend-dot lf-dot-lost"></span> Reported Lost
+                        </span>
+                        <span class="lf-legend-item"
+                              style="color:var(--primary-color);font-weight:700;">
+                            <span class="lf-legend-dot"
+                                  style="background:var(--primary-color);"></span>
+                            Your New Pin
+                        </span>
+                    </div>
+
+                    <!-- Separate map section for Found panel (shares same viewport/inner IDs via JS) -->
+                    <div class="lf-map-section" id="lf-map-section-found">
+                        <div class="lf-map-toolbar">
+                            <div class="lf-map-title">
+                                <i class="bi bi-map-fill"></i> Campus Map
+                            </div>
+                            <div class="lf-map-hint">
+                                <i class="bi bi-hand-index-thumb"></i>
+                                Click "Place Hotspot", then click the map
+                            </div>
+                            <div class="lf-zoom-controls">
+                                <button class="lf-zoom-btn" id="lf-zoom-in-found"
+                                        title="Zoom In"
+                                        onclick="document.getElementById('lf-zoom-in').click()">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                                <button class="lf-zoom-btn" id="lf-zoom-out-found"
+                                        title="Zoom Out"
+                                        onclick="document.getElementById('lf-zoom-out').click()">
+                                    <i class="bi bi-dash-lg"></i>
+                                </button>
+                                <button class="lf-zoom-btn" id="lf-zoom-reset-found"
+                                        title="Reset View"
+                                        onclick="document.getElementById('lf-zoom-reset').click()">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- The map viewport is the SAME element — we just move it into whichever
+                             panel is visible using JS. Simpler alternative: duplicate the image,
+                             share hotspot data via the JS array.
+                             For simplicity here we keep two separate map canvases sharing the same
+                             JS state. The "Found" panel has its own viewport that is initialised
+                             once the user switches to it via the place-btn click path. -->
+                        <div class="lf-map-viewport" id="lf-map-viewport-found">
+                            <div class="lf-map-inner" id="lf-map-inner-found">
+                                <div class="lf-placing-banner" id="lf-placing-banner-found">
+                                    <i class="bi bi-crosshair2 me-1"></i>
+                                    Click anywhere on the map to drop a pin
+                                </div>
+                                <img src="images/map2.jpg"
+                                     alt="Campus Map — click to place a hotspot pin"
+                                     class="lf-map-img"
+                                     draggable="false">
+                                <!-- Hotspot pins for found panel injected here -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div><!-- /lf-panel-found -->
+
+    </main>
+
+    <!-- ── Success Toast ────────────────────────────────────────────────── -->
+    <div class="lf-toast" id="lf-toast" role="alert" aria-live="polite">
+        <div class="lf-toast-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div>
+            <div class="lf-toast-title"></div>
+            <div class="lf-toast-msg"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         FOOTER  (identical markup to all other pages)
+    ════════════════════════════════════════════════════════════════════════ -->
+    <footer>
+        <div class="container text-center small text-muted">
+            © 2026 Campus Lost &amp; Found System. Built with Modular JavaScript &amp; LocalStorage.
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Shared app scripts (renders navbar user badge, theme toggle) -->
+    <script src="js/storage.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- Lost & Found page logic -->
+    <script src="js/lostFound.js"></script>
+
+    <!-- Wire up the Found panel's second map instance -->
+    <script>
+    // After lostFound.js has initialised, we need to also wire up
+    // the second map viewport (in the "I Found Something" panel).
+    // Strategy: mirror all hotspot pins into the found-panel map,
+    // and link its Place Hotspot button to the found-panel viewport.
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // ── Replicate hotspots into the Found panel map ──────────────────
+        function syncFoundPanelHotspots() {
+            var foundInner = document.getElementById('lf-map-inner-found');
+            if (!foundInner) return;
+
+            // Clear old pins (keep img + banner)
+            var oldPins = foundInner.querySelectorAll('.lf-hotspot');
+            oldPins.forEach(function (p) { p.remove(); });
+
+            // Rebuild from the live data array
+            lostFoundItems.forEach(function (item) {
+                var el = document.createElement('div');
+                el.className = 'lf-hotspot';
+                el.id = 'lf-hotspot-found-' + item.id;
+                el.setAttribute('data-id', item.id);
+                el.title = item.name + ' — ' + item.location;
+                el.style.left = item.x + '%';
+                el.style.top  = item.y + '%';
+                var pinClass = 'lf-pin-' + item.status;
+                el.innerHTML = [
+                    '<div class="lf-pin ' + pinClass + '">',
+                    '  <div class="lf-pin-head"><div class="lf-pin-head-inner"></div></div>',
+                    '  <div class="lf-pin-tail"></div>',
+                    '</div>'
+                ].join('');
+                el.style.pointerEvents = 'none'; // Read-only in found panel
+                foundInner.appendChild(el);
+            });
+        }
+
+        syncFoundPanelHotspots();
+
+        // ── Place Hotspot button wires to Found panel map ────────────────
+        var foundViewport = document.getElementById('lf-map-viewport-found');
+        var foundInner    = document.getElementById('lf-map-inner-found');
+        var placingBanner = document.getElementById('lf-placing-banner-found');
+        var coordsDisplay = document.getElementById('lf-pin-coords');
+        var foundPlaceBtn = document.getElementById('lf-place-btn');
+
+        var foundPlacing      = false;
+        var foundPendingCoords = null;
+        var foundPreviewPin    = null;
+
+        // Map zoom/pan state for found panel (independent)
+        var fScale = 1, fTransX = 0, fTransY = 0;
+
+        function applyFoundTransform() {
+            if (foundInner) {
+                foundInner.style.transform = 'scale(' + fScale + ') translate(' + (fTransX / fScale) + 'px, ' + (fTransY / fScale) + 'px)';
+            }
+        }
+
+        // Zoom buttons for found panel (proxy to found map state)
+        document.getElementById('lf-zoom-in-found').onclick = function () {
+            fScale = Math.min(4, fScale + 0.35);
+            applyFoundTransform();
+            if (foundViewport && !foundPlacing) foundViewport.style.cursor = fScale > 1 ? 'grab' : 'default';
+        };
+        document.getElementById('lf-zoom-out-found').onclick = function () {
+            fScale = Math.max(1, fScale - 0.35);
+            if (fScale <= 1) { fTransX = 0; fTransY = 0; }
+            applyFoundTransform();
+        };
+        document.getElementById('lf-zoom-reset-found').onclick = function () {
+            fScale = 1; fTransX = 0; fTransY = 0;
+            applyFoundTransform();
+            if (foundViewport) foundViewport.style.cursor = 'default';
+        };
+
+        // Mouse wheel zoom on found map
+        if (foundViewport) {
+            foundViewport.addEventListener('wheel', function (e) {
+                e.preventDefault();
+                fScale = Math.min(4, Math.max(1, fScale + (e.deltaY < 0 ? 0.2 : -0.2)));
+                if (fScale <= 1) { fTransX = 0; fTransY = 0; }
+                applyFoundTransform();
+            }, { passive: false });
+        }
+
+        // Pan on found map
+        var fDragging = false, fDragX = 0, fDragY = 0, fDragTX = 0, fDragTY = 0;
+        if (foundViewport) {
+            foundViewport.addEventListener('mousedown', function (e) {
+                if (foundPlacing || fScale <= 1) return;
+                fDragging = true; fDragX = e.clientX; fDragY = e.clientY;
+                fDragTX = fTransX; fDragTY = fTransY;
+                foundViewport.style.cursor = 'grabbing';
+            });
+        }
+        document.addEventListener('mousemove', function (e) {
+            if (!fDragging) return;
+            fTransX = fDragTX + (e.clientX - fDragX);
+            fTransY = fDragTY + (e.clientY - fDragY);
+            // Clamp
+            var vp = document.getElementById('lf-map-viewport-found');
+            if (vp) {
+                var maxX = vp.clientWidth  * (fScale - 1);
+                var maxY = vp.clientHeight * (fScale - 1);
+                fTransX = Math.max(-maxX, Math.min(0, fTransX));
+                fTransY = Math.max(-maxY, Math.min(0, fTransY));
+            }
+            applyFoundTransform();
+        });
+        document.addEventListener('mouseup', function () {
+            if (fDragging) {
+                fDragging = false;
+                var vp = document.getElementById('lf-map-viewport-found');
+                if (vp) vp.style.cursor = foundPlacing ? 'crosshair' : (fScale > 1 ? 'grab' : 'default');
+            }
+        });
+
+        // Override the Place Hotspot button to target FOUND panel viewport
+        if (foundPlaceBtn) {
+            foundPlaceBtn.addEventListener('click', function () {
+                if (foundPlacing) {
+                    // Cancel
+                    foundPlacing = false;
+                    foundPendingCoords = null;
+                    foundPlaceBtn.classList.remove('lf-placing-active');
+                    foundPlaceBtn.innerHTML = '<i class="bi bi-geo-alt-fill"></i> Place Hotspot on Map';
+                    if (foundViewport) {
+                        foundViewport.classList.remove('lf-placing-mode');
+                        foundViewport.style.cursor = fScale > 1 ? 'grab' : 'default';
+                    }
+                    if (placingBanner) placingBanner.classList.remove('lf-banner-visible');
+                    if (foundPreviewPin) { foundPreviewPin.remove(); foundPreviewPin = null; }
+                    if (coordsDisplay) {
+                        coordsDisplay.classList.remove('lf-coords-set');
+                        coordsDisplay.innerHTML = '<i class="bi bi-geo-alt"></i> No pin placed yet. Click "Place Hotspot on Map" first.';
+                    }
+                } else {
+                    // Enter placing mode on FOUND panel map
+                    foundPlacing = true;
+                    foundPendingCoords = null;
+                    foundPlaceBtn.classList.add('lf-placing-active');
+                    foundPlaceBtn.innerHTML = '<i class="bi bi-x-circle"></i> Cancel Placement';
+                    if (foundViewport) {
+                        foundViewport.classList.add('lf-placing-mode');
+                        foundViewport.style.cursor = 'crosshair';
+                    }
+                    if (placingBanner) placingBanner.classList.add('lf-banner-visible');
+                    if (coordsDisplay) {
+                        coordsDisplay.classList.remove('lf-coords-set');
+                        coordsDisplay.innerHTML = '<i class="bi bi-geo-alt"></i> Click anywhere on the map to place the hotspot…';
+                    }
+                }
+            }, true); // capture phase so this runs before lostFound.js listener
+        }
+
+        // Click-on-found-map handler
+        if (foundViewport) {
+            foundViewport.addEventListener('click', function (e) {
+                if (!foundPlacing) return;
+
+                var rect = foundViewport.getBoundingClientRect();
+                var clickX = (e.clientX - rect.left - fTransX) / fScale;
+                var clickY = (e.clientY - rect.top  - fTransY) / fScale;
+                var pctX   = Math.max(0, Math.min(100, (clickX / foundInner.offsetWidth)  * 100));
+                var pctY   = Math.max(0, Math.min(100, (clickY / foundInner.offsetHeight) * 100));
+
+                foundPendingCoords = { x: pctX, y: pctY };
+
+                // Set shared pendingPinCoords so submit handler picks it up
+                pendingPinCoords = foundPendingCoords;
+
+                // Preview pin
+                if (foundPreviewPin) foundPreviewPin.remove();
+                foundPreviewPin = document.createElement('div');
+                foundPreviewPin.id = 'lf-found-preview-pin';
+                foundPreviewPin.className = 'lf-hotspot lf-hs-active';
+                foundPreviewPin.style.pointerEvents = 'none';
+                foundPreviewPin.innerHTML = '<div class="lf-pin lf-pin-new"><div class="lf-pin-head"><div class="lf-pin-head-inner"></div></div><div class="lf-pin-tail"></div></div>';
+                foundPreviewPin.style.left = pctX + '%';
+                foundPreviewPin.style.top  = pctY + '%';
+                foundInner.appendChild(foundPreviewPin);
+
+                if (coordsDisplay) {
+                    coordsDisplay.classList.add('lf-coords-set');
+                    coordsDisplay.innerHTML = '<i class="bi bi-check-circle-fill"></i> Pin placed at (' + pctX.toFixed(1) + '%, ' + pctY.toFixed(1) + '%) — submit when ready.';
+                }
+
+                // Exit placing mode
+                foundPlacing = false;
+                foundPlaceBtn.classList.remove('lf-placing-active');
+                foundPlaceBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Reposition Pin';
+                foundViewport.classList.remove('lf-placing-mode');
+                foundViewport.style.cursor = fScale > 1 ? 'grab' : 'default';
+                if (placingBanner) placingBanner.classList.remove('lf-banner-visible');
+            });
+        }
+
+        // After a new item is submitted, sync hotspots into found map too
+        var origSubmit = document.getElementById('lf-submit-btn');
+        if (origSubmit) {
+            origSubmit.addEventListener('click', function () {
+                // Give lostFound.js time to push new item before we sync
+                setTimeout(function () {
+                    syncFoundPanelHotspots();
+                    // Also clear found-panel preview pin
+                    var pp = document.getElementById('lf-found-preview-pin');
+                    if (pp) pp.remove();
+                    foundPreviewPin = null;
+                    foundPendingCoords = null;
+                    // Reset place btn label
+                    if (foundPlaceBtn && !foundPlacing) {
+                        foundPlaceBtn.innerHTML = '<i class="bi bi-geo-alt-fill"></i> Place Hotspot on Map';
+                    }
+                }, 350);
+            });
+        }
+
+    }); // end DOMContentLoaded
+    </script>
+
+</body>
+</html>
