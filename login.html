@@ -196,6 +196,12 @@
         return;
       }
 
+      if (user.banned) {
+        alertBox.className = "alert alert-danger border-0 shadow-sm mb-4 d-block";
+        alertBox.innerHTML = '<i class="bi bi-slash-circle-fill me-1"></i> This account has been suspended. Contact an administrator.';
+        return;
+      }
+
       // Verify student ID
       if (user.studentId && user.studentId.toLowerCase().trim() !== studentId.toLowerCase().trim()) {
         showError("Incorrect Student ID.");

@@ -169,6 +169,24 @@ function findUserByStudentId(studentId) {
 }
 
 // ============================================================
+//  ADMIN CONFIG
+//  Hardcoded whitelist of admin accounts. This is the ONLY way
+//  to become an admin — add/remove trusted emails here directly
+//  in the source. There is no in-app promotion.
+// ============================================================
+var ADMIN_EMAILS = [
+    "kartikey3214.beai24@chitkara.edu.in"
+    // add more trusted admin emails here, one per line
+];
+
+function isAdminUser(user) {
+    if (!user || !user.useremail) return false;
+    var email = user.useremail.toLowerCase().trim();
+    return ADMIN_EMAILS.some(function(e) {
+        return e.toLowerCase().trim() === email;
+    });
+}
+// ============================================================
 //  SESSION FUNCTIONS
 // ============================================================
 
@@ -248,6 +266,27 @@ function switchUser(email) {
         return user;
     }
     return null;
+}
+
+function setUserBanned(email, banned) {
+    if (!email) return;
+    var users = getUsers();
+    var key = email.toLowerCase().trim();
+    var idx = users.findIndex(function(u) {
+        return u.useremail && u.useremail.toLowerCase().trim() === key;
+    });
+    if (idx === -1) return;
+    users[idx].banned = !!banned;
+    localStorage.setItem("campusfind_users", JSON.stringify(users));
+}
+
+function deleteUser(email) {
+    if (!email) return;
+    var key = email.toLowerCase().trim();
+    var users = getUsers().filter(function(u) {
+        return !(u.useremail && u.useremail.toLowerCase().trim() === key);
+    });
+    localStorage.setItem("campusfind_users", JSON.stringify(users));
 }
 
 // ============================================================

@@ -83,7 +83,11 @@ window.addEventListener('load', function() {
     // Render dynamic navbar user badge & account switcher
     renderNavbarUser();
 
+    // Hide the "Admin" sidebar link from everyone except whitelisted admins
+    applyAdminNavVisibility();
+
     // Determine active page
+
     let path = window.location.pathname;
     if (path.includes("report.html") || path.includes("report-found.html")) {
         initReportPage();
@@ -97,6 +101,14 @@ window.addEventListener('load', function() {
         initHomePage();
     }
 });
+
+function applyAdminNavVisibility() {
+    let currentUser = getCurrentUser();
+    let showAdmin = (typeof isAdminUser === "function") && isAdminUser(currentUser);
+    document.querySelectorAll('a[href="admin.html"]').forEach(function(link) {
+        link.classList.toggle("d-none", !showAdmin);
+    });
+}
 
 
 // Render multi-user account switcher badge in navigation bar
@@ -2356,26 +2368,23 @@ function removeReport(id) {
 // 6. ADMIN LOGIC
 // -------------------------------------------------------------
 function initAdminPage() {
-    let reports = getReports();
-    let tbody = document.getElementById("admin-table-body");
-    if (!tbody) return;
+    // ── Access guard: only whitelisted admins may see this page ──
+    let currentUser = getCurrentUser();
+    if (!currentUser) {
+        alert("Please log in to continue.");
+        window.location.href = "login.html";
+        return;
+    }
+    if (!isAdminUser(currentUser)) {
+        alert("Access denied. This page is restricted to administrators.");
+        window.location.href = "index.html";
+        return;
+    }
 
-    tbody.innerHTML = "";
-    reports.forEach(r => {
-        tbody.innerHTML += `
-            <tr>
-                <td><strong>${r.id}</strong></td>
-                <td><span class="badge ${r.type === 'lost' ? 'badge-lost' : 'badge-found'}">${r.type.toUpperCase()}</span></td>
-                <td>${r.itemName}</td>
-                <td><span class="badge bg-light text-dark border">${r.postedBy}</span></td>
-                <td>${r.zone}</td>
-                <td>${r.date}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-danger" onclick="removeReport('${r.id}')"><i class="bi bi-trash"></i> Delete</button>
-                </td>
-            </tr>
-        `;
-    });
+    renderAdminStats();
+    renderAdminReports();
+    renderAdminUsers();
+    renderAdminClaims();
 
     let resetBtn = document.getElementById("btn-reset-sample-data");
     if (resetBtn) {
@@ -2386,6 +2395,161 @@ function initAdminPage() {
             }
         };
     }
+}
+
+function renderAdminStats() {
+    let statsRow = document.getElementById("admin-stats-row");
+    if (!statsRow) return;
+
+    let reports = getReports();
+    let users = getUsers().filter(u => u.useremail);
+    let claims = getClaims();
+
+    let lostCount = reports.filter(r => r.type === "lost").length;
+    let foundCount = reports.filter(r => r.type === "found").length;
+    let pendingClaims = claims.filter(c => c.status === "Pending Founder Approval" || c.status === "Pending Approval").length;
+    let resolvedClaims = claims.filter(c => c.status === "Approved & Meeting Scheduled").length;
+
+    let stats = [
+        { label: "Total Users", value: users.length, icon: "bi-people-fill", color: "primary" },
+        { label: "Reports (Lost / Found)", value: `${lostCount} / ${foundCount}`, icon: "bi-clipboard-data", color: "warning" },
+        { label: "Pending Claims", value: pendingClaims, icon: "bi-hourglass-split", color: "danger" },
+        { label: "Resolved Recoveries", value: resolvedClaims, icon: "bi-check-circle-fill", color: "success" }
+    ];
+
+    statsRow.innerHTML = stats.map(s => `
+        <div class="col-6 col-lg-3">
+            <div class="bg-white rounded-3 border shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-${s.color} bg-opacity-10 text-${s.color} d-flex align-items-center justify-content-center" style="width:44px; height:44px; flex-shrink:0;">
+                        <i class="bi ${s.icon} fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold lh-1">${s.value}</div>
+                        <div class="small text-muted">${s.label}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join("");
+}
+
+function renderAdminReports() {
+    let tbody = document.getElementById("admin-table-body");
+    if (!tbody) return;
+
+    let searchInput = document.getElementById("admin-report-search");
+    let typeFilter = document.getElementById("admin-report-type-filter");
+    let query = (searchInput ? searchInput.value : "").toLowerCase().trim();
+    let typeVal = typeFilter ? typeFilter.value : "all";
+
+    let reports = getReports().filter(r => {
+        let matchesType = typeVal === "all" || r.type === typeVal;
+        let matchesQuery = !query ||
+            (r.itemName && r.itemName.toLowerCase().includes(query)) ||
+            (r.postedBy && r.postedBy.toLowerCase().includes(query)) ||
+            (r.zone && r.zone.toLowerCase().includes(query));
+        return matchesType && matchesQuery;
+    });
+
+    tbody.innerHTML = "";
+    if (reports.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">No reports match.</td></tr>`;
+    }
+    reports.forEach(r => {
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${r.id}</strong></td>
+                <td><span class="badge ${r.type === 'lost' ? 'badge-lost' : 'badge-found'}">${r.type.toUpperCase()}</span></td>
+                <td>${escapeHtml(r.itemName)}</td>
+                <td><span class="badge bg-light text-dark border">${escapeHtml(r.postedBy)}</span></td>
+                <td>${escapeHtml(r.zone)}</td>
+                <td>${escapeHtml(r.date)}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeReport('${r.id}')"><i class="bi bi-trash"></i> Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    if (searchInput) searchInput.oninput = renderAdminReports;
+    if (typeFilter) typeFilter.onchange = renderAdminReports;
+}
+
+function renderAdminUsers() {
+    let tbody = document.getElementById("admin-users-table-body");
+    if (!tbody) return;
+
+    let users = getUsers().filter(u => u.useremail);
+    tbody.innerHTML = "";
+    if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No registered users.</td></tr>`;
+    }
+    users.forEach(u => {
+        let isAdmin = isAdminUser(u);
+        let isBanned = !!u.banned;
+        tbody.innerHTML += `
+            <tr>
+                <td>${escapeHtml(u.username || "—")}</td>
+                <td>${escapeHtml(u.useremail)}${isAdmin ? ' <span class="badge bg-warning text-dark ms-1">Admin</span>' : ''}</td>
+                <td>${escapeHtml(u.studentId || "—")}</td>
+                <td>${escapeHtml(u.department || "—")}</td>
+                <td>${isBanned ? '<span class="badge bg-danger">Banned</span>' : '<span class="badge bg-success">Active</span>'}</td>
+                <td class="text-end">
+                    ${isAdmin ? '' : (isBanned
+                        ? `<button class="btn btn-sm btn-outline-success me-1" onclick="adminUnbanUser('${escapeHtml(u.useremail)}')"><i class="bi bi-check-circle"></i> Unban</button>`
+                        : `<button class="btn btn-sm btn-outline-warning me-1" onclick="adminBanUser('${escapeHtml(u.useremail)}')"><i class="bi bi-slash-circle"></i> Ban</button>`)}
+                    ${isAdmin ? '' : `<button class="btn btn-sm btn-outline-danger" onclick="adminDeleteUser('${escapeHtml(u.useremail)}')"><i class="bi bi-trash"></i> Delete</button>`}
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function adminBanUser(email) {
+    if (!confirm(`Ban ${email}? They won't be able to log in until unbanned.`)) return;
+    setUserBanned(email, true);
+    renderAdminUsers();
+    renderAdminStats();
+}
+
+function adminUnbanUser(email) {
+    setUserBanned(email, false);
+    renderAdminUsers();
+    renderAdminStats();
+}
+
+function adminDeleteUser(email) {
+    if (!confirm(`Permanently delete the account for ${email}? This cannot be undone.`)) return;
+    deleteUser(email);
+    renderAdminUsers();
+    renderAdminStats();
+}
+
+function renderAdminClaims() {
+    let tbody = document.getElementById("admin-claims-table-body");
+    if (!tbody) return;
+
+    let claims = getClaims();
+    tbody.innerHTML = "";
+    if (claims.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No claims yet.</td></tr>`;
+    }
+    claims.forEach(c => {
+        let badgeClass = c.status === "Approved & Meeting Scheduled" ? "bg-success"
+            : c.status === "Rejected" ? "bg-danger"
+            : "bg-warning text-dark";
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${escapeHtml(c.claimId)}</strong></td>
+                <td>${escapeHtml(c.itemName)}</td>
+                <td>${escapeHtml(c.claimedBy)}<br><span class="small text-muted">${escapeHtml(c.claimedByEmail)}</span></td>
+                <td>${escapeHtml(c.reporter || "—")}<br><span class="small text-muted">${escapeHtml(c.reporterEmail || "")}</span></td>
+                <td><span class="badge ${badgeClass}">${escapeHtml(c.status)}</span></td>
+                <td>${escapeHtml(c.date || "—")}</td>
+            </tr>
+        `;
+    });
 }
 
 function getDefaultImage(cat) {
