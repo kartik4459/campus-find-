@@ -2,6 +2,64 @@
 // Handles page rendering, card displays, user session state, matching views, notifications, and claim approval flow
 
 let uploadedImageBase64 = null;
+let uploadedImageFeaturesPromise = null;
+
+function extractImageFeatures(dataUrl) {
+    return new Promise((resolve) => {
+        let image = new Image();
+        image.onload = function() {
+            let canvas = document.createElement("canvas");
+            let size = 32;
+            canvas.width = size;
+            canvas.height = size;
+            let context = canvas.getContext("2d", { willReadFrequently: true });
+            if (!context) {
+                resolve(null);
+                return;
+            }
+
+            context.drawImage(image, 0, 0, size, size);
+            let pixels = context.getImageData(0, 0, size, size).data;
+            let histogram = new Array(16).fill(0);
+            let grayscale = new Array(size * size).fill(0);
+            let totalBrightness = 0;
+
+            for (let pixelIndex = 0; pixelIndex < size * size; pixelIndex++) {
+                let offset = pixelIndex * 4;
+                let red = pixels[offset];
+                let green = pixels[offset + 1];
+                let blue = pixels[offset + 2];
+                let brightness = (red * 0.299 + green * 0.587 + blue * 0.114) / 255;
+                let colorBin = (Math.floor(red / 128) * 8) + (Math.floor(green / 128) * 4) + (Math.floor(blue / 128) * 2) + (brightness >= 0.5 ? 1 : 0);
+                histogram[colorBin]++;
+                grayscale[pixelIndex] = brightness;
+                totalBrightness += brightness;
+            }
+
+            let averageBrightness = totalBrightness / grayscale.length;
+            let perceptualHash = "";
+            let edgeStrength = 0;
+            for (let row = 0; row < size; row++) {
+                for (let column = 0; column < size; column++) {
+                    let pixelIndex = row * size + column;
+                    perceptualHash += grayscale[pixelIndex] >= averageBrightness ? "1" : "0";
+                    if (column > 0) edgeStrength += Math.abs(grayscale[pixelIndex] - grayscale[pixelIndex - 1]);
+                    if (row > 0) edgeStrength += Math.abs(grayscale[pixelIndex] - grayscale[pixelIndex - size]);
+                }
+            }
+
+            resolve({
+                histogram: histogram.map(value => value / grayscale.length),
+                perceptualHash: perceptualHash,
+                edgeStrength: edgeStrength / (size * size * 2),
+                aspectRatio: image.width / image.height,
+                averageBrightness: averageBrightness
+            });
+        };
+        image.onerror = () => resolve(null);
+        image.src = dataUrl;
+    });
+}
 
 // Image preview helper function
 function previewImage(event) {
@@ -10,6 +68,7 @@ function previewImage(event) {
         let reader = new FileReader();
         reader.onload = function(e) {
             uploadedImageBase64 = e.target.result;
+            uploadedImageFeaturesPromise = extractImageFeatures(e.target.result);
             let preview = document.getElementById("img-preview");
             if (preview) {
                 preview.src = e.target.result;
@@ -104,7 +163,7 @@ function renderNavbarUser() {
                 <i class="${themeIcon}"></i>
             </button>
 
-            <a href="dashboard.html" class="position-relative text-decoration-none text-muted nav-notification-bell" title="View Notifications & Chats in Dashboard">
+            <a href="dashboard.html#notifications-section" class="position-relative text-decoration-none text-muted nav-notification-bell" title="View Notifications & Chats in Dashboard">
                 <i class="bi bi-bell"></i>
                 ${count > 0 ? `
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.2rem 0.35rem;">
@@ -184,7 +243,7 @@ function initHomePage() {
     let targetTotal = reports.length;
     let targetLost = reports.filter(r => r.type === "lost").length;
     let targetFound = reports.filter(r => r.type === "found").length;
-    let targetRecovered = claims.filter(c => c.status === "Approved" || c.status === "Resolved").length;
+    let targetRecovered = reports.filter(r => r.status === "Recovered").length;
 
     // Setup IntersectionObserver for Live Statistics Section
     let statsSection = document.getElementById("stats-section");
@@ -199,8 +258,7 @@ function initHomePage() {
                     setTimeout(() => animateCountUp("stat-lost", targetLost), 120);
                     setTimeout(() => animateCountUp("stat-found", targetFound), 240);
                     setTimeout(() => animateCountUp("stat-recovered", targetRecovered), 360);
-                    
-                    observer.unobserve(statsSection);
+
                 }
             });
         }, { threshold: 0.2 });
@@ -236,7 +294,12 @@ function initHomePage() {
         recentObserver.observe(recentSection);
     }
 
-    renderRecentCards(reports);
+    let currentUser = getCurrentUser();
+    let myReports = currentUser && currentUser.useremail
+        ? reports.filter(item => item.status !== "Recovered" && item.postedByEmail && item.postedByEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim())
+        : [];
+
+    renderRecentCards(myReports);
 
     // Filter Listeners
     let searchIn = document.getElementById("home-search-input");
@@ -248,7 +311,7 @@ function initHomePage() {
         let t = typeSelect ? typeSelect.value : "all";
         let c = catSelect ? catSelect.value : "all";
 
-        let filtered = reports.filter(item => {
+        let filtered = myReports.filter(item => {
             let matchQ = item.itemName.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
             let matchT = t === "all" || item.type === t;
             let matchC = c === "all" || item.category === c;
@@ -454,22 +517,31 @@ function initReportPage() {
     let hiddenInput = document.getElementById("hiddenDetails");
     let categoryEl = document.getElementById("category");
     let colorEl = document.getElementById("color");
-    let categoryOtherEl = document.getElementById("category-other");
-    let colorOtherEl = document.getElementById("color-other");
+    let zoneEl = document.getElementById("zone");
+    let customCategoryContainer = document.getElementById("custom-category-container");
+    let customCategoryInput = document.getElementById("custom-category");
+    let customColorContainer = document.getElementById("custom-color-container");
+    let customColorInput = document.getElementById("custom-color");
+    let customZoneContainer = document.getElementById("custom-zone-container");
+    let customZoneInput = document.getElementById("custom-zone");
 
-    function toggleOtherInput(selectEl, otherInputEl) {
-        if (!selectEl || !otherInputEl) return;
-
-        let isOther = selectEl.value === "Other";
-        otherInputEl.classList.toggle("d-none", !isOther);
-        otherInputEl.required = isOther;
-        if (!isOther) otherInputEl.value = "";
+    function toggleCustomSelectField(selectEl, containerEl, inputEl) {
+        if (!selectEl || !containerEl || !inputEl) return;
+        const isCustom = selectEl.value === "Other";
+        containerEl.classList.toggle("d-none", !isCustom);
+        inputEl.required = isCustom;
+        if (!isCustom) inputEl.value = "";
     }
 
-    if (categoryEl) categoryEl.addEventListener("change", () => toggleOtherInput(categoryEl, categoryOtherEl));
-    if (colorEl) colorEl.addEventListener("change", () => toggleOtherInput(colorEl, colorOtherEl));
-    toggleOtherInput(categoryEl, categoryOtherEl);
-    toggleOtherInput(colorEl, colorOtherEl);
+    if (categoryEl) {
+        categoryEl.addEventListener("change", () => toggleCustomSelectField(categoryEl, customCategoryContainer, customCategoryInput));
+    }
+    if (colorEl) {
+        colorEl.addEventListener("change", () => toggleCustomSelectField(colorEl, customColorContainer, customColorInput));
+    }
+    if (zoneEl) {
+        zoneEl.addEventListener("change", () => toggleCustomSelectField(zoneEl, customZoneContainer, customZoneInput));
+    }
 
     function renderInstructions(type) {
         let card = document.getElementById("instruction-card");
@@ -541,7 +613,7 @@ function initReportPage() {
         foundBtn.onclick = () => setReportType("found");
     }
 
-    form.onsubmit = function(e) {
+    form.onsubmit = async function(e) {
         e.preventDefault();
 
         // ── Inline feedback ─────────────────────────────────────────
@@ -605,6 +677,8 @@ function initReportPage() {
 
         // ── Collect field values ────────────────────────────────────
         let itemNameEl    = document.getElementById("itemName");
+        let categoryEl    = document.getElementById("category");
+        let colorEl       = document.getElementById("color");
         let zoneEl        = document.getElementById("zone");
         let dateEl        = document.getElementById("date");
         let descEl        = document.getElementById("description");
@@ -613,25 +687,50 @@ function initReportPage() {
         let itemName    = itemNameEl    ? itemNameEl.value.trim()    : "";
         let cat         = categoryEl    ? categoryEl.value           : "";
         let color       = colorEl       ? colorEl.value              : "";
-        if (cat === "Other") cat = categoryOtherEl ? categoryOtherEl.value.trim() : "";
-        if (color === "Other") color = colorOtherEl ? colorOtherEl.value.trim() : "";
         let zone        = zoneEl        ? zoneEl.value               : "";
         let date        = dateEl        ? dateEl.value               : "";
         let description = descEl        ? descEl.value.trim()        : "";
         let phone       = phoneEl       ? phoneEl.value.trim()       : "";
         let reportType  = typeInput     ? typeInput.value            : "lost";
         let hiddenVal   = (reportType === "lost" && hiddenInput) ? hiddenInput.value.trim() : "";
+        let customCategory = customCategoryInput ? customCategoryInput.value.trim() : "";
+        let customColor = customColorInput ? customColorInput.value.trim() : "";
+        let customZone  = customZoneInput ? customZoneInput.value.trim() : "";
+
+        if (categoryEl && categoryEl.value === "Other") {
+            cat = customCategory;
+        }
+        if (colorEl && colorEl.value === "Other") {
+            color = customColor;
+        }
+        if (zoneEl && zoneEl.value === "Other") {
+            zone = customZone;
+        }
 
         // ── Required field validation ───────────────────────────────
         if (!itemName)    { showError("Item Name is required.");          return; }
-        if (!cat)         { showError("Please select a Category.");       return; }
-        if (!color)       { showError("Please select a Primary Color.");  return; }
-        if (!zone)        { showError("Please select a Campus Zone.");    return; }
+        if (!cat)         { showError("Please select a Category or enter a custom category."); return; }
+        if (categoryEl && categoryEl.value === "Other" && !customCategory) {
+            showError("Please enter the custom category.");
+            return;
+        }
+        if (!color)       { showError("Please select a Primary Color or enter a custom color."); return; }
+        if (colorEl && colorEl.value === "Other" && !customColor) {
+            showError("Please enter the custom color.");
+            return;
+        }
+        if (!zone)        { showError("Please select a Campus Zone or enter a custom location."); return; }
+        if (zoneEl && zoneEl.value === "Other" && !customZone) {
+            showError("Please enter the custom campus location.");
+            return;
+        }
         if (!date)        { showError("Please select the Date.");         return; }
         if (!description) { showError("Item Description is required.");   return; }
 
         // ── Image ───────────────────────────────────────────────────
         let itemImg = uploadedImageBase64 || getDefaultImage(cat);
+
+        let itemImageFeatures = uploadedImageFeaturesPromise ? await uploadedImageFeaturesPromise : null;
 
         // ── Build report object ─────────────────────────────────────
         let newReport = {
@@ -648,6 +747,7 @@ function initReportPage() {
             postedByEmail: activeUser.useremail || "",
             contactPhone:  phone || activeUser.contactPhone || "",
             image:         itemImg,
+            imageFeatures: itemImageFeatures,
             status:        "Searching"
         };
 
@@ -665,6 +765,7 @@ function initReportPage() {
         }
 
         uploadedImageBase64 = null;
+        uploadedImageFeaturesPromise = null;
 
         // ── Verify save ─────────────────────────────────────────────
         try {
@@ -693,7 +794,7 @@ function initMatchesPage() {
     let urlTargetId = urlParams.get("id");
     let currentUser = getCurrentUser();
 
-    // Find all reports belonging to the active logged-in user
+    // Separate the active user's reports from other reports for the selector.
     let myReports = [];
     let otherReports = [];
 
@@ -716,18 +817,7 @@ function initMatchesPage() {
                 // Logged-in user clicked their own report -> put it on top!
                 targetReport = requestedReport;
             } else {
-                // Logged-in user clicked another user's report (e.g. Ira clicked Rohan's lost charger).
-                // If logged-in user (Ira) has a report of the opposite type (e.g. Found item),
-                // put IRA'S report on top as the target, so Rohan's item is the candidate below to notify/claim!
-                let myOppositeReport = myReports.find(r => r.type !== requestedReport.type);
-                if (myOppositeReport) {
-                    targetReport = myOppositeReport;
-                } else if (myReports.length > 0) {
-                    // Always ensure logged in user's report is on top if they have reports
-                    targetReport = myReports[0];
-                } else {
-                    targetReport = requestedReport;
-                }
+                targetReport = requestedReport;
             }
         }
     }
@@ -737,7 +827,7 @@ function initMatchesPage() {
         targetReport = myReports[0];
     }
 
-    // Populate Report Selector Dropdown with clean optgroups
+    // Populate the selector with the active user's reports and other reports.
     let selectEl = document.getElementById("target-report-select");
     if (selectEl) {
         selectEl.innerHTML = "";
@@ -766,6 +856,10 @@ function initMatchesPage() {
             });
             otherOptGroup += `</optgroup>`;
             selectEl.innerHTML += otherOptGroup;
+        }
+
+        if (myReports.length === 0 && otherReports.length === 0) {
+            selectEl.innerHTML = `<option value="">No reports submitted yet</option>`;
         }
 
         selectEl.onchange = (e) => {
@@ -805,7 +899,7 @@ function renderNoUserReportsState(currentUser) {
                     </div>
                     <h3 class="fw-bold mb-2">No Reports Submitted by ${userName} Yet</h3>
                     <p class="text-muted small mb-4">
-                        You are currently logged in as <strong>${userName}</strong>. Submit a Lost or Found item report to run our matching algorithm against other campus items, or select a campus report from the dropdown above to inspect matches.
+                        You are currently logged in as <strong>${userName}</strong>. Submit a Lost or Found item report to run our matching algorithm against other reported items.
                     </p>
                     <div class="d-flex justify-content-center gap-3 flex-wrap">
                         <a href="report.html" class="btn btn-lost">
@@ -927,47 +1021,55 @@ function renderMatchCardsList(targetReport, reports) {
                                     <span class="badge bg-primary fs-5">🎯 ${m.score}% Match</span>
                                 </div>
                                 <div class="p-2 bg-light rounded border mb-3 text-center small text-muted">
-                                    <strong>Formula:</strong> ${b.category.pts} + ${b.color.pts} + ${b.location.pts} + ${b.date.pts} + ${b.description.pts} = <strong>${m.totalPts} / 100 pts</strong>
+                                    <strong>Formula:</strong> ${b.category.pts} + ${b.color.pts} + ${b.location.pts} + ${b.date.pts} + ${b.description.pts} + ${b.image.pts} = <strong>${m.totalPts} / 100 pts</strong>
                                 </div>
 
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Category (25% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.category.pts} / 25 pts</span>
+                                        <span>Category (24% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.category.pts} / ${b.category.maxPts} pts</span>
                                     </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.category.pts / 25) * 100}%"></div></div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.category.pts / b.category.maxPts) * 100}%"></div></div>
                                 </div>
 
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Color (20% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.color.pts} / 20 pts</span>
+                                        <span>Color (18% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.color.pts} / ${b.color.maxPts} pts</span>
                                     </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.color.pts / 20) * 100}%"></div></div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.color.pts / b.color.maxPts) * 100}%"></div></div>
                                 </div>
 
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Zone (25% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.location.pts} / 25 pts</span>
+                                        <span>Zone (22% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.location.pts} / ${b.location.maxPts} pts</span>
                                     </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.location.pts / 25) * 100}%"></div></div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.location.pts / b.location.maxPts) * 100}%"></div></div>
                                 </div>
 
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Date (15% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.date.pts} / 15 pts</span>
+                                        <span>Date (12% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.date.pts} / ${b.date.maxPts} pts</span>
                                     </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.date.pts / 15) * 100}%"></div></div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.date.pts / b.date.maxPts) * 100}%"></div></div>
                                 </div>
 
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Description (15% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.description.pts} / 15 pts</span>
+                                        <span>Description (12% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.description.pts} / ${b.description.maxPts} pts</span>
                                     </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.description.pts / 15) * 100}%"></div></div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.description.pts / b.description.maxPts) * 100}%"></div></div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small fw-semibold">
+                                        <span>Image (12% Wt)</span>
+                                        <span class="text-primary fw-bold">${b.image.pts} / ${b.image.maxPts} pts</span>
+                                    </div>
+                                    <div class="progress" style="height:6px"><div class="progress-bar bg-info" style="width:${(b.image.pts / b.image.maxPts) * 100}%"></div></div>
                                 </div>
                             </div>
 
@@ -1351,6 +1453,20 @@ function initDashboardPage() {
     // Render My Submitted Reports
     renderMyReports(currentUser.useremail);
 
+    // Reposition hash navigation after the fixed navbar and dashboard content render.
+    if (window.location.hash === "#notifications-section") {
+        window.requestAnimationFrame(function() {
+            let section = document.getElementById("notifications-section");
+            let navbar = document.querySelector(".navbar-custom");
+            if (!section) return;
+            let navbarHeight = navbar ? navbar.getBoundingClientRect().height : 0;
+            window.scrollTo({
+                top: Math.max(0, section.getBoundingClientRect().top + window.scrollY - navbarHeight - 16),
+                behavior: "auto"
+            });
+        });
+    }
+
     // Setup Meeting Location change listener to show/hide custom input
     let meetingLocationSelect = document.getElementById("meeting-location");
     if (meetingLocationSelect) {
@@ -1641,7 +1757,7 @@ function renderSubmittedClaims(userEmail) {
 
                 <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
                     <span class="extra-small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Secure Encrypted Match</span>
-                    <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openOrCreateChat('${c.itemId}', '${c.itemId}')">
+                    <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openClaimChat('${c.claimId}')">
                         <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
                     </button>
                 </div>
@@ -1685,7 +1801,7 @@ function renderNotificationsFeed(userEmail) {
         let badgeClass = isChatMsg ? "bg-primary text-white" : (isOwnerAlert ? "bg-warning text-dark" : (isApproved ? "bg-success text-white" : (isMoreInfo ? "bg-warning text-dark" : (isRejected ? "bg-danger text-white" : "bg-info text-dark"))));
 
         container.innerHTML += `
-            <div class="notification-item-card p-3 mb-2 rounded-3 border shadow-sm position-relative">
+            <div class="p-3 mb-2 rounded-3 border shadow-sm position-relative" style="background-color: #120f26; border-color: rgba(168, 85, 247, 0.25) !important;">
                 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
                     <span class="badge ${badgeClass} extra-small fw-bold px-2.5 py-1">${badgeText}</span>
                     <div class="d-flex align-items-center gap-2">
@@ -1698,7 +1814,7 @@ function renderNotificationsFeed(userEmail) {
                         </button>
                     </div>
                 </div>
-                <p class="notification-message-text small mb-2 fw-medium" style="line-height: 1.4;">${escapeHtml(n.message)}</p>
+                <p class="small mb-2 text-light fw-medium" style="line-height: 1.4;">${escapeHtml(n.message)}</p>
                 
                 ${n.chatId ? `
                     <div class="mt-2 pt-2 border-top border-secondary-subtle d-flex justify-content-between align-items-center">
@@ -1840,13 +1956,55 @@ function renderReceivedClaims(userEmail) {
 
                 <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
                     <span class="extra-small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Secure Encrypted Match</span>
-                    <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openOrCreateChat('${c.itemId}', '${c.itemId}')">
+                    <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openClaimChat('${c.claimId}')">
                         <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
                     </button>
                 </div>
             </div>
         `;
     });
+}
+
+function openClaimChat(claimId) {
+    let claim = getClaims().find(c => c.claimId === claimId);
+    if (!claim) {
+        alert("Could not load this claim conversation.");
+        return;
+    }
+
+    let reports = getReports();
+    let linkedReport = reports.find(r => r.id === claim.itemId);
+    if (!linkedReport) {
+        alert("Could not find the report connected to this claim.");
+        return;
+    }
+
+    let lostReport;
+    let foundReport;
+    if (linkedReport.type === "found") {
+        foundReport = linkedReport;
+        lostReport = reports.find(r =>
+            r.type === "lost" &&
+            r.postedByEmail &&
+            claim.claimedByEmail &&
+            r.postedByEmail.toLowerCase().trim() === claim.claimedByEmail.toLowerCase().trim()
+        );
+    } else {
+        lostReport = linkedReport;
+        foundReport = reports.find(r =>
+            r.type === "found" &&
+            r.postedByEmail &&
+            claim.reporterEmail &&
+            r.postedByEmail.toLowerCase().trim() === claim.reporterEmail.toLowerCase().trim()
+        );
+    }
+
+    if (!lostReport || !foundReport) {
+        alert("Could not find both reports for this match chat.");
+        return;
+    }
+
+    openOrCreateChat(lostReport.id, foundReport.id);
 }
 
 // -------------------------------------------------------------

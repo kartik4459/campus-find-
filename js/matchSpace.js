@@ -156,11 +156,12 @@ function getUserMatchSpaceData() {
                 date: candidateReport.date,
                 description: candidateReport.description,
                 factors: {
-                    category: m.breakdown ? Math.round((m.breakdown.category.pts / 25) * 30) : 25,
-                    color: m.breakdown ? Math.round((m.breakdown.color.pts / 20) * 20) : 20,
-                    location: m.breakdown ? Math.round((m.breakdown.location.pts / 25) * 20) : 20,
-                    date: m.breakdown ? Math.round((m.breakdown.date.pts / 15) * 15) : 15,
-                    description: m.breakdown ? Math.round((m.breakdown.description.pts / 15) * 15) : 10
+                    category: m.breakdown ? Math.round((m.breakdown.category.pts / m.breakdown.category.maxPts) * 30) : 25,
+                    color: m.breakdown ? Math.round((m.breakdown.color.pts / m.breakdown.color.maxPts) * 20) : 20,
+                    location: m.breakdown ? Math.round((m.breakdown.location.pts / m.breakdown.location.maxPts) * 20) : 20,
+                    date: m.breakdown ? Math.round((m.breakdown.date.pts / m.breakdown.date.maxPts) * 15) : 15,
+                    description: m.breakdown ? Math.round((m.breakdown.description.pts / m.breakdown.description.maxPts) * 15) : 10,
+                    image: m.breakdown ? Math.round((m.breakdown.image.pts / m.breakdown.image.maxPts) * 10) : 0
                 }
             };
         });

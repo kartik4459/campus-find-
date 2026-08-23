@@ -111,6 +111,15 @@ main {
     flex: 1;
 }
 
+body[data-page="dashboard"] main {
+    padding-top: 7rem !important;
+}
+
+main.py-5,
+main.py-4 {
+    padding-top: 7rem !important;
+}
+
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
@@ -147,12 +156,12 @@ a:hover {
 
 /* ─── Navbar ─────────────────────────────────────────────────────────────── */
 .navbar-custom {
-    position: relative !important;
+    position: fixed !important;
     top: 0;
     left: 0;
     width: 100%;
     z-index: 1050;
-    background: rgba(7, 10, 28, 0.95) !important;
+    background: rgba(7, 10, 28, 0.45) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(168, 85, 247, 0.15) !important;
@@ -240,7 +249,7 @@ html.light-theme .brand-logo-img {
     background-size: cover !important;
     background-position: center top !important;
     background-repeat: no-repeat !important;
-    padding-top: 3.5rem !important;
+    padding-top: 7.5rem !important;
     padding-bottom: 6rem;
     min-height: 90vh;
     display: flex;
@@ -250,7 +259,10 @@ html.light-theme .brand-logo-img {
 }
 
 html.light-theme .hero-section {
-    background-image: none !important;
+    background-image: url('../images/light.png') !important;
+    background-size: cover !important;
+    background-position: center top !important;
+    background-repeat: no-repeat !important;
     background-color: var(--bg-main) !important;
 }
 
@@ -539,6 +551,17 @@ html.light-theme .hero-section::after {
     opacity: 0.7;
 }
 
+.form-control[type="date"] {
+    color-scheme: dark;
+}
+
+.form-control[type="date"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) invert(1) contrast(200%);
+    cursor: pointer;
+    opacity: 1;
+    background: transparent;
+}
+
 .type-toggle-btn {
     border: 2px solid var(--border-dark);
     background-color: var(--bg-input);
@@ -624,10 +647,10 @@ html.light-theme {
     --bg-card:         #ffffff; /* Pure white card backgrounds */
     --bg-card-hover:   #f1f5f9; /* Soft slate gray for hover */
     --bg-input:        #ffffff;
-    --border-color:    #e2e8f0; /* Crisp soft slate border */
-    --border-glow-blue: rgba(37, 99, 235, 0.16);
-    --border-glow-green: rgba(5, 150, 105, 0.16);
-    --border-dark:     #cbd5e1;
+    --border-color:    rgba(59, 130, 246, 0.16); /* Soft blue border outline */
+    --border-glow-blue: rgba(59, 130, 246, 0.22);
+    --border-glow-green: rgba(16, 185, 129, 0.22);
+    --border-dark:     #e2e8f0;
 
     /* Primary Accent: Electric Blue */
     --primary-color:   #2563eb; /* Deep primary blue */
@@ -638,26 +661,14 @@ html.light-theme {
     /* Success / Matches: Emerald Green */
     --found-color:     #059669; /* Rich green */
     --found-hover:     #047857;
-    --found-bg:        rgba(5, 150, 105, 0.08);
-    --found-border:    rgba(5, 150, 105, 0.25);
+    --found-bg:        rgba(5, 150, 105, 0.06);
+    --found-border:    rgba(5, 150, 105, 0.2);
 
     /* Lost / Warnings: Cyan-Blue */
     --lost-color:      #0891b2;
     --lost-hover:      #0e7490;
-    --lost-bg:         rgba(8, 145, 178, 0.08);
-    --lost-border:     rgba(8, 145, 178, 0.25);
-
-    /* Danger states */
-    --danger-color:    #ef4444;
-    --danger-hover:    #dc2626;
-    --danger-bg:       rgba(239, 68, 68, 0.08);
-    --danger-border:   rgba(239, 68, 68, 0.25);
-
-    /* Warning states */
-    --warning-color:   #d97706;
-    --warning-hover:   #b45309;
-    --warning-bg:      rgba(217, 119, 6, 0.08);
-    --warning-border:  rgba(217, 119, 6, 0.25);
+    --lost-bg:         rgba(8, 145, 178, 0.06);
+    --lost-border:     rgba(8, 145, 178, 0.2);
 
     /* Text */
     --text-heading:    #0f172a; /* Slate 900 for dark crisp headings */
@@ -666,209 +677,72 @@ html.light-theme {
     --text-light:      #475569; /* Slate 600 */
 
     /* Shadows */
-    --shadow-sm:       0 1px 3px rgba(0, 0, 0, 0.06);
-    --shadow-md:       0 4px 14px rgba(15, 23, 42, 0.08), 0 0 10px rgba(37, 99, 235, 0.03);
-    --shadow-lg:       0 12px 28px rgba(15, 23, 42, 0.10), 0 0 20px rgba(37, 99, 235, 0.05);
-
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #2563eb 0%, #059669 100%);
-    --gradient-hover:   linear-gradient(135deg, #1d4ed8 0%, #047857 100%);
-    --gradient-text:    linear-gradient(90deg, #2563eb 0%, #0891b2 100%);
-    --gradient-dark:    linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    --shadow-sm:       0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md:       0 4px 12px rgba(15, 23, 42, 0.06), 0 0 10px rgba(59, 130, 246, 0.02);
+    --shadow-lg:       0 12px 24px rgba(15, 23, 42, 0.09), 0 0 20px rgba(59, 130, 246, 0.04);
 }
 
-/* Light Theme Base & Scrollbar */
 html.light-theme body {
-    background-color: var(--bg-main) !important;
-    background-image: radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.03) 0%, transparent 40%),
-                      radial-gradient(circle at 90% 80%, rgba(5, 150, 105, 0.03) 0%, transparent 40%) !important;
-    color: var(--text-body) !important;
-}
-
-html.light-theme ::-webkit-scrollbar-track {
-    background: #f1f5f9;
-}
-html.light-theme ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-html.light-theme ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-
-/* Light Theme Typography & Bootstrap Color Overrides */
-html.light-theme h1,
-html.light-theme h2,
-html.light-theme h3,
-html.light-theme h4,
-html.light-theme h5,
-html.light-theme h6 {
-    color: var(--text-heading);
-}
-
-html.light-theme .text-heading {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .text-body {
-    color: var(--text-body) !important;
-}
-
-html.light-theme .text-muted {
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .text-light {
-    color: var(--text-light) !important;
-}
-
-html.light-theme .text-dark {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .bg-white {
-    background-color: #ffffff !important;
-    color: var(--text-body) !important;
-}
-
-html.light-theme .bg-light,
-html.light-theme .bg-light-subtle {
-    background-color: #f8fafc !important;
-    color: var(--text-body) !important;
-    border-color: var(--border-color) !important;
-}
-
-html.light-theme .bg-dark-subtle {
-    background-color: #f1f5f9 !important;
-    color: var(--text-body) !important;
-    border-color: var(--border-color) !important;
-}
-
-html.light-theme .border, 
-html.light-theme .border-top, 
-html.light-theme .border-bottom,
-html.light-theme .border-start,
-html.light-theme .border-end {
-    border-color: var(--border-color) !important;
-}
-
-html.light-theme .shadow-sm {
-    box-shadow: var(--shadow-sm) !important;
-}
-
-html.light-theme .shadow,
-html.light-theme .shadow-lg {
-    box-shadow: var(--shadow-lg) !important;
+    background-image: radial-gradient(circle at 18% 22%, rgba(168, 85, 247, 0.18) 0%, transparent 38%), radial-gradient(circle at 82% 58%, rgba(37, 99, 235, 0.18) 0%, transparent 42%);
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 /* Light Theme overrides for custom UI states */
+/* Light Theme overrides for custom UI states */
+/* Transparent glass navbar, matching the dark-theme treatment (blurred, reflects page behind it) */
 html.light-theme .navbar-custom {
-    background: rgba(255, 255, 255, 0.95) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-color) !important;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.16) !important;
+    box-shadow: 0 4px 30px rgba(15, 23, 42, 0.06);
 }
 
-html.light-theme .navbar-brand {
-    color: var(--text-heading) !important;
+/* navbar-brand, btn-menu, btn-outline-secondary, btn-theme-toggle and
+   nav-notification-bell all already use theme-aware CSS variables
+   (--text-body / --border-color / etc.) in their base rules above, so
+   once the navbar itself is transparent instead of a solid teal block,
+   no extra color overrides are needed here — they render correctly. */
+
+html.light-theme .navbar-custom .avatar-circle-nav:hover {
+    color: #7c3aed !important;
+    border-color: #a855f7 !important;
+    background-color: #f3e8ff !important;
+    background-image: none !important;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.16), 0 0 16px rgba(168, 85, 247, 0.35) !important;
 }
 
-html.light-theme .btn-menu {
-    color: var(--text-heading) !important;
-    border-color: var(--border-color) !important;
-    background: transparent !important;
-}
-
-html.light-theme .btn-menu:hover {
-    color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    background-color: var(--primary-light) !important;
-}
-
-html.light-theme .btn-theme-toggle {
-    color: var(--text-heading) !important;
-    background-color: #f1f5f9 !important;
-    border: 1px solid var(--border-color) !important;
-}
-
-html.light-theme .btn-theme-toggle:hover {
-    color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    background-color: var(--primary-light) !important;
-}
-
-html.light-theme .nav-notification-bell {
-    color: var(--text-heading) !important;
-    background-color: #f1f5f9 !important;
-    border: 1px solid var(--border-color) !important;
-}
-
-html.light-theme .nav-notification-bell:hover {
-    color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    background-color: var(--primary-light) !important;
-}
-
-html.light-theme .btn-outline-secondary {
-    color: var(--text-heading) !important;
-    border-color: var(--border-color) !important;
-    background-color: transparent !important;
-}
-
-html.light-theme .btn-outline-secondary:hover {
-    color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    background-color: var(--primary-light) !important;
+html.light-theme #match-space-user-title {
+    background-color: rgba(8, 145, 178, 0.14) !important;
+    color: #0e7490 !important;
+    border: 1px solid rgba(8, 145, 178, 0.3);
 }
 
 html.light-theme .offcanvas {
     background-color: #ffffff !important;
     border-right: 1px solid var(--border-color) !important;
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.08) !important;
 }
 
 html.light-theme .offcanvas-header {
-    background-color: #ffffff !important;
     border-bottom: 1px solid var(--border-color) !important;
 }
 
-html.light-theme .offcanvas-title {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .offcanvas-body {
-    background-color: #ffffff !important;
-}
-
-html.light-theme .sidebar-link,
-html.light-theme .sidebar-nav .nav-link {
+html.light-theme .sidebar-link {
     color: var(--text-body) !important;
 }
 
 html.light-theme .sidebar-link:hover,
-html.light-theme .sidebar-link.active,
-html.light-theme .sidebar-nav .nav-link:hover {
+html.light-theme .sidebar-link.active {
     background-color: var(--primary-light) !important;
     color: var(--primary-color) !important;
 }
 
-html.light-theme .sidebar-nav .nav-link.active {
-    background-image: var(--gradient-primary) !important;
-    color: #ffffff !important;
-}
-
-html.light-theme .card,
-html.light-theme .form-card,
 html.light-theme .card-featured {
     background-color: #ffffff !important;
     border: 1px solid var(--border-color) !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-
-html.light-theme .card:hover {
-    border-color: var(--border-dark) !important;
-    box-shadow: var(--shadow-md) !important;
 }
 
 html.light-theme .form-control,
@@ -887,15 +761,13 @@ html.light-theme .form-select:focus {
 html.light-theme .dropdown-menu {
     background-color: #ffffff !important;
     border: 1px solid var(--border-color) !important;
-    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1) !important;
 }
 
 html.light-theme .dropdown-item {
     color: var(--text-body) !important;
 }
 
-html.light-theme .dropdown-item:hover,
-html.light-theme .dropdown-item:focus {
+html.light-theme .dropdown-item:hover {
     background-color: var(--bg-card-hover) !important;
     color: var(--text-heading) !important;
 }
@@ -903,28 +775,21 @@ html.light-theme .dropdown-item:focus {
 html.light-theme .modal-content {
     background-color: #ffffff !important;
     border: 1px solid var(--border-color) !important;
-    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15) !important;
 }
 
 html.light-theme .modal-header,
 html.light-theme .modal-footer {
     border-color: var(--border-color) !important;
-    background-color: #ffffff !important;
-    color: var(--text-heading) !important;
 }
 
-html.light-theme .modal-body {
-    background-color: #ffffff !important;
-    color: var(--text-body) !important;
+.border, 
+.border-top, 
+.border-bottom {
+    border-color: var(--border-color) !important;
 }
 
-html.light-theme .btn-close {
-    filter: none !important;
-    opacity: 0.6;
-}
-
-html.light-theme .btn-close:hover {
-    opacity: 1;
+.shadow-sm {
+    box-shadow: var(--shadow-sm) !important;
 }
 
 /* Dropdown Menu Dark Theme Override */
@@ -984,7 +849,7 @@ html.light-theme .btn-close:hover {
     color: var(--text-heading) !important;
 }
 
-html:not(.light-theme) .modal-header .btn-close {
+.modal-header .btn-close {
     filter: invert(1) grayscale(100%) brightness(200%);
 }
 
@@ -1290,6 +1155,20 @@ footer a:hover {
     color: var(--primary-color);
 }
 
+html.light-theme footer {
+    background-color: #e0f2fe;
+    color: var(--text-body);
+    border-top-color: rgba(37, 99, 235, 0.24);
+}
+
+html.light-theme footer a {
+    color: #1d4ed8;
+}
+
+html.light-theme footer a:hover {
+    color: #7c3aed;
+}
+
 /* ─── Helper Utilities ────────────────────────────────────────────────────── */
 .extra-small {
     font-size: 0.75rem;
@@ -1379,6 +1258,10 @@ footer a:hover {
     box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2) !important;
 }
 
+html.light-theme .sidebar-nav .nav-link.active {
+    color: #ffffff !important;
+}
+
 /* Menu Toggle Button Style */
 .btn-menu {
     color: var(--text-body) !important;
@@ -1399,7 +1282,7 @@ footer a:hover {
     background-color: var(--primary-light) !important;
 }
 
-html:not(.light-theme) .offcanvas .btn-close {
+.offcanvas .btn-close {
     filter: invert(1) grayscale(100%) brightness(200%);
 }
 
@@ -1665,6 +1548,60 @@ html:not(.light-theme) .offcanvas .btn-close {
     display: none !important;
 }
 
+/* Stats Banner Section Icons */
+.stats-banner-section {
+    background-color: #131126 !important;
+    border-top: 1px solid rgba(168, 85, 247, 0.08) !important;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.08) !important;
+    padding: 5rem 0 !important;
+}
+
+html.light-theme .stats-banner-section {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+
+.stat-icon-wrapper {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Navbar Notification Bell */
+.nav-notification-bell {
+    color: var(--text-body) !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+}
+
+.nav-notification-bell:hover {
+    color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    background-color: var(--primary-light) !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+}
+
+.nav-notification-bell .bi-bell {
+    font-size: 1.1rem;
+}
+
+#notifications-section {
+    scroll-margin-top: 6rem;
+}
+
 /* Card Wrapper Links */
 .card-wrapper-link {
     display: block;
@@ -1687,7 +1624,29 @@ html:not(.light-theme) .offcanvas .btn-close {
 }
 
 html.light-theme .card-item-title {
-    color: var(--text-heading) !important;
+    color: #7c3aed !important; /* Premium violet purple for light mode cards */
+}
+
+/* Contrasting Background for Recent Reports Feed Section */
+.recent-reports-section {
+    background-color: #17152b !important;
+    border-top: 1px solid rgba(168, 85, 247, 0.08) !important;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.08) !important;
+    padding: 8.5rem 0 !important;
+}
+
+html.light-theme .recent-reports-section {
+    background-color: var(--bg-card) !important;
+    background-image: url('../images/light2.png') !important;
+    background-size: cover !important;
+    background-position: center top !important;
+    background-repeat: no-repeat !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Taller sections to remove congested layout */
+.how-it-works-section {
+    padding: 8.5rem 0 !important;
 }
 
 /* =============================================================
@@ -1805,6 +1764,10 @@ html.light-theme .btn-chat-chip {
 html.light-theme .btn-chat-chip:hover {
     background-color: var(--primary-color) !important;
     color: #ffffff !important;
+}
+
+html.light-theme .text-light {
+    color: var(--text-body) !important;
 }
 
 /* =============================================================
@@ -1974,6 +1937,20 @@ html.light-theme .btn-chat-chip:hover {
     box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
 }
 
+html.light-theme .btn-match-space-back {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(37, 99, 235, 0.35);
+    color: #2563eb;
+    box-shadow: 0 4px 15px rgba(30, 64, 175, 0.14);
+}
+
+html.light-theme .btn-match-space-back:hover {
+    background: #eff6ff;
+    border-color: #2563eb;
+    color: #1d4ed8;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.24);
+}
+
 /* SVG Connection Paths */
 .match-space-lines {
     position: absolute;
@@ -2045,6 +2022,27 @@ html.light-theme .btn-chat-chip:hover {
     border-color: #06b6d4 !important;
     box-shadow: 0 20px 50px rgba(6, 182, 212, 0.5), 0 0 35px rgba(168, 85, 247, 0.4) !important;
     z-index: 100;
+}
+
+html.light-theme .initial-item-card {
+    background: rgba(245, 243, 255, 0.96);
+    border-color: rgba(168, 85, 247, 0.42);
+    box-shadow: 0 12px 35px rgba(76, 29, 149, 0.16), 0 0 25px rgba(168, 85, 247, 0.16);
+}
+
+html.light-theme .node-central,
+html.light-theme .node-match-card,
+html.light-theme .zero-matches-node {
+    background: rgba(245, 243, 255, 0.96);
+    color: var(--text-body);
+    border-color: rgba(168, 85, 247, 0.42);
+    box-shadow: 0 12px 30px rgba(76, 29, 149, 0.16), 0 0 22px rgba(168, 85, 247, 0.14);
+}
+
+html.light-theme .node-central .text-light,
+html.light-theme .node-match-card .text-light,
+html.light-theme .zero-matches-node .text-light {
+    color: var(--text-heading) !important;
 }
 
 .card-hint-pill {
@@ -2590,6 +2588,32 @@ html.light-theme .btn-chat-chip:hover {
     text-transform: uppercase;
 }
 
+html.light-theme .stat-card-glass {
+    background: rgba(219, 234, 254, 0.96);
+    border-color: rgba(37, 99, 235, 0.38);
+    box-shadow: 0 10px 30px rgba(30, 64, 175, 0.14);
+}
+
+html.light-theme #stats-section .row > div:nth-child(1) .stat-card-glass {
+    border-color: rgba(168, 85, 247, 0.38);
+}
+
+html.light-theme #stats-section .row > div:nth-child(2) .stat-card-glass {
+    border-color: rgba(6, 182, 212, 0.38);
+}
+
+html.light-theme #stats-section .row > div:nth-child(3) .stat-card-glass {
+    border-color: rgba(16, 185, 129, 0.38);
+}
+
+html.light-theme #stats-section .row > div:nth-child(4) .stat-card-glass {
+    border-color: rgba(245, 158, 11, 0.42);
+}
+
+html.light-theme .stat-label {
+    color: var(--text-body);
+}
+
 /* =============================================================
    HOW IT WORKS — CONNECTED PROCESS TIMELINE STYLES & ANIMATIONS
    ============================================================= */
@@ -2605,6 +2629,22 @@ html.light-theme .btn-chat-chip:hover {
     padding-top: 3.5rem !important;
     padding-bottom: 2.2rem !important;
     overflow: hidden;
+}
+
+html.light-theme .how-it-works-section {
+    background-color: var(--bg-main);
+    background-image: radial-gradient(circle at 18% 22%, rgba(168, 85, 247, 0.18) 0%, transparent 38%), radial-gradient(circle at 82% 58%, rgba(37, 99, 235, 0.18) 0%, transparent 42%), url('../images/light2.png');
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+}
+
+html.light-theme .how-it-works-section h2 {
+    color: var(--text-heading) !important;
+}
+
+html.light-theme .how-it-works-section p.text-muted {
+    color: var(--text-muted) !important;
 }
 
 .how-header-anim {
@@ -2884,6 +2924,27 @@ html.light-theme .btn-chat-chip:hover {
 /* =============================================================
    PREMIUM RECENT CAMPUS REPORTS SECTION & CARDS
    ============================================================= */
+html.light-theme .how-it-works-section .timeline-step-card,
+html.light-theme .how-it-works-section .step-theme-featured {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-color: rgba(168, 85, 247, 0.36) !important;
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.14), 0 0 22px rgba(168, 85, 247, 0.12) !important;
+}
+
+html.light-theme .how-it-works-section .step-badge-number {
+    color: var(--text-muted);
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.18);
+}
+
+html.light-theme .how-it-works-section .step-title {
+    color: var(--text-heading);
+}
+
+html.light-theme .how-it-works-section .step-description {
+    color: var(--text-body);
+}
+
 .recent-reports-section {
     position: relative;
     background-color: #121126 !important;
@@ -2894,14 +2955,55 @@ html.light-theme .btn-chat-chip:hover {
     overflow: hidden;
 }
 
+html.light-theme .recent-reports-section {
+    background-color: var(--bg-main) !important;
+    background-image: radial-gradient(circle at 18% 22%, rgba(168, 85, 247, 0.18) 0%, transparent 38%), radial-gradient(circle at 82% 58%, rgba(37, 99, 235, 0.18) 0%, transparent 42%)!important;
+    background-size: cover !important;
+    background-position: center top !important;
+    background-repeat: no-repeat !important;
+}
+
+html.light-theme .recent-reports-section .recent-filters-anim,
+html.light-theme .recent-reports-section .bg-white,
+html.light-theme .report-card-premium {
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: var(--text-body) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+html.light-theme .recent-reports-section .form-control,
+html.light-theme .recent-reports-section .form-select {
+    background-color: #ffffff !important;
+    color: var(--text-heading) !important;
+    border-color: var(--border-dark) !important;
+}
+
+html.light-theme .report-card-premium .card-item-title {
+    color: var(--text-heading) !important;
+}
+
+html.light-theme .report-card-premium .card-description,
+html.light-theme .report-card-premium .card-meta-row {
+    color: var(--text-body) !important;
+}
+
 .recent-reports-section h2 {
     color: #ffffff !important;
     font-size: 1.85rem;
     letter-spacing: -0.01em;
 }
 
+html.light-theme .recent-reports-section h2 {
+    color: var(--text-heading) !important;
+}
+
 .recent-reports-section p.text-muted {
     color: #94a3b8 !important;
+}
+
+html.light-theme .recent-reports-section p.text-muted {
+    color: var(--text-muted) !important;
 }
 
 /* Visually Simplified Compact Dark Translucent Filter Bar */
@@ -2961,7 +3063,8 @@ html.light-theme .btn-chat-chip:hover {
 /* Card Image Wrapper & Zoom */
 .card-img-wrapper {
     position: relative;
-    height: 180px;
+    height: auto;
+    aspect-ratio: 4 / 3;
     background-color: #0c0a1a;
     border-top-left-radius: 18px;
     border-top-right-radius: 18px;
@@ -2969,7 +3072,13 @@ html.light-theme .btn-chat-chip:hover {
 }
 
 .card-img-wrapper img {
+    object-fit: contain !important;
+    object-position: center;
     transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+html.light-theme .recent-reports-section .card-img-wrapper {
+    background-color: #e2e8f0;
 }
 
 .report-card-premium:hover .card-img-wrapper img {
@@ -3069,6 +3178,20 @@ html.light-theme .btn-chat-chip:hover {
     border-color: rgba(168, 85, 247, 0.7) !important;
     color: #ffffff !important;
     box-shadow: 0 0 15px rgba(168, 85, 247, 0.4) !important;
+}
+
+html.light-theme .recent-reports-section .btn-view-full-info {
+    background: #7c3aed !important;
+    border-color: #6d28d9 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(109, 40, 217, 0.22) !important;
+}
+
+html.light-theme .recent-reports-section .btn-view-full-info:hover {
+    background: #6d28d9 !important;
+    border-color: #5b21b6 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 15px rgba(124, 58, 237, 0.35) !important;
 }
 
 .btn-view-full-info .btn-arrow-icon {
@@ -3172,6 +3295,43 @@ html.light-theme .btn-chat-chip:hover {
     font-weight: 700;
 }
 
+html.light-theme .recent-reports-section .custom-select-trigger {
+    background-color: #ffffff !important;
+    border-color: rgba(37, 99, 235, 0.35) !important;
+    color: var(--text-heading) !important;
+}
+
+html.light-theme .recent-reports-section .custom-select-trigger:hover,
+html.light-theme .recent-reports-section .custom-select-wrapper.is-open .custom-select-trigger {
+    background-color: #eff6ff !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 12px rgba(37, 99, 235, 0.2) !important;
+}
+
+html.light-theme .recent-reports-section .custom-select-trigger .chevron-icon {
+    color: var(--primary-color);
+}
+
+html.light-theme .recent-reports-section .custom-select-menu {
+    background-color: #ffffff !important;
+    border-color: rgba(37, 99, 235, 0.3) !important;
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.16) !important;
+}
+
+html.light-theme .recent-reports-section .custom-select-option {
+    color: var(--text-body);
+}
+
+html.light-theme .recent-reports-section .custom-select-option:hover {
+    background-color: #ede9fe !important;
+    color: var(--text-heading) !important;
+}
+
+html.light-theme .recent-reports-section .custom-select-option.is-selected {
+    background-color: #7c3aed !important;
+    color: #ffffff !important;
+}
+
 /* Custom scrollbar for dropdown menu */
 .custom-select-menu::-webkit-scrollbar {
     width: 6px;
@@ -3183,569 +3343,6 @@ html.light-theme .btn-chat-chip:hover {
     background: #6B3FBF;
     border-radius: 10px;
 }
-
-/* =============================================================
-   COMPREHENSIVE LIGHT THEME OVERRIDES FOR DYNAMIC COMPONENTS
-   ============================================================= */
-
-/* ─── 1. My Match Space 3D Network ───────────────────────── */
-html.light-theme .match-space-stage {
-    background: transparent;
-}
-
-html.light-theme .btn-match-space-back {
-    background: #ffffff !important;
-    border: 1.5px solid var(--lost-color) !important;
-    color: var(--lost-color) !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
-}
-
-html.light-theme .btn-match-space-back:hover {
-    background: rgba(8, 145, 178, 0.1) !important;
-    border-color: var(--lost-hover) !important;
-    color: var(--lost-hover) !important;
-}
-
-html.light-theme .initial-item-card {
-    background: rgba(255, 255, 255, 0.95) !important;
-    border: 1.5px solid rgba(37, 99, 235, 0.25) !important;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08), 0 0 15px rgba(37, 99, 235, 0.08) !important;
-    color: var(--text-body) !important;
-}
-
-html.light-theme .initial-item-card h5,
-html.light-theme .initial-item-card h6 {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .initial-item-card:hover {
-    background: #ffffff !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12), 0 0 25px rgba(37, 99, 235, 0.2) !important;
-}
-
-html.light-theme .card-hint-pill {
-    background: rgba(37, 99, 235, 0.08) !important;
-    color: var(--primary-color) !important;
-    border-color: rgba(37, 99, 235, 0.25) !important;
-}
-
-html.light-theme .initial-item-card:hover .card-hint-pill {
-    background: rgba(8, 145, 178, 0.15) !important;
-    color: var(--lost-color) !important;
-    border-color: rgba(8, 145, 178, 0.4) !important;
-}
-
-html.light-theme .node-central {
-    background: #ffffff !important;
-    border: 2.5px solid var(--primary-color) !important;
-    box-shadow: 0 12px 35px rgba(37, 99, 235, 0.2), 0 0 20px rgba(8, 145, 178, 0.15) !important;
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .node-central h5 {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .central-pulse-ring {
-    border-color: rgba(37, 99, 235, 0.4) !important;
-}
-
-html.light-theme .central-pulse-ring-2 {
-    border-color: rgba(8, 145, 178, 0.3) !important;
-}
-
-html.light-theme .node-match-card {
-    background: rgba(255, 255, 255, 0.95) !important;
-    border: 1.5px solid var(--border-color) !important;
-    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08) !important;
-    color: var(--text-body) !important;
-}
-
-html.light-theme .node-match-card .text-light {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .node-match-card:hover {
-    background: #ffffff !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12), 0 0 20px rgba(37, 99, 235, 0.2) !important;
-}
-
-html.light-theme .node-match-high {
-    border-color: var(--lost-color) !important;
-    box-shadow: 0 10px 30px rgba(8, 145, 178, 0.15) !important;
-}
-
-html.light-theme .node-match-med {
-    border-color: rgba(37, 99, 235, 0.4) !important;
-    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12) !important;
-}
-
-html.light-theme .node-match-low {
-    border-color: var(--border-color) !important;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05) !important;
-}
-
-html.light-theme .circular-chart .circle-bg {
-    stroke: rgba(0, 0, 0, 0.08) !important;
-}
-
-html.light-theme .ring-score-text {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .zero-matches-node {
-    background: rgba(255, 255, 255, 0.95) !important;
-    border: 1.5px dashed var(--primary-color) !important;
-    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.1) !important;
-    color: var(--text-body) !important;
-}
-
-html.light-theme .zero-matches-node .text-light {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .bg-purple-glow {
-    background: rgba(37, 99, 235, 0.1) !important;
-}
-
-html.light-theme .text-purple {
-    color: var(--primary-color) !important;
-}
-
-/* ─── 2. Live Statistics Banner ───────────────────────────── */
-html.light-theme .stats-banner-section {
-    background: #f1f5f9 !important;
-    background-color: #f1f5f9 !important;
-    border-top: 1px solid var(--border-color) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-}
-
-html.light-theme .stats-badge-text {
-    color: var(--primary-color) !important;
-}
-
-html.light-theme .stats-banner-section h2 {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .stat-card-glass {
-    background: #ffffff !important;
-    border: 1.5px solid var(--border-color) !important;
-    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05) !important;
-}
-
-html.light-theme .stat-card-glass:hover {
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08) !important;
-}
-
-html.light-theme .stat-label {
-    color: var(--text-muted) !important;
-}
-
-/* ─── 3. How FindIt Works Connected Timeline ──────────────── */
-html.light-theme .how-it-works-section {
-    background-color: #ffffff !important;
-    background-image: none !important;
-    border-top: 1px solid var(--border-color) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-}
-
-html.light-theme .how-it-works-section h2 {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .how-it-works-section p.text-muted {
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .timeline-step-card {
-    background: #f8fafc !important;
-    border: 1.5px solid var(--border-color) !important;
-    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
-}
-
-html.light-theme .timeline-step-card:hover {
-    background: #ffffff !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1) !important;
-}
-
-html.light-theme .step-theme-featured {
-    background: #ffffff !important;
-    border: 2px solid var(--primary-color) !important;
-    box-shadow: 0 8px 30px rgba(37, 99, 235, 0.12) !important;
-}
-
-html.light-theme .step-title {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .step-description {
-    color: var(--text-body) !important;
-}
-
-html.light-theme .step-badge-number {
-    background: rgba(0, 0, 0, 0.04) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .timeline-line-track {
-    background: rgba(0, 0, 0, 0.08) !important;
-}
-
-/* ─── 4. Recent Campus Reports Section ────────────────────── */
-html.light-theme .recent-reports-section {
-    background-color: #f8fafc !important;
-    background-image: none !important;
-    border-top: 1px solid var(--border-color) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-}
-
-html.light-theme .recent-reports-section h2 {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .recent-reports-section p.text-muted {
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .recent-reports-section .recent-filters-anim,
-html.light-theme .recent-reports-section .bg-white {
-    background: #ffffff !important;
-    border: 1px solid var(--border-color) !important;
-    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05) !important;
-}
-
-html.light-theme .recent-reports-section .form-control,
-html.light-theme .recent-reports-section .form-select {
-    background-color: #ffffff !important;
-    border: 1px solid var(--border-dark) !important;
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .recent-reports-section .form-control::placeholder {
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .report-card-premium {
-    background: #ffffff !important;
-    border: 1px solid var(--border-color) !important;
-    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05) !important;
-}
-
-html.light-theme .report-card-premium:hover {
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1) !important;
-}
-
-html.light-theme .card-img-wrapper {
-    background-color: #f1f5f9 !important;
-}
-
-html.light-theme .card-img-overlay-gradient {
-    background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.95) 100%) !important;
-}
-
-html.light-theme .card-item-title {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .card-description {
-    color: var(--text-body) !important;
-}
-
-html.light-theme .card-meta-row {
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .btn-view-full-info {
-    background: var(--primary-light) !important;
-    border: 1px solid var(--border-color) !important;
-    color: var(--primary-color) !important;
-}
-
-html.light-theme .btn-view-full-info:hover {
-    background: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
-}
-
-/* ─── 5. Custom Themed Dropdowns in Light Theme ──────────── */
-html.light-theme .custom-select-trigger {
-    background-color: #ffffff !important;
-    border: 1px solid var(--border-dark) !important;
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .custom-select-trigger:hover,
-html.light-theme .custom-select-wrapper.is-open .custom-select-trigger {
-    background-color: #f8fafc !important;
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
-}
-
-html.light-theme .custom-select-trigger .chevron-icon {
-    color: var(--primary-color) !important;
-}
-
-html.light-theme .custom-select-menu {
-    background-color: #ffffff !important;
-    border: 1px solid var(--border-color) !important;
-    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12) !important;
-}
-
-html.light-theme .custom-select-option {
-    color: var(--text-body) !important;
-}
-
-html.light-theme .custom-select-option:hover {
-    background-color: #f1f5f9 !important;
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .custom-select-option.is-selected {
-    background-color: var(--primary-light) !important;
-    color: var(--primary-color) !important;
-    font-weight: 700;
-}
-
-html.light-theme .custom-select-menu::-webkit-scrollbar-track {
-    background: #f8fafc;
-}
-html.light-theme .custom-select-menu::-webkit-scrollbar-thumb {
-    background: var(--border-dark);
-}
-
-/* ─── 6. Authentication Modals & Pages ───────────────────── */
-html.light-theme .auth-modal-overlay {
-    background: rgba(15, 23, 42, 0.45) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-html.light-theme .auth-modal-card {
-    background: #ffffff !important;
-    border: 1px solid var(--border-color) !important;
-    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15) !important;
-    color: var(--text-body) !important;
-}
-
-html.light-theme .auth-header {
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(6, 182, 212, 0.08) 100%) !important;
-    border-bottom: 1px solid var(--border-color) !important;
-}
-
-html.light-theme .auth-header h4 {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .auth-header p {
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .auth-modal-close {
-    background: rgba(0, 0, 0, 0.05) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .auth-modal-close:hover {
-    background: rgba(239, 68, 68, 0.1) !important;
-    border-color: rgba(239, 68, 68, 0.3) !important;
-    color: #ef4444 !important;
-}
-
-html.light-theme .auth-modal-card .form-label {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .auth-modal-card .input-group-text {
-    background-color: #f8fafc !important;
-    border: 1px solid var(--border-dark) !important;
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .auth-modal-card .form-control,
-html.light-theme .auth-modal-card .form-select {
-    background-color: #ffffff !important;
-    border: 1px solid var(--border-dark) !important;
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .auth-modal-card .form-control::placeholder {
-    color: var(--text-muted) !important;
-}
-
-html.light-theme .auth-modal-card .btn-demo-user {
-    background-color: #f8fafc !important;
-    border: 1px solid var(--border-color) !important;
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .auth-modal-card .btn-demo-user:hover {
-    background-color: var(--primary-light) !important;
-    border-color: var(--primary-color) !important;
-    color: var(--primary-color) !important;
-}
-
-html.light-theme .auth-modal-card .text-dark {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme .auth-modal-card .bg-light {
-    background-color: #f8fafc !important;
-    border-color: var(--border-color) !important;
-}
-
-/* ─── 7. FindIt Secure Match Chat ────────────────────────── */
-html.light-theme .chat-pane-header,
-html.light-theme .chat-chips-container,
-html.light-theme .chat-input-container,
-html.light-theme .chat-privacy-box {
-    background-color: #f8fafc !important;
-    border-color: var(--border-color) !important;
-}
-
-html.light-theme .chat-bubble-other {
-    background-color: #f1f5f9 !important;
-    color: #0f172a !important;
-    border-color: #cbd5e1 !important;
-}
-
-html.light-theme .btn-chat-chip {
-    background-color: #ffffff !important;
-    color: #334155 !important;
-    border-color: #cbd5e1 !important;
-}
-
-html.light-theme .btn-chat-chip:hover {
-    background-color: var(--primary-color) !important;
-    color: #ffffff !important;
-    border-color: var(--primary-color) !important;
-}
-
-html.light-theme .btn-chat-contact {
-    background-color: var(--primary-light) !important;
-    color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-}
-
-html.light-theme .btn-chat-contact:hover {
-    background-color: var(--primary-color) !important;
-    color: #ffffff !important;
-}
-
-html.light-theme .chat-input-container input,
-html.light-theme .chat-input-container textarea {
-    background-color: #ffffff !important;
-    color: var(--text-heading) !important;
-    border: 1px solid var(--border-dark) !important;
-}
-
-html.light-theme #chat-messages-container::-webkit-scrollbar-thumb {
-    background: rgba(37, 99, 235, 0.2);
-}
-
-html.light-theme #chat-messages-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(37, 99, 235, 0.4);
-}
-
-/* ─── 8. Dashboard & Notifications ───────────────────────── */
-.notification-item-card {
-    background-color: #120f26;
-    border: 1px solid rgba(168, 85, 247, 0.25);
-    color: var(--text-body);
-}
-
-.notification-message-text {
-    color: #e2e8f0;
-}
-
-html.light-theme .notification-item-card {
-    background-color: #ffffff !important;
-    border-color: var(--border-color) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-}
-
-html.light-theme .notification-message-text {
-    color: var(--text-heading) !important;
-}
-
-html.light-theme #notifications-container {
-    background-color: #f8fafc !important;
-    border-color: var(--border-color) !important;
-}
-
-/* ─── 9. Progress Bars, Tables & Footer ───────────────────── */
-html.light-theme .progress {
-    background-color: #e2e8f0 !important;
-}
-
-html.light-theme .table {
-    --bs-table-color: var(--text-body) !important;
-    --bs-table-bg: #ffffff !important;
-    --bs-table-border-color: var(--border-color) !important;
-    --bs-table-hover-color: var(--text-heading) !important;
-    --bs-table-hover-bg: #f8fafc !important;
-    background-color: #ffffff !important;
-}
-
-html.light-theme thead.table-light,
-html.light-theme .table thead th {
-    background-color: #f1f5f9 !important;
-    color: var(--text-heading) !important;
-    border-bottom: 2px solid var(--border-color) !important;
-}
-
-html.light-theme .table td,
-html.light-theme .table th {
-    background-color: #ffffff !important;
-    color: var(--text-body) !important;
-}
-
-html.light-theme tr:hover td {
-    background-color: #f8fafc !important;
-}
-
-html.light-theme footer {
-    background-color: #f1f5f9 !important;
-    color: var(--text-muted) !important;
-    border-top: 1px solid var(--border-color) !important;
-}
-
-html.light-theme footer a {
-    color: var(--text-body) !important;
-}
-
-html.light-theme footer a:hover {
-    color: var(--primary-color) !important;
-}
-
-/* ─── 10. Auth Forms Password Strength Box ────────────────── */
-html.light-theme #password-strength-box {
-    background: #f8fafc !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-body) !important;
-}
-
-html.light-theme #password-strength-box .text-muted {
-    color: var(--text-muted) !important;
-}
-
-html.light-theme #password-strength-box .progress {
-    background: #e2e8f0 !important;
-}
-
-html.light-theme .form-check-label {
-    color: var(--text-muted) !important;
-}
-
-
 
 
 

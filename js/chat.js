@@ -30,10 +30,24 @@ function initChatPage() {
         return;
     }
 
+    // Resolve participant emails from the linked reports as a fallback for older chats.
+    let reports = getReports();
+    let lostReport = reports.find(r => r.id === currentChat.lostItemId);
+    let foundReport = reports.find(r => r.id === currentChat.foundItemId);
+    let lostUserEmail = (lostReport && lostReport.postedByEmail) || currentChat.lostUserEmail || "";
+    let finderEmail = (foundReport && foundReport.postedByEmail) || currentChat.finderEmail || "";
+
+    currentChat.lostUserEmail = lostUserEmail;
+    currentChat.finderEmail = finderEmail;
+    if (!currentChat.lostUserEmail || !currentChat.finderEmail) {
+        showChatError("Chat participants could not be identified.");
+        return;
+    }
+
     // Privacy & Access Control Check: Only lost item owner or finder can access!
     let myEmail = currentUser.useremail.toLowerCase().trim();
-    let isLostOwner = currentChat.lostUserEmail.toLowerCase().trim() === myEmail;
-    let isFinder = currentChat.finderEmail.toLowerCase().trim() === myEmail;
+    let isLostOwner = lostUserEmail.toLowerCase().trim() === myEmail;
+    let isFinder = finderEmail.toLowerCase().trim() === myEmail;
 
     if (!isLostOwner && !isFinder) {
         showChatError("Access Restricted. This chat is private to the lost item owner and finder.");
@@ -47,6 +61,7 @@ function initChatPage() {
     renderChatSidebar();
     renderChatHeader();
     renderFinderActionPanel(isFinder);
+    renderQuickActionChips();
     renderRecoveryStatusBar();
     renderChatMessages();
 
@@ -137,6 +152,15 @@ function renderFinderActionPanel(isFinder) {
     } else {
         panel.classList.add("d-none");
     }
+}
+
+function renderQuickActionChips() {
+    const currentUser = getCurrentUser();
+    const chip = document.getElementById("quick-chip-ask-item");
+    if (!currentUser || !chip || !currentChat) return;
+
+    const isLostOwner = (currentChat.lostUserEmail || "").toLowerCase().trim() === currentUser.useremail.toLowerCase().trim();
+    chip.classList.toggle("d-none", !isLostOwner);
 }
 
 function renderRecoveryStatusBar() {

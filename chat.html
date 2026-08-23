@@ -14,7 +14,7 @@
 <body data-page="chat">
 
     <!-- Header / Navbar -->
-    <nav class="navbar navbar-custom">
+    <nav class="navbar navbar-custom sticky-top">
         <div class="container">
             <div class="d-flex align-items-center">
                 <button class="btn btn-menu me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
@@ -182,7 +182,7 @@
 
                         <!-- Quick Action Chips -->
                         <div class="p-2.5 px-3 border-top chat-chips-container d-flex gap-2 overflow-auto" style="white-space: nowrap;">
-                            <button type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Ask About Item')">
+                            <button id="quick-chip-ask-item" type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Ask About Item')">
                                 💬 Ask About Item
                             </button>
                             <button type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Request Verification')">

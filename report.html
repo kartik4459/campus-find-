@@ -14,7 +14,7 @@
 <body data-page="report">
 
     <!-- Header / Navbar -->
-    <nav class="navbar navbar-custom">
+    <nav class="navbar navbar-custom sticky-top">
         <div class="container">
             <div class="d-flex align-items-center">
                 <!-- Hamburger menu button -->
@@ -56,7 +56,6 @@
                 <a class="nav-link active" href="report.html"><i class="bi bi-plus-square me-2"></i>Report Item</a>
                 <a class="nav-link" href="matches.html"><i class="bi bi-cpu me-2"></i>Match Engine</a>
                 <a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
-                <a class="nav-link" href="lost-found.html"><i class="bi bi-geo-alt me-2"></i>Lost &amp; Found Map</a>
                 <a class="nav-link text-warning" href="admin.html"><i class="bi bi-shield-lock me-2"></i>Admin</a>
             </div>
             
@@ -127,7 +126,6 @@
                                     <option value="Accessories">Accessories</option>
                                     <option value="Other">Other</option>
                                 </select>
-                                <input type="text" id="category-other" class="form-control mt-2 d-none" placeholder="Type the category" aria-label="Other category">
                             </div>
                             <div class="col-md-6">
                                 <label for="color" class="form-label fw-semibold">Primary Color <span class="text-danger">*</span></label>
@@ -143,8 +141,17 @@
                                     <option value="Grey">Grey</option>
                                     <option value="Other">Other</option>
                                 </select>
-                                <input type="text" id="color-other" class="form-control mt-2 d-none" placeholder="Type the primary color" aria-label="Other primary color">
                             </div>
+                        </div>
+
+                        <div id="custom-category-container" class="mb-3 d-none">
+                            <label for="custom-category" class="form-label fw-semibold">Custom Category <span class="text-danger">*</span></label>
+                            <input type="text" id="custom-category" class="form-control" placeholder="Enter your own category e.g. Headphones, Bottle, Watch">
+                        </div>
+
+                        <div id="custom-color-container" class="mb-3 d-none">
+                            <label for="custom-color" class="form-label fw-semibold">Custom Color <span class="text-danger">*</span></label>
+                            <input type="text" id="custom-color" class="form-control" placeholder="Enter the item color e.g. Silver, Maroon, Multi-color">
                         </div>
 
                         <div class="row g-3 mb-3">
@@ -161,6 +168,7 @@
                                     <option value="Auditorium">Auditorium</option>
                                     <option value="Laboratory">Laboratory</option>
                                     <option value="Admin Block">Admin Block</option>
+                                    <option value="Other">Other</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -169,18 +177,14 @@
                             </div>
                         </div>
 
+                        <div id="custom-zone-container" class="mb-3 d-none">
+                            <label for="custom-zone" class="form-label fw-semibold">Custom Campus Location <span class="text-danger">*</span></label>
+                            <input type="text" id="custom-zone" class="form-control" placeholder="Enter the exact campus location e.g. Gate 3, Flower Garden, Engineering Lab">
+                        </div>
+
                         <div class="mb-3">
                             <label for="description" class="form-label fw-semibold">Item Description <span class="text-danger">*</span></label>
                             <textarea id="description" rows="3" class="form-control" placeholder="Provide distinct description words..." required></textarea>
-                        </div>
-
-                        <!-- Hidden Details Field (Only for Lost Items) -->
-                        <div class="p-3 bg-light rounded-3 border mb-4" id="hidden-details-container">
-                            <label for="hiddenDetails" class="form-label fw-bold text-dark mb-1">
-                                <i class="bi bi-shield-lock text-primary me-1"></i>Hidden Identifying Details (Owner Proof)
-                            </label>
-                            <input type="text" id="hiddenDetails" class="form-control" placeholder="e.g. Engraved initials IS, Dell charger inside...">
-                            <small class="text-muted" style="font-size: 0.75rem;">Private details to help verify your ownership if someone finds your item.</small>
                         </div>
 
                         <div class="mb-4">
