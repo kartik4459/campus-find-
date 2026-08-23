@@ -362,10 +362,32 @@ function getNotifications(userEmail) {
     });
 }
 
+function getUnreadNotificationCount(userEmail) {
+    if (!userEmail) return 0;
+    var notifs = getNotifications(userEmail);
+    return notifs.filter(function(n) {
+        return n.read !== true; // treat undefined (legacy) or false as unread
+    }).length;
+}
+
 function sendNotification(notification) {
+    if (!notification) return;
+    if (notification.read === undefined) {
+        notification.read = false;
+    }
     var all = safeParseJSON(localStorage.getItem("campus_notifications"), []);
     all.unshift(notification);
     localStorage.setItem("campus_notifications", JSON.stringify(all));
+}
+
+function markNotificationAsRead(notifId) {
+    if (!notifId) return;
+    var all = safeParseJSON(localStorage.getItem("campus_notifications"), []);
+    var idx = all.findIndex(function(n) { return n.id === notifId; });
+    if (idx >= 0) {
+        all[idx].read = true;
+        localStorage.setItem("campus_notifications", JSON.stringify(all));
+    }
 }
 
 function clearNotifications(userEmail) {

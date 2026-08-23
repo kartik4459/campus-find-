@@ -152,9 +152,9 @@
 
                         <!-- Finder-Only Action Panel (Approve / Reject / Request More Info) -->
                         <div id="finder-action-bar" class="p-3 border-bottom bg-primary-subtle text-primary border-primary-subtle d-none">
-                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                                 <div class="extra-small fw-bold">
-                                    <i class="bi bi-shield-check me-1"></i>Finder Action Panel:
+                                    <i class="bi bi-shield-check me-1"></i>Finder Ownership Review Panel:
                                 </div>
                                 <div class="d-flex gap-2 flex-wrap">
                                     <button type="button" class="btn btn-sm btn-success fw-bold py-1 px-2.5 extra-small" onclick="finderApproveOwnership()">
@@ -168,6 +168,9 @@
                                     </button>
                                 </div>
                             </div>
+                            <div id="finder-claim-proof-display" class="p-2.5 bg-white text-dark rounded border extra-small">
+                                <!-- Claimant answer populated dynamically by chat.js -->
+                            </div>
                         </div>
 
                         <!-- Recovery Arranged / Item Recovered Header Banner -->
@@ -175,35 +178,43 @@
                             <!-- Populated dynamically by chat.js -->
                         </div>
 
+                        <!-- Safety Tip Banner (Shown After Approval) -->
+                        <div id="chat-safety-tip" class="px-3 py-2 bg-dark-subtle text-muted extra-small border-bottom d-none">
+                            <i class="bi bi-shield-lock-fill text-success me-1"></i>
+                            <strong>Safety Reminder:</strong> Avoid sharing passwords, OTPs, or unnecessary personal information. Prefer meeting in a safe, public campus location.
+                        </div>
+
                         <!-- Scrollable Message Body -->
                         <div id="chat-messages-container" class="flex-grow-1 p-4 overflow-auto d-flex flex-column gap-3">
                             <!-- Messages populated by chat.js -->
                         </div>
 
+                        <!-- Verification Pending / Locked State Banner (When Pending/Rejected) -->
+                        <div id="chat-lock-banner" class="p-3 border-top bg-warning bg-opacity-10 text-dark d-none">
+                            <!-- Banner text populated by chat.js -->
+                        </div>
+
                         <!-- Quick Action Chips -->
-                        <div class="p-2.5 px-3 border-top chat-chips-container d-flex gap-2 overflow-auto" style="white-space: nowrap;">
-                            <button id="quick-chip-ask-item" type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Ask About Item')">
-                                💬 Ask About Item
+                        <div id="chat-chips-row" class="p-2.5 px-3 border-top chat-chips-container d-flex gap-2 overflow-auto" style="white-space: nowrap;">
+                            <button id="quick-chip-ask-item" type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Suggest Meeting Spot')">
+                                📍 Suggest Meeting Spot
                             </button>
-                            <button type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Request Verification')">
-                                🔍 Request Verification
+                            <button type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Suggest Pickup Time')">
+                                🕐 Suggest Pickup Time
                             </button>
-                            <button type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Arrange Recovery')">
-                                📍 Arrange Recovery
-                            </button>
-                            <button type="button" class="btn btn-sm btn-chat-chip-danger rounded-pill extra-small fw-bold" onclick="sendQuickChip('Report Suspicious Claim')">
-                                ⚠️ Report Suspicious
+                            <button type="button" class="btn btn-sm btn-chat-chip rounded-pill extra-small fw-bold" onclick="sendQuickChip('Ask Question')">
+                                💬 Ask Question
                             </button>
                         </div>
 
                         <!-- Input Bar -->
-                        <div class="p-3 border-top chat-input-container rounded-bottom-4">
+                        <div id="chat-input-row" class="p-3 border-top chat-input-container rounded-bottom-4">
                             <form id="chat-form" onsubmit="handleSendMessage(event)" class="d-flex align-items-center gap-2">
                                 <button type="button" class="btn btn-outline-secondary border-0 text-muted" title="Attachment helper" onclick="sendQuickChip('Share Verification Photo')">
                                     <i class="bi bi-paperclip fs-5"></i>
                                 </button>
                                 <input type="text" id="chat-input" class="form-control bg-input border-secondary-subtle text-light rounded-pill px-3 py-2" placeholder="Type a message..." required autocomplete="off">
-                                <button type="submit" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; padding: 0;">
+                                <button type="submit" id="chat-send-btn" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; padding: 0;">
                                     <i class="bi bi-send-fill fs-6"></i>
                                 </button>
                             </form>

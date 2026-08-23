@@ -72,7 +72,7 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
                 <div>
                     <h2 class="fw-bold mb-1">Welcome back, <span id="dash-user-name" class="text-primary">Student</span> 👋</h2>
-                    <p class="text-muted mb-0">Verify hidden details, approve claims, and schedule handover meetings.</p>
+                    <p class="text-muted mb-0">Here's what's happening with your lost & found reports.</p>
                 </div>
                 <div class="d-flex gap-2">
                     <a href="report.html" class="btn btn-lost btn-sm">
@@ -84,31 +84,90 @@
                 </div>
             </div>
 
-            <div class="row g-4">
-                <!-- Notifications Column -->
-                <div class="col-lg-4">
-                    <div id="notifications-section" class="bg-white rounded-3 border shadow-sm p-4 h-100">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+            <!-- Quick Statistics Summary Cards Row -->
+            <div class="row g-3 mb-4" id="dash-stats-row">
+                <div class="col-12 col-sm-4">
+                    <div class="dash-stat-card d-flex align-items-center gap-3">
+                        <div class="dash-stat-icon icon-lost-bg">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                        </div>
+                        <div>
+                            <div class="dash-stat-number" id="dash-stat-lost-count">0</div>
+                            <div class="dash-stat-label">Lost Items</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4">
+                    <div class="dash-stat-card d-flex align-items-center gap-3">
+                        <div class="dash-stat-icon icon-found-bg">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div>
+                            <div class="dash-stat-number" id="dash-stat-found-count">0</div>
+                            <div class="dash-stat-label">Found Items</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4">
+                    <div class="dash-stat-card d-flex align-items-center gap-3">
+                        <div class="dash-stat-icon icon-match-bg">
+                            <i class="bi bi-cpu-fill"></i>
+                        </div>
+                        <div>
+                            <div class="dash-stat-number" id="dash-stat-matches-count">0</div>
+                            <div class="dash-stat-label">Potential Matches</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 1: Full-Width Notification Center -->
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div id="notifications-section" class="bg-white rounded-3 border shadow-sm p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                             <h5 class="fw-bold mb-0 text-dark">
-                                <i class="bi bi-bell-fill text-warning me-2"></i>Notifications
+                                <i class="bi bi-bell-fill text-warning me-2"></i>Notification Center
                             </h5>
                             <button id="btn-clear-notifications" class="btn btn-sm btn-outline-danger py-1 px-2.5 small fw-semibold" onclick="handleClearAllNotifications()" title="Delete all notifications">
                                 <i class="bi bi-trash3 me-1"></i>Delete All
                             </button>
                         </div>
-                        <div id="notifications-container" class="rounded border p-2" style="max-height: 380px; overflow-y: auto;">
+                        
+                        <!-- Notification Category Tabs -->
+                        <div class="nav nav-pills bg-light p-1 rounded-3 mb-3 gap-1 extra-small fw-bold border flex-nowrap overflow-x-auto" id="notif-category-tabs">
+                            <button class="nav-link active py-1.5 px-3 rounded-2" id="notif-tab-all" onclick="switchNotifTab('all')">
+                                All
+                            </button>
+                            <button class="nav-link py-1.5 px-3 rounded-2" id="notif-tab-unread" onclick="switchNotifTab('unread')">
+                                Unread
+                            </button>
+                            <button class="nav-link py-1.5 px-3 rounded-2" id="notif-tab-action" onclick="switchNotifTab('action')">
+                                🔴 Action Needed
+                            </button>
+                            <button class="nav-link py-1.5 px-3 rounded-2" id="notif-tab-messages" onclick="switchNotifTab('messages')">
+                                💬 Messages
+                            </button>
+                            <button class="nav-link py-1.5 px-3 rounded-2" id="notif-tab-activity" onclick="switchNotifTab('activity')">
+                                📋 Activity
+                            </button>
+                        </div>
+
+                        <div id="notifications-container" class="rounded border p-2" style="max-height: 440px; overflow-y: auto;">
                             <!-- Dynamic rendering via app.js -->
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Claims & Reports Main Section -->
-                <div class="col-lg-8">
+            <!-- Row 2: Alerts & Ownership Claims Grid -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
                     <!-- Found Item Alerts Received -->
                     <div class="bg-white rounded-3 border shadow-sm p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="fw-bold mb-0 text-dark">
-                                <i class="bi bi-bell-fill text-warning me-2"></i>Found Item Alerts (Provide Hidden Details to Founder)
+                                <i class="bi bi-bell-fill text-warning me-2"></i>Found Item Alerts
                             </h5>
                             <span class="badge bg-warning-subtle text-dark border rounded-pill px-2.5 py-1" id="found-notices-badge">0 Alerts</span>
                         </div>
@@ -118,29 +177,55 @@
                     </div>
 
                     <!-- Received Claims Needing Approval (For Founders) -->
-                    <div class="bg-white rounded-3 border shadow-sm p-4 mb-4">
-                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-shield-check text-success me-2"></i>Claim Requests Received (Verify Hidden Details & Schedule Meeting)</h5>
+                    <div class="bg-white rounded-3 border shadow-sm p-4">
+                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-shield-check text-success me-2"></i>Ownership Claim Requests</h5>
                         <div id="received-claims-container">
                             <!-- Dynamic -->
                         </div>
                     </div>
+                </div>
 
+                <div class="col-lg-6">
                     <!-- Sent Claims & Handover Status -->
-                    <div class="bg-white rounded-3 border shadow-sm p-4 mb-4">
-                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-send-check text-primary me-2"></i>My Sent Claim Requests & Meeting Details</h5>
+                    <div class="bg-white rounded-3 border shadow-sm p-4 h-100">
+                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-send-check text-primary me-2"></i>My Ownership Claims</h5>
                         <div id="submitted-claims-container">
                             <!-- Dynamic -->
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- My Active Reports -->
-                    <div class="bg-white rounded-3 border shadow-sm p-4">
-                        <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-collection me-2 text-primary"></i>My Submitted Reports</h5>
-                        <div id="my-lost-container">
-                            <!-- Dynamic -->
+            <!-- Row 3: Your Lost & Found Items Grid -->
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <!-- Your Lost Items Section -->
+                    <div class="bg-white rounded-3 border shadow-sm p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-exclamation-circle text-cyan me-2"></i>Your Lost Items</h5>
+                            <a href="report.html" class="btn btn-sm btn-outline-cyan rounded-pill px-3 fw-bold"><i class="bi bi-plus-lg me-1"></i>Report Lost</a>
+                        </div>
+                        <div id="my-lost-items-container">
+                            <!-- Dynamic rendering via app.js -->
                         </div>
                     </div>
                 </div>
+
+                <div class="col-lg-6">
+                    <!-- Your Found Items Section -->
+                    <div class="bg-white rounded-3 border shadow-sm p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-check-circle text-success me-2"></i>Your Found Items</h5>
+                            <a href="report-found.html" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold"><i class="bi bi-plus-lg me-1"></i>Report Found</a>
+                        </div>
+                        <div id="my-found-items-container">
+                            <!-- Dynamic rendering via app.js -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden compatibility hook container for legacy script bindings -->
+                <div id="my-lost-container" class="d-none"></div>
             </div>
         </div>
     </main>
@@ -201,6 +286,46 @@
                         <button type="submit" class="btn btn-success w-100 fw-bold py-2">
                             <i class="bi bi-check2-circle me-1"></i>Approve Claim & Send Schedule to Claimant
                         </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Approve Ownership Claim Modal (No Meeting Schedule Inputs) -->
+    <div class="modal fade" id="approveClaimModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-success text-white border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-shield-check me-2"></i>Approve Ownership Claim
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase tracking-wider">
+                            <i class="bi bi-person-fill text-primary me-1"></i>Item & Claimant Details
+                        </label>
+                        <div id="modal-approve-claimant-display" class="p-3 bg-light rounded-3 border small text-dark"></div>
+                    </div>
+
+                    <form id="approve-claim-form" onsubmit="handleApproveClaimSubmit(event)">
+                        <input type="hidden" id="modal-approve-claim-id">
+
+                        <div class="alert alert-success bg-success-subtle text-success-emphasis border-0 shadow-sm mb-3 small">
+                            <i class="bi bi-check-circle-fill me-1"></i>
+                            Approving this claim will verify ownership and unlock chat so you can coordinate the return.
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-danger fw-bold flex-fill py-2" data-bs-dismiss="modal" onclick="openRejectModalFromApprove()">
+                                <i class="bi bi-x-circle me-1"></i>✕ Reject Claim
+                            </button>
+                            <button type="submit" class="btn btn-success fw-bold flex-fill py-2">
+                                <i class="bi bi-check-circle-fill me-1"></i>✓ Approve Claim
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>

@@ -78,41 +78,58 @@
                 <div id="instruction-card" class="mb-4"></div>
 
                 <div class="form-card">
-                    <form id="report-form">
+                    <!-- Step Progress Stepper Bar -->
+                    <div class="form-stepper" id="report-stepper">
+                        <div class="form-stepper-progress" id="stepper-progress-bar"></div>
+                        <button type="button" class="stepper-item active" data-step="1" onclick="jumpToStep(1)">
+                            <div class="stepper-circle">1</div>
+                            <div class="stepper-label">Item</div>
+                        </button>
+                        <button type="button" class="stepper-item" data-step="2" onclick="jumpToStep(2)">
+                            <div class="stepper-circle">2</div>
+                            <div class="stepper-label">Details</div>
+                        </button>
+                        <button type="button" class="stepper-item" data-step="3" onclick="jumpToStep(3)">
+                            <div class="stepper-circle">3</div>
+                            <div class="stepper-label">Location</div>
+                        </button>
+                        <button type="button" class="stepper-item" data-step="4" onclick="jumpToStep(4)">
+                            <div class="stepper-circle">4</div>
+                            <div class="stepper-label">Photo</div>
+                        </button>
+                        <button type="button" class="stepper-item" data-step="5" onclick="jumpToStep(5)">
+                            <div class="stepper-circle">5</div>
+                            <div class="stepper-label">Review</div>
+                        </button>
+                    </div>
+
+                    <form id="report-form" novalidate>
                         <input type="hidden" id="report-type-input" name="type" value="lost">
 
-                        <!-- Navigation to Found Report Page -->
-                        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 bg-light rounded-3 border">
-                            <div>
-                                <h6 class="fw-bold mb-1 text-heading">Found something instead?</h6>
-                                <p class="text-muted small mb-0">Log a found item so the owner can search for it.</p>
+                        <!-- Step 1: Item & Report Type -->
+                        <div class="form-step-pane" id="step-pane-1">
+                            <div class="step-pane-header">
+                                <h5 class="fw-bold mb-1"><i class="bi bi-1-circle text-primary me-2"></i>Step 1 — Item Overview</h5>
+                                <p class="text-muted small mb-0">Select report type, title, and item category.</p>
                             </div>
-                            <a href="report-found.html" class="btn btn-sm btn-found rounded-pill px-3 fw-bold">
-                                <i class="bi bi-check-circle me-1"></i>I Found Something
-                            </a>
-                        </div>
 
-                        <!-- Item Details -->
-                        <h5 class="fw-bold mb-3"><i class="bi bi-tag text-primary me-2"></i>Item Characteristics</h5>
-
-                        <div class="mb-3">
-                            <label for="itemName" class="form-label fw-semibold">Item Name <span class="text-danger">*</span></label>
-                            <input type="text" id="itemName" class="form-control" placeholder="e.g. Black Nike Backpack, iPhone 14 Pro, Brown Wallet" required>
-                        </div>
-
-                        <!-- Image Upload Field -->
-                        <div class="mb-3 p-3 bg-light rounded-3 border">
-                            <label for="itemImage" class="form-label fw-semibold text-dark mb-1">
-                                <i class="bi bi-image text-primary me-1"></i>Upload Item Photo (Optional)
-                            </label>
-                            <input type="file" id="itemImage" accept="image/*" class="form-control form-control-sm" onchange="previewImage(event)">
-                            <div class="text-center mt-2">
-                                <img id="img-preview" src="" class="img-fluid rounded border d-none" style="max-height: 180px; object-fit: cover;">
+                            <!-- Navigation to Found Report Page -->
+                            <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 bg-light rounded-3 border">
+                                <div>
+                                    <h6 class="fw-bold mb-1 text-heading">Found something instead?</h6>
+                                    <p class="text-muted small mb-0">Log a found item so the owner can search for it.</p>
+                                </div>
+                                <a href="report-found.html" class="btn btn-sm btn-found rounded-pill px-3 fw-bold">
+                                    <i class="bi bi-check-circle me-1"></i>I Found Something
+                                </a>
                             </div>
-                        </div>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="itemName" class="form-label fw-semibold">Item Name <span class="text-danger">*</span></label>
+                                <input type="text" id="itemName" class="form-control" placeholder="e.g. Black Nike Backpack, iPhone 14 Pro, Brown Wallet" required>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="category" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
                                 <select id="category" class="form-select" required>
                                     <option value="">Select Category...</option>
@@ -127,7 +144,21 @@
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+
+                            <div id="custom-category-container" class="mb-3 d-none">
+                                <label for="custom-category" class="form-label fw-semibold">Custom Category <span class="text-danger">*</span></label>
+                                <input type="text" id="custom-category" class="form-control" placeholder="Enter your own category e.g. Headphones, Bottle, Watch">
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Characteristics -->
+                        <div class="form-step-pane d-none" id="step-pane-2">
+                            <div class="step-pane-header">
+                                <h5 class="fw-bold mb-1"><i class="bi bi-2-circle text-primary me-2"></i>Step 2 — Item Details</h5>
+                                <p class="text-muted small mb-0">Describe color and distinguishing characteristics.</p>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="color" class="form-label fw-semibold">Primary Color <span class="text-danger">*</span></label>
                                 <select id="color" class="form-select" required>
                                     <option value="">Select Color...</option>
@@ -142,59 +173,108 @@
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
-                        </div>
 
-                        <div id="custom-category-container" class="mb-3 d-none">
-                            <label for="custom-category" class="form-label fw-semibold">Custom Category <span class="text-danger">*</span></label>
-                            <input type="text" id="custom-category" class="form-control" placeholder="Enter your own category e.g. Headphones, Bottle, Watch">
-                        </div>
-
-                        <div id="custom-color-container" class="mb-3 d-none">
-                            <label for="custom-color" class="form-label fw-semibold">Custom Color <span class="text-danger">*</span></label>
-                            <input type="text" id="custom-color" class="form-control" placeholder="Enter the item color e.g. Silver, Maroon, Multi-color">
-                        </div>
-
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label for="zone" class="form-label fw-semibold">Campus Zone / Location <span class="text-danger">*</span></label>
-                                <select id="zone" class="form-select" required>
-                                    <option value="">Select Zone...</option>
-                                    <option value="Library">Library</option>
-                                    <option value="Main Block">Main Block</option>
-                                    <option value="Cafeteria">Cafeteria</option>
-                                    <option value="Hostel">Hostel</option>
-                                    <option value="Sports Complex">Sports Complex</option>
-                                    <option value="Parking">Parking</option>
-                                    <option value="Auditorium">Auditorium</option>
-                                    <option value="Laboratory">Laboratory</option>
-                                    <option value="Admin Block">Admin Block</option>
-                                    <option value="Other">Other</option>
-                                </select>
+                            <div id="custom-color-container" class="mb-3 d-none">
+                                <label for="custom-color" class="form-label fw-semibold">Custom Color <span class="text-danger">*</span></label>
+                                <input type="text" id="custom-color" class="form-control" placeholder="Enter the item color e.g. Silver, Maroon, Multi-color">
                             </div>
-                            <div class="col-md-6">
-                                <label for="date" class="form-label fw-semibold">Date Lost or Found <span class="text-danger">*</span></label>
-                                <input type="date" id="date" class="form-control" required>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label fw-semibold">Item Description <span class="text-danger">*</span></label>
+                                <textarea id="description" rows="3" class="form-control" placeholder="Provide distinct description words..." required></textarea>
                             </div>
                         </div>
 
-                        <div id="custom-zone-container" class="mb-3 d-none">
-                            <label for="custom-zone" class="form-label fw-semibold">Custom Campus Location <span class="text-danger">*</span></label>
-                            <input type="text" id="custom-zone" class="form-control" placeholder="Enter the exact campus location e.g. Gate 3, Flower Garden, Engineering Lab">
+                        <!-- Step 3: Location & Date -->
+                        <div class="form-step-pane d-none" id="step-pane-3">
+                            <div class="step-pane-header">
+                                <h5 class="fw-bold mb-1"><i class="bi bi-3-circle text-primary me-2"></i>Step 3 — Location & Date</h5>
+                                <p class="text-muted small mb-0">Specify where and when the item was lost or found.</p>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="zone" class="form-label fw-semibold">Campus Zone / Location <span class="text-danger">*</span></label>
+                                    <select id="zone" class="form-select" required>
+                                        <option value="">Select Zone...</option>
+                                        <option value="Library">Library</option>
+                                        <option value="Main Block">Main Block</option>
+                                        <option value="Cafeteria">Cafeteria</option>
+                                        <option value="Hostel">Hostel</option>
+                                        <option value="Sports Complex">Sports Complex</option>
+                                        <option value="Parking">Parking</option>
+                                        <option value="Auditorium">Auditorium</option>
+                                        <option value="Laboratory">Laboratory</option>
+                                        <option value="Admin Block">Admin Block</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="date" class="form-label fw-semibold">Date Lost or Found <span class="text-danger">*</span></label>
+                                    <input type="date" id="date" class="form-control" required>
+                                </div>
+                            </div>
+
+                            <div id="custom-zone-container" class="mb-3 d-none">
+                                <label for="custom-zone" class="form-label fw-semibold">Custom Campus Location <span class="text-danger">*</span></label>
+                                <input type="text" id="custom-zone" class="form-control" placeholder="Enter the exact campus location e.g. Gate 3, Flower Garden, Engineering Lab">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="contactPhone" class="form-label fw-semibold">Contact Phone (Optional)</label>
+                                <input type="tel" id="contactPhone" class="form-control" placeholder="+91 98765 43210">
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="description" class="form-label fw-semibold">Item Description <span class="text-danger">*</span></label>
-                            <textarea id="description" rows="3" class="form-control" placeholder="Provide distinct description words..." required></textarea>
+                        <!-- Step 4: Photo Upload -->
+                        <div class="form-step-pane d-none" id="step-pane-4">
+                            <div class="step-pane-header">
+                                <h5 class="fw-bold mb-1"><i class="bi bi-4-circle text-primary me-2"></i>Step 4 — Add Photo</h5>
+                                <p class="text-muted small mb-0">Upload a clear item image to improve algorithm matching.</p>
+                            </div>
+
+                            <!-- Image Upload Field -->
+                            <div class="mb-3 p-3 bg-light rounded-3 border">
+                                <label for="itemImage" class="form-label fw-semibold text-dark mb-1">
+                                    <i class="bi bi-image text-primary me-1"></i>Upload Item Photo (Optional)
+                                </label>
+                                <input type="file" id="itemImage" accept="image/*" class="form-control form-control-sm" onchange="previewImage(event)">
+                                <div id="image-preview-wrapper" class="mt-3 d-none text-center">
+                                    <div class="image-preview-card position-relative d-inline-block rounded-3 overflow-hidden border shadow-sm p-1.5 bg-white">
+                                        <img id="img-preview" src="" alt="Selected Item Photo Preview" class="img-fluid rounded-2 d-block">
+                                        <button type="button" id="remove-img-btn" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-circle p-0 d-flex align-items-center justify-content-center shadow-sm" style="width: 26px; height: 26px; font-size: 0.8rem; line-height: 1; z-index: 5;" title="Remove image" onclick="removeImage()">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label for="contactPhone" class="form-label fw-semibold">Contact Phone (Optional)</label>
-                            <input type="tel" id="contactPhone" class="form-control" placeholder="+91 98765 43210">
+                        <!-- Step 5: Review & Submit -->
+                        <div class="form-step-pane d-none" id="step-pane-5">
+                            <div class="step-pane-header">
+                                <h5 class="fw-bold mb-1"><i class="bi bi-5-circle text-primary me-2"></i>Step 5 — Review & Submit</h5>
+                                <p class="text-muted small mb-0">Review the report summary below before submitting.</p>
+                            </div>
+
+                            <div class="review-summary-card mb-4" id="review-summary-content">
+                                <!-- Populated dynamically by app.js -->
+                            </div>
+
+                            <button type="submit" class="btn btn-matching btn-lg w-100 fw-bold">
+                                Submit & Run Intelligent Matching Engine
+                            </button>
                         </div>
 
-                        <button type="submit" class="btn btn-matching btn-lg w-100 fw-bold">
-                            Submit & Run Intelligent Matching Engine
-                        </button>
+                        <!-- Step Navigation Controls -->
+                        <div class="step-nav-bar" id="step-nav-bar">
+                            <button type="button" class="btn btn-outline-secondary px-4 fw-bold disabled" id="prev-step-btn" onclick="nextStep(-1)">
+                                <i class="bi bi-arrow-left me-1"></i> Back
+                            </button>
+                            <button type="button" class="btn btn-primary px-4 fw-bold" id="next-step-btn" onclick="nextStep(1)">
+                                Next Step <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>

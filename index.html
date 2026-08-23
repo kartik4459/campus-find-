@@ -175,8 +175,8 @@
         <section class="how-it-works-section py-5 border-top border-bottom" id="how-it-works-section">
             <div class="container">
                 <!-- Section Header -->
-                <div class="text-center mb-5 how-header-anim">
-                    <p class="text-uppercase fw-bold extra-small mb-1 text-teal" style="letter-spacing: 0.15em;">
+                <div class="text-center mb-5">
+                    <p class="text-uppercase fw-bold extra-small mb-1 text-primary" style="letter-spacing: 0.15em;">
                         <i class="bi bi-diagram-3 me-1"></i>PROCESS WORKFLOW
                     </p>
                     <h2 class="fw-bold text-heading mb-2" style="font-size: 2.1rem; letter-spacing: -0.01em;">
@@ -308,6 +308,117 @@
                 <!-- Reports Grid -->
                 <div class="row g-4" id="recent-reports-grid">
                     <!-- Dynamic rendering via app.js -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Help / FAQ Accordion Section -->
+        <section class="py-5 quick-help-section" id="quick-help-section">
+            <div class="container" style="max-width: 860px;">
+                <div class="text-center mb-5">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 fw-bold extra-small mb-2">
+                        ❓ QUICK HELP
+                    </span>
+                    <h2 class="fw-bold mb-2 text-heading">Got a question? We've got you covered.</h2>
+                    <p class="text-muted small">Find quick answers to common questions about reporting, verifying, and recovering items.</p>
+                </div>
+
+                <div class="quick-help-accordion d-flex flex-column gap-3" id="quick-help-accordion">
+                    <!-- Q1 -->
+                    <div class="help-item-card rounded-3 border p-3.5 shadow-sm" onclick="toggleHelpAccordion(this)">
+                        <div class="help-item-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="help-icon-wrapper rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-search text-cyan"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0 text-heading">I lost something. What should I do?</h6>
+                            </div>
+                            <span class="accordion-toggle-icon fs-5 text-muted fw-bold">+</span>
+                        </div>
+                        <div class="help-item-body mt-3 pt-3 border-top text-muted small" style="display: none;">
+                            Create a Lost Item report with the item's details, where and when you lost it. If a potential match is found, you can verify your ownership and connect with the finder.
+                        </div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div class="help-item-card rounded-3 border p-3.5 shadow-sm" onclick="toggleHelpAccordion(this)">
+                        <div class="help-item-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="help-icon-wrapper rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-box-seam text-success"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0 text-heading">I found someone's item. What should I do?</h6>
+                            </div>
+                            <span class="accordion-toggle-icon fs-5 text-muted fw-bold">+</span>
+                        </div>
+                        <div class="help-item-body mt-3 pt-3 border-top text-muted small" style="display: none;">
+                            Create a Found Item report with the item's details and where you found it. If someone claims it, you can verify their ownership before connecting with them.
+                        </div>
+                    </div>
+
+                    <!-- Q3 -->
+                    <div class="help-item-card rounded-3 border p-3.5 shadow-sm" onclick="toggleHelpAccordion(this)">
+                        <div class="help-item-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="help-icon-wrapper rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-shield-lock text-primary"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0 text-heading">How is ownership verified?</h6>
+                            </div>
+                            <span class="accordion-toggle-icon fs-5 text-muted fw-bold">+</span>
+                        </div>
+                        <div class="help-item-body mt-3 pt-3 border-top text-muted small" style="display: none;">
+                            The claimant provides a hidden detail about the item that isn't publicly displayed. The finder can use this detail to verify whether the claim is genuine.
+                        </div>
+                    </div>
+
+                    <!-- Q4 -->
+                    <div class="help-item-card rounded-3 border p-3.5 shadow-sm" onclick="toggleHelpAccordion(this)">
+                        <div class="help-item-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="help-icon-wrapper rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-chat-dots text-primary"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0 text-heading">When can I chat with the other user?</h6>
+                            </div>
+                            <span class="accordion-toggle-icon fs-5 text-muted fw-bold">+</span>
+                        </div>
+                        <div class="help-item-body mt-3 pt-3 border-top text-muted small" style="display: none;">
+                            Chat becomes available only after the ownership claim has been approved.
+                        </div>
+                    </div>
+
+                    <!-- Q5 -->
+                    <div class="help-item-card rounded-3 border p-3.5 shadow-sm" onclick="toggleHelpAccordion(this)">
+                        <div class="help-item-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="help-icon-wrapper rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0 text-heading">How do I mark my item as recovered?</h6>
+                            </div>
+                            <span class="accordion-toggle-icon fs-5 text-muted fw-bold">+</span>
+                        </div>
+                        <div class="help-item-body mt-3 pt-3 border-top text-muted small" style="display: none;">
+                            After the item has been returned, confirm that you received it. The item will then be marked as recovered.
+                        </div>
+                    </div>
+
+                    <!-- Q6 -->
+                    <div class="help-item-card rounded-3 border p-3.5 shadow-sm" onclick="toggleHelpAccordion(this)">
+                        <div class="help-item-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="help-icon-wrapper rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-lock text-cyan"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0 text-heading">Is my contact information protected?</h6>
+                            </div>
+                            <span class="accordion-toggle-icon fs-5 text-muted fw-bold">+</span>
+                        </div>
+                        <div class="help-item-body mt-3 pt-3 border-top text-muted small" style="display: none;">
+                            You can coordinate through CampusFind's chat without immediately sharing personal contact information.
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>

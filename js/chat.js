@@ -54,14 +54,34 @@ function initChatPage() {
         return;
     }
 
+    // Check if claim is approved for this chat room
+    let claims = typeof getClaims === "function" ? getClaims() : [];
+    let linkedClaim = claims.find(c =>
+        (c.itemId === currentChat.foundItemId || c.itemId === currentChat.lostItemId) &&
+        (
+            (c.claimedByEmail && c.claimedByEmail.toLowerCase().trim() === lostUserEmail.toLowerCase().trim()) ||
+            (c.reporterEmail && c.reporterEmail.toLowerCase().trim() === finderEmail.toLowerCase().trim())
+        )
+    );
+
+    let isApproved = (linkedClaim && (
+        linkedClaim.status === "Approved & Meeting Scheduled" ||
+        linkedClaim.status === "Verified" ||
+        linkedClaim.status === "Recovery Arranged" ||
+        linkedClaim.status === "Recovered"
+    )) || currentChat.status === "Verified" || currentChat.status === "Recovery Arranged" || currentChat.status === "Recovered" || currentChatId === "CHAT-DEMO-001";
+
+    let isRejected = (linkedClaim && linkedClaim.status === "Rejected") || currentChat.status === "Rejected";
+
     // Mark messages sent by the other user as read
     markChatMessagesRead(currentChatId, currentUser.useremail);
 
-    // Render UI
-    renderChatSidebar();
-    renderChatHeader();
-    renderFinderActionPanel(isFinder);
-    renderQuickActionChips();
+    // Render UI according to role & approval state
+    renderChatSidebar(isApproved, isRejected);
+    renderChatHeader(isApproved, isRejected);
+    renderFinderActionPanel(isFinder, isApproved, isRejected, linkedClaim);
+    renderChatInputState(isApproved, isFinder, isRejected);
+    renderQuickActionChips(isApproved);
     renderRecoveryStatusBar();
     renderChatMessages();
 
@@ -84,7 +104,7 @@ function showChatError(msg) {
     }
 }
 
-function renderChatSidebar() {
+function renderChatSidebar(isApproved, isRejected) {
     if (!currentChat) return;
 
     let scoreEl = document.getElementById("sidebar-match-score");
@@ -110,12 +130,20 @@ function renderChatSidebar() {
     if (finderNameEl) finderNameEl.innerText = finderName;
 
     if (badgeEl) {
-        badgeEl.innerText = currentChat.status;
-        badgeEl.className = getStatusBadgeClass(currentChat.status);
+        if (isApproved) {
+            badgeEl.innerText = "✓ Ownership Verified";
+            badgeEl.className = "badge bg-success text-white rounded-pill px-3 py-1 fw-bold";
+        } else if (isRejected) {
+            badgeEl.innerText = "Claim Rejected";
+            badgeEl.className = "badge bg-danger text-white rounded-pill px-3 py-1 fw-bold";
+        } else {
+            badgeEl.innerText = "Verification Pending";
+            badgeEl.className = "badge bg-warning text-dark rounded-pill px-3 py-1 fw-bold";
+        }
     }
 }
 
-function renderChatHeader() {
+function renderChatHeader(isApproved, isRejected) {
     if (!currentChat) return;
 
     let headerItem = document.getElementById("chat-header-item");
@@ -129,76 +157,131 @@ function renderChatHeader() {
     if (headerItem) headerItem.innerText = currentChat.lostItemName;
     if (headerFinder) headerFinder.innerText = `Finder: ${finderName}`;
     if (headerStatus) {
-        headerStatus.innerText = currentChat.status;
-        headerStatus.className = getStatusBadgeClass(currentChat.status);
+        if (isApproved) {
+            headerStatus.innerText = "✓ Ownership Verified";
+            headerStatus.className = "badge bg-success text-white rounded-pill px-3 py-1 fw-bold extra-small";
+        } else if (isRejected) {
+            headerStatus.innerText = "Claim Rejected";
+            headerStatus.className = "badge bg-danger text-white rounded-pill px-3 py-1 fw-bold extra-small";
+        } else {
+            headerStatus.innerText = "Verification Pending";
+            headerStatus.className = "badge bg-warning text-dark rounded-pill px-3 py-1 fw-bold extra-small";
+        }
     }
 }
 
-function getStatusBadgeClass(status) {
-    if (status === "Verified") return "badge bg-success text-white rounded-pill px-3 py-1 fw-bold extra-small";
-    if (status === "Recovery Arranged") return "badge bg-primary text-white rounded-pill px-3 py-1 fw-bold extra-small";
-    if (status === "Recovered") return "badge bg-info text-dark rounded-pill px-3 py-1 fw-bold extra-small";
-    if (status === "Rejected") return "badge bg-danger text-white rounded-pill px-3 py-1 fw-bold extra-small";
-    return "badge bg-warning text-dark rounded-pill px-3 py-1 fw-bold extra-small";
-}
-
-function renderFinderActionPanel(isFinder) {
+function renderFinderActionPanel(isFinder, isApproved, isRejected, linkedClaim) {
     let panel = document.getElementById("finder-action-bar");
+    let proofDisplay = document.getElementById("finder-claim-proof-display");
     if (!panel) return;
 
-    // Show action bar ONLY to the person who FOUND the item, and only if not yet recovered/rejected
-    if (isFinder && currentChat.status !== "Recovered" && currentChat.status !== "Rejected") {
+    // Show action bar ONLY to Finder during Pending state
+    if (isFinder && !isApproved && !isRejected) {
         panel.classList.remove("d-none");
+        if (proofDisplay) {
+            let proofText = linkedClaim && linkedClaim.providedProof ? linkedClaim.providedProof : "No details provided";
+            proofDisplay.innerHTML = `
+                <strong class="d-block mb-1 text-dark"><i class="bi bi-shield-lock-fill text-primary me-1"></i>Claimant's Submitted Hidden Detail:</strong>
+                <div class="text-dark fw-bold fs-6">"${escapeHtml(proofText)}"</div>
+            `;
+        }
     } else {
         panel.classList.add("d-none");
     }
 }
 
-function renderQuickActionChips() {
-    const currentUser = getCurrentUser();
-    const chip = document.getElementById("quick-chip-ask-item");
-    if (!currentUser || !chip || !currentChat) return;
+function renderChatInputState(isApproved, isFinder, isRejected) {
+    let chatInput = document.getElementById("chat-input");
+    let sendBtn = document.getElementById("chat-send-btn");
+    let lockBanner = document.getElementById("chat-lock-banner");
+    let safetyTip = document.getElementById("chat-safety-tip");
+    let chipsRow = document.getElementById("chat-chips-row");
 
-    const isLostOwner = (currentChat.lostUserEmail || "").toLowerCase().trim() === currentUser.useremail.toLowerCase().trim();
-    chip.classList.toggle("d-none", !isLostOwner);
+    if (isApproved) {
+        if (chatInput) {
+            chatInput.disabled = false;
+            chatInput.placeholder = "Type a message to coordinate recovery...";
+        }
+        if (sendBtn) sendBtn.disabled = false;
+        if (lockBanner) lockBanner.classList.add("d-none");
+        if (safetyTip) safetyTip.classList.remove("d-none");
+        if (chipsRow) chipsRow.classList.remove("d-none");
+    } else {
+        if (chatInput) {
+            chatInput.disabled = true;
+            chatInput.placeholder = isRejected ? "Chat is locked (Claim Rejected)" : "Chat is locked (Verification Pending)";
+        }
+        if (sendBtn) sendBtn.disabled = true;
+        if (safetyTip) safetyTip.classList.add("d-none");
+        if (chipsRow) chipsRow.classList.add("d-none");
+
+        if (lockBanner) {
+            lockBanner.classList.remove("d-none");
+            if (isRejected) {
+                lockBanner.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 text-danger">
+                        <i class="bi bi-x-circle-fill fs-5"></i>
+                        <div>
+                            <strong class="d-block">✕ Claim Rejected</strong>
+                            <span class="small">The finder did not accept the submitted ownership proof. Chat remains locked.</span>
+                        </div>
+                    </div>
+                `;
+            } else if (isFinder) {
+                lockBanner.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 text-dark">
+                        <i class="bi bi-shield-lock-fill text-warning fs-5"></i>
+                        <div>
+                            <strong class="d-block">🔒 Verification Pending</strong>
+                            <span class="small">Please review the claimant's submitted hidden detail in the panel above and click <strong>Approve Ownership</strong> or <strong>Reject Claim</strong>. Chat messaging unlocks upon approval.</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                lockBanner.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 text-dark">
+                        <i class="bi bi-clock-history text-primary fs-5"></i>
+                        <div>
+                            <strong class="d-block">🔒 Verification Pending</strong>
+                            <span class="small">Your ownership claim has been sent to the finder. Chat messaging will unlock once the finder approves your claim.</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    }
 }
+
+function renderQuickActionChips(isApproved) {
+    let chipsRow = document.getElementById("chat-chips-row");
+    if (!chipsRow) return;
+    if (!isApproved) {
+        chipsRow.classList.add("d-none");
+    } else {
+        chipsRow.classList.remove("d-none");
+    }
+}
+
+let recoveryTimerInterval = null;
 
 function renderRecoveryStatusBar() {
     let bar = document.getElementById("recovery-status-bar");
     if (!bar || !currentChat) return;
 
-    if (currentChat.status === "Verified" || currentChat.status === "Recovery Arranged") {
-        bar.classList.remove("d-none");
-        bar.className = "p-3 border-bottom bg-success-subtle text-dark d-flex justify-content-between align-items-center flex-wrap gap-2";
-        
-        let recInfo = currentChat.recoveryDetails 
-            ? `<strong>${currentChat.recoveryDetails.location}</strong> · ${currentChat.recoveryDetails.date} @ ${currentChat.recoveryDetails.time}`
-            : `Ownership Verified by Finder`;
+    if (recoveryTimerInterval) {
+        clearInterval(recoveryTimerInterval);
+        recoveryTimerInterval = null;
+    }
 
-        bar.innerHTML = `
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-shield-check-fill text-success fs-5"></i>
-                <div class="small">
-                    <strong class="text-success d-block">✓ Ownership Verified</strong>
-                    <span class="text-muted extra-small">${recInfo}</span>
-                </div>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-                ${currentChat.status !== "Recovery Arranged" ? `
-                    <button class="btn btn-sm btn-primary fw-bold extra-small py-1.5 px-3" onclick="openArrangeRecoveryModal()">
-                        <i class="bi bi-calendar-event me-1"></i>Arrange Recovery
-                    </button>
-                ` : `
-                    <button class="btn btn-sm btn-outline-primary fw-bold extra-small py-1.5 px-3" onclick="openArrangeRecoveryModal()">
-                        <i class="bi bi-pencil me-1"></i>Update Recovery Plan
-                    </button>
-                `}
-                <button class="btn btn-sm btn-success fw-bold extra-small py-1.5 px-3" onclick="markItemAsRecovered()">
-                    <i class="bi bi-check-circle-fill me-1"></i>Mark Item as Recovered
-                </button>
-            </div>
-        `;
-    } else if (currentChat.status === "Recovered") {
+    let currentUser = getCurrentUser();
+    let myEmail = currentUser ? currentUser.useremail.toLowerCase().trim() : "";
+    let isLostOwner = (currentChat.lostUserEmail || "").toLowerCase().trim() === myEmail;
+
+    let users = getUsers();
+    let lostUser = users.find(u => u.useremail && u.useremail.toLowerCase() === (currentChat.lostUserEmail || "").toLowerCase());
+    let lostOwnerName = lostUser ? lostUser.username : ((currentChat.lostUserEmail || "").split('@')[0]);
+
+    if (currentChat.status === "Recovered") {
         bar.classList.remove("d-none");
         bar.className = "p-3 border-bottom bg-info-subtle text-dark d-flex justify-content-between align-items-center";
         bar.innerHTML = `
@@ -210,6 +293,133 @@ function renderRecoveryStatusBar() {
                 </div>
             </div>
             <span class="badge bg-info text-dark rounded-pill px-3 py-1 fw-bold extra-small">RECOVERED</span>
+        `;
+        return;
+    }
+
+    if (currentChat.status === "Verified" || currentChat.status === "Recovery Arranged") {
+        bar.classList.remove("d-none");
+
+        // Check if recovery details are set with a date & time
+        let rec = currentChat.recoveryDetails;
+        let targetTime = null;
+        if (rec && rec.date && rec.time) {
+            try {
+                targetTime = new Date(`${rec.date}T${rec.time}`);
+            } catch (e) {
+                targetTime = null;
+            }
+        }
+
+        let now = new Date();
+
+        if (targetTime && !isNaN(targetTime.getTime()) && now.getTime() < targetTime.getTime()) {
+            // COUNTDOWN STATE: Recovery time is in the future
+            bar.className = "p-3 border-bottom bg-primary-subtle text-dark d-flex justify-content-between align-items-center flex-wrap gap-2";
+            bar.innerHTML = `
+                <div>
+                    <strong class="text-primary d-block small mb-0.5">
+                        <i class="bi bi-clock-history me-1"></i>⏳ Recovery Scheduled
+                    </strong>
+                    <span class="text-muted extra-small">
+                        Location: <strong>${escapeHtml(rec.location)}</strong> · ${rec.date} @ ${rec.time}
+                    </span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end">
+                        <span class="extra-small text-muted d-block uppercase fw-bold" style="font-size: 0.65rem;">Recovery in:</span>
+                        <span id="recovery-countdown-display" class="badge bg-primary fs-6 font-monospace py-1.5 px-2.5">00 : 00 : 00</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary fw-bold extra-small py-1 px-2.5" onclick="openArrangeRecoveryModal()">
+                        <i class="bi bi-pencil me-1"></i>Update Time
+                    </button>
+                </div>
+            `;
+
+            let updateCountdown = () => {
+                let currentNow = new Date();
+                let diff = targetTime.getTime() - currentNow.getTime();
+                if (diff <= 0) {
+                    clearInterval(recoveryTimerInterval);
+                    recoveryTimerInterval = null;
+                    renderRecoveryStatusBar(); // Re-render to show confirmation!
+                    return;
+                }
+                let hours = Math.floor(diff / (1000 * 60 * 60));
+                let mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                let secs = Math.floor((diff % (1000 * 60)) / 1000);
+                let displayEl = document.getElementById("recovery-countdown-display");
+                if (displayEl) {
+                    displayEl.innerText = `${String(hours).padStart(2, '0')} : ${String(mins).padStart(2, '0')} : ${String(secs).padStart(2, '0')}`;
+                }
+            };
+
+            updateCountdown();
+            recoveryTimerInterval = setInterval(updateCountdown, 1000);
+            return;
+        } else if (targetTime && !isNaN(targetTime.getTime()) && now.getTime() >= targetTime.getTime()) {
+            // CONFIRMATION STATE: Timer reached 00:00!
+            if (isLostOwner) {
+                // Lost owner prompt: "Did you receive your item?"
+                bar.className = "p-3 border-bottom bg-warning-subtle text-dark d-flex justify-content-between align-items-center flex-wrap gap-2";
+                bar.innerHTML = `
+                    <div>
+                        <strong class="text-dark d-block fs-6 mb-0.5">
+                            <i class="bi bi-bell-fill text-warning me-1"></i>🔔 Recovery Confirmation
+                        </strong>
+                        <span class="text-dark small fw-semibold">Did you receive your item? Your scheduled recovery time has passed.</span>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-sm btn-success fw-bold py-1.5 px-3" onclick="confirmItemReceipt(true)">
+                            <i class="bi bi-check-circle-fill me-1"></i>✓ Yes, I received my item
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary fw-bold py-1.5 px-3" onclick="confirmItemReceipt(false)">
+                            Not yet
+                        </button>
+                    </div>
+                `;
+                return;
+            } else {
+                // Finder prompt: Confirmation Pending from Lost Owner
+                bar.className = "p-3 border-bottom bg-light text-dark d-flex justify-content-between align-items-center flex-wrap gap-2";
+                bar.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-clock-history text-warning fs-4"></i>
+                        <div>
+                            <strong class="text-dark d-block">🔔 Recovery Confirmation Pending</strong>
+                            <small class="text-muted extra-small">Scheduled recovery time has passed. Awaiting confirmation from lost owner (<strong>${escapeHtml(lostOwnerName)}</strong>).</small>
+                        </div>
+                    </div>
+                    <span class="badge bg-warning text-dark rounded-pill px-3 py-1.5 fw-bold extra-small">Awaiting Owner Confirmation</span>
+                `;
+                return;
+            }
+        }
+
+        // DEFAULT VERIFIED STATE: No date set yet or 'Not yet' clicked
+        let recInfo = rec
+            ? `<strong>${rec.location}</strong> · ${rec.date} @ ${rec.time}`
+            : `Ownership Verified by Finder`;
+
+        bar.className = "p-3 border-bottom bg-success-subtle text-dark d-flex justify-content-between align-items-center flex-wrap gap-2";
+        bar.innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-shield-check-fill text-success fs-5"></i>
+                <div class="small">
+                    <strong class="text-success d-block">✓ Ownership Verified</strong>
+                    <span class="text-muted extra-small">${recInfo}</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm btn-primary fw-bold extra-small py-1.5 px-3" onclick="openArrangeRecoveryModal()">
+                    <i class="bi bi-calendar-event me-1"></i>${rec ? 'Update Recovery Plan' : 'Arrange Recovery'}
+                </button>
+                ${isLostOwner ? `
+                    <button class="btn btn-sm btn-success fw-bold extra-small py-1.5 px-3" onclick="confirmItemReceipt(true)">
+                        <i class="bi bi-check-circle-fill me-1"></i>Mark Item as Recovered
+                    </button>
+                ` : ''}
+            </div>
         `;
     } else {
         bar.classList.add("d-none");
@@ -337,13 +547,26 @@ function finderApproveOwnership() {
     if (!confirm("Confirm that you have verified ownership and wish to APPROVE this claim?")) return;
 
     updateChatStatus(currentChatId, "Verified");
+
+    // Also update matching claim in campus_claims
+    let claims = typeof getClaims === "function" ? getClaims() : [];
+    let linkedClaim = claims.find(c =>
+        (c.itemId === currentChat.foundItemId || c.itemId === currentChat.lostItemId) &&
+        (
+            (c.claimedByEmail && c.claimedByEmail.toLowerCase().trim() === currentChat.lostUserEmail.toLowerCase().trim()) ||
+            (c.reporterEmail && c.reporterEmail.toLowerCase().trim() === currentChat.finderEmail.toLowerCase().trim())
+        )
+    );
+    if (linkedClaim) {
+        updateClaimStatus(linkedClaim.claimId, "Approved & Meeting Scheduled");
+    }
     
     // Post System message inside chat
     let systemMsg = {
         id: "MSG-" + Date.now(),
         senderId: "SYSTEM",
         senderName: "FindIt System",
-        text: `✓ Ownership Verified by Finder (${currentUser.username}). Status updated to VERIFIED.`,
+        text: `✓ Ownership Verified by Finder (${currentUser.username}). Status updated to VERIFIED. Chat is now unlocked so you can coordinate the return.`,
         type: "system",
         timestamp: new Date().toISOString(),
         read: true
@@ -357,17 +580,13 @@ function finderApproveOwnership() {
         senderName: currentUser.username,
         senderEmail: currentUser.useremail,
         itemName: currentChat.lostItemName,
-        message: `🎉 Claim Approved! Finder ${currentUser.username} verified your ownership for "${currentChat.lostItemName}". You can now arrange recovery in chat!`,
+        message: `🎉 Claim Approved! Finder ${currentUser.username} verified your ownership for "${currentChat.lostItemName}". Chat is now unlocked so you can coordinate the return.`,
         chatId: currentChatId,
         type: "claim_approved",
         date: new Date().toLocaleString()
     });
 
-    currentChat = getChatById(currentChatId);
-    renderChatSidebar();
-    renderChatHeader();
-    renderRecoveryStatusBar();
-    renderChatMessages();
+    initChatPage();
 }
 
 function finderRejectClaim() {
@@ -376,6 +595,19 @@ function finderRejectClaim() {
     if (reason === null) return;
 
     updateChatStatus(currentChatId, "Rejected");
+
+    // Also update matching claim in campus_claims
+    let claims = typeof getClaims === "function" ? getClaims() : [];
+    let linkedClaim = claims.find(c =>
+        (c.itemId === currentChat.foundItemId || c.itemId === currentChat.lostItemId) &&
+        (
+            (c.claimedByEmail && c.claimedByEmail.toLowerCase().trim() === currentChat.lostUserEmail.toLowerCase().trim()) ||
+            (c.reporterEmail && c.reporterEmail.toLowerCase().trim() === currentChat.finderEmail.toLowerCase().trim())
+        )
+    );
+    if (linkedClaim) {
+        updateClaimStatus(linkedClaim.claimId, "Rejected", { rejectionReason: reason });
+    }
 
     let systemMsg = {
         id: "MSG-" + Date.now(),
@@ -400,12 +632,7 @@ function finderRejectClaim() {
         date: new Date().toLocaleString()
     });
 
-    currentChat = getChatById(currentChatId);
-    renderChatSidebar();
-    renderChatHeader();
-    renderFinderActionPanel(false);
-    renderRecoveryStatusBar();
-    renderChatMessages();
+    initChatPage();
 }
 
 function finderRequestMoreInfo() {
@@ -503,35 +730,83 @@ function handleConfirmRecoveryPlan(event) {
     renderChatMessages();
 }
 
+function confirmItemReceipt(isReceived) {
+    let currentUser = getCurrentUser();
+    let myEmail = currentUser ? currentUser.useremail.toLowerCase().trim() : "";
+    let isLostOwner = (currentChat.lostUserEmail || "").toLowerCase().trim() === myEmail;
+
+    // Strict Role Check: ONLY Lost Owner can confirm receipt!
+    if (!isLostOwner) {
+        alert("Only the lost item owner can confirm receipt of the item.");
+        return;
+    }
+
+    if (isReceived) {
+        // Lost Owner confirms "Yes, I received my item"
+        updateChatStatus(currentChatId, "Recovered");
+
+        // System message in chat
+        let systemMsg = {
+            id: "MSG-" + Date.now(),
+            senderId: "SYSTEM",
+            senderName: "FindIt System",
+            text: `🎉 Item receipt confirmed by owner (${currentUser.username}). Status updated to RECOVERED!`,
+            type: "system",
+            timestamp: new Date().toISOString(),
+            read: true
+        };
+        sendChatMessage(currentChatId, systemMsg);
+
+        // Update status in campus_reports to "Recovered" (increments landing page stat!)
+        let reports = getReports();
+        let lostRep = reports.find(r => r.id === currentChat.lostItemId);
+        let foundRep = reports.find(r => r.id === currentChat.foundItemId);
+        if (lostRep) lostRep.status = "Recovered";
+        if (foundRep) foundRep.status = "Recovered";
+        localStorage.setItem("campus_reports", JSON.stringify(reports));
+
+        // Notify Finder
+        sendNotification({
+            id: "NOTIF-" + Date.now(),
+            recipientEmail: currentChat.finderEmail,
+            senderName: currentUser.username,
+            senderEmail: currentUser.useremail,
+            itemName: currentChat.lostItemName,
+            message: `🎉 Item Recovered! Owner ${currentUser.username} confirmed receipt of "${currentChat.lostItemName}". Thank you for helping our campus community!`,
+            chatId: currentChatId,
+            type: "item_recovered",
+            date: new Date().toLocaleString()
+        });
+
+        alert("🎉 Item Recovered! Your item has been successfully marked as recovered.");
+        initChatPage();
+    } else {
+        // Lost Owner clicks "Not yet"
+        let systemMsg = {
+            id: "MSG-" + Date.now(),
+            senderId: "SYSTEM",
+            senderName: "FindIt System",
+            text: `⏳ Owner indicated item is not yet received. Recovery coordination continues in chat.`,
+            type: "system",
+            timestamp: new Date().toISOString(),
+            read: true
+        };
+        sendChatMessage(currentChatId, systemMsg);
+
+        // Clear target time so standard verified bar is shown with option to confirm later
+        if (currentChat.recoveryDetails) {
+            delete currentChat.recoveryDetails.date;
+            delete currentChat.recoveryDetails.time;
+            updateChatStatus(currentChatId, "Verified", currentChat.recoveryDetails);
+        }
+
+        alert("⏳ Recovery confirmation is still pending. You can continue coordinating with the finder through chat.");
+        initChatPage();
+    }
+}
+
 function markItemAsRecovered() {
-    if (!confirm("Are you sure this item has been returned and recovered by its rightful owner?")) return;
-
-    updateChatStatus(currentChatId, "Recovered");
-
-    let systemMsg = {
-        id: "MSG-" + Date.now(),
-        senderId: "SYSTEM",
-        senderName: "FindIt System",
-        text: `🎉 Item recovered successfully.`,
-        type: "system",
-        timestamp: new Date().toISOString(),
-        read: true
-    };
-    sendChatMessage(currentChatId, systemMsg);
-
-    // Update status in campus_reports if present
-    let reports = getReports();
-    let lostRep = reports.find(r => r.id === currentChat.lostItemId);
-    let foundRep = reports.find(r => r.id === currentChat.foundItemId);
-    if (lostRep) lostRep.status = "Recovered";
-    if (foundRep) foundRep.status = "Recovered";
-    localStorage.setItem("campus_reports", JSON.stringify(reports));
-
-    currentChat = getChatById(currentChatId);
-    renderChatSidebar();
-    renderChatHeader();
-    renderRecoveryStatusBar();
-    renderChatMessages();
+    confirmItemReceipt(true);
 }
 
 function openMatchDetailsModal() {

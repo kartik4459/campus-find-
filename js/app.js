@@ -63,19 +63,44 @@ function extractImageFeatures(dataUrl) {
 
 // Image preview helper function
 function previewImage(event) {
-    let file = event.target.files[0];
-    if (file) {
+    let input = event.target;
+    let file = input && input.files && input.files[0];
+    let wrapper = document.getElementById("image-preview-wrapper");
+    let preview = document.getElementById("img-preview");
+
+    if (file && file.type && file.type.startsWith("image/")) {
         let reader = new FileReader();
         reader.onload = function(e) {
             uploadedImageBase64 = e.target.result;
             uploadedImageFeaturesPromise = extractImageFeatures(e.target.result);
-            let preview = document.getElementById("img-preview");
             if (preview) {
                 preview.src = e.target.result;
-                preview.classList.remove("d-none");
+            }
+            if (wrapper) {
+                wrapper.classList.remove("d-none");
             }
         };
         reader.readAsDataURL(file);
+    } else {
+        removeImage();
+    }
+}
+
+// Remove selected image helper function
+function removeImage() {
+    uploadedImageBase64 = null;
+    uploadedImageFeaturesPromise = null;
+    let fileInput = document.getElementById("itemImage");
+    if (fileInput) {
+        fileInput.value = "";
+    }
+    let preview = document.getElementById("img-preview");
+    if (preview) {
+        preview.src = "";
+    }
+    let wrapper = document.getElementById("image-preview-wrapper");
+    if (wrapper) {
+        wrapper.classList.add("d-none");
     }
 }
 
@@ -165,9 +190,9 @@ function renderNavbarUser() {
     }).join('');
 
     let initials = currentUser.username ? currentUser.username.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : 'U';
-    let notifications = getNotifications(currentUser.useremail);
+    let unreadNotifCount = (typeof getUnreadNotificationCount === 'function') ? getUnreadNotificationCount(currentUser.useremail) : 0;
     let unreadChatCount = (typeof getUnreadChatCount === 'function') ? getUnreadChatCount(currentUser.useremail) : 0;
-    let count = notifications.length + unreadChatCount;
+    let count = unreadNotifCount + unreadChatCount;
 
     userDisplay.innerHTML = `
         <div class="d-flex align-items-center gap-3">
@@ -625,6 +650,240 @@ function initReportPage() {
         foundBtn.onclick = () => setReportType("found");
     }
 
+    // ── STEP WIZARD CONTROLLER LOGIC ─────────────────────────────
+    let currentStep = 1;
+
+    function getFeedbackEl() {
+        let feedbackEl = document.getElementById("report-feedback-msg");
+        if (!feedbackEl) {
+            feedbackEl = document.createElement("div");
+            feedbackEl.id = "report-feedback-msg";
+            feedbackEl.style.marginBottom = "1rem";
+            form.parentNode.insertBefore(feedbackEl, form);
+        }
+        return feedbackEl;
+    }
+
+    function clearFeedback() {
+        let el = document.getElementById("report-feedback-msg");
+        if (el) {
+            el.className = "d-none";
+            el.innerHTML = "";
+        }
+    }
+
+    function showStepError(msg, focusEl) {
+        let feedbackEl = getFeedbackEl();
+        feedbackEl.className = "alert alert-danger border-0 shadow-sm";
+        feedbackEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>' + msg;
+        feedbackEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (focusEl && typeof focusEl.focus === "function") {
+            focusEl.focus();
+        }
+    }
+
+    function validateStep(step) {
+        clearFeedback();
+        if (step === 1) {
+            let name = document.getElementById("itemName") ? document.getElementById("itemName").value.trim() : "";
+            let cat = document.getElementById("category") ? document.getElementById("category").value : "";
+            let customCat = document.getElementById("custom-category") ? document.getElementById("custom-category").value.trim() : "";
+            if (!name) {
+                showStepError("Please enter the Item Name before proceeding.", document.getElementById("itemName"));
+                return false;
+            }
+            if (!cat) {
+                showStepError("Please select an Item Category before proceeding.", document.getElementById("category"));
+                return false;
+            }
+            if (cat === "Other" && !customCat) {
+                showStepError("Please enter your custom category.", document.getElementById("custom-category"));
+                return false;
+            }
+        } else if (step === 2) {
+            let color = document.getElementById("color") ? document.getElementById("color").value : "";
+            let customColor = document.getElementById("custom-color") ? document.getElementById("custom-color").value.trim() : "";
+            let desc = document.getElementById("description") ? document.getElementById("description").value.trim() : "";
+            if (!color) {
+                showStepError("Please select a Primary Color before proceeding.", document.getElementById("color"));
+                return false;
+            }
+            if (color === "Other" && !customColor) {
+                showStepError("Please enter your custom color.", document.getElementById("custom-color"));
+                return false;
+            }
+            if (!desc) {
+                showStepError("Please enter an Item Description before proceeding.", document.getElementById("description"));
+                return false;
+            }
+        } else if (step === 3) {
+            let zone = document.getElementById("zone") ? document.getElementById("zone").value : "";
+            let customZone = document.getElementById("custom-zone") ? document.getElementById("custom-zone").value.trim() : "";
+            let date = document.getElementById("date") ? document.getElementById("date").value : "";
+            if (!zone) {
+                showStepError("Please select a Campus Zone or Location before proceeding.", document.getElementById("zone"));
+                return false;
+            }
+            if (zone === "Other" && !customZone) {
+                showStepError("Please enter your custom campus location.", document.getElementById("custom-zone"));
+                return false;
+            }
+            if (!date) {
+                showStepError("Please select the Date before proceeding.", document.getElementById("date"));
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function renderReviewSummary() {
+        let reviewContainer = document.getElementById("review-summary-content");
+        if (!reviewContainer) return;
+
+        let name = document.getElementById("itemName") ? document.getElementById("itemName").value.trim() : "—";
+        let cat = document.getElementById("category") ? document.getElementById("category").value : "—";
+        let customCat = document.getElementById("custom-category") ? document.getElementById("custom-category").value.trim() : "";
+        if (cat === "Other" && customCat) cat = customCat;
+
+        let color = document.getElementById("color") ? document.getElementById("color").value : "—";
+        let customColor = document.getElementById("custom-color") ? document.getElementById("custom-color").value.trim() : "";
+        if (color === "Other" && customColor) color = customColor;
+
+        let zone = document.getElementById("zone") ? document.getElementById("zone").value : "—";
+        let customZone = document.getElementById("custom-zone") ? document.getElementById("custom-zone").value.trim() : "";
+        if (zone === "Other" && customZone) zone = customZone;
+
+        let date = document.getElementById("date") ? document.getElementById("date").value : "—";
+        let desc = document.getElementById("description") ? document.getElementById("description").value.trim() : "—";
+        let phone = document.getElementById("contactPhone") ? document.getElementById("contactPhone").value.trim() : "Not provided";
+        let typeVal = typeInput ? typeInput.value.toUpperCase() : "LOST";
+
+        let previewWrapper = document.getElementById("image-preview-wrapper");
+        let previewImg = document.getElementById("img-preview");
+        let hasImg = previewWrapper && !previewWrapper.classList.contains("d-none") && previewImg && previewImg.src && previewImg.src !== window.location.href;
+
+        reviewContainer.innerHTML = `
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                <span class="badge ${typeVal === 'LOST' ? 'bg-danger' : 'bg-success'} px-3 py-1.5 rounded-pill fw-bold">${typeVal} ITEM REPORT</span>
+                <span class="text-muted extra-small"><i class="bi bi-shield-check text-success me-1"></i>Ready to submit</span>
+            </div>
+
+            ${hasImg ? `
+                <div class="text-center mb-3">
+                    <img src="${previewImg.src}" class="img-fluid rounded border shadow-sm" style="max-height: 120px; object-fit: contain;">
+                </div>
+            ` : ''}
+
+            <div class="review-item-row">
+                <span class="review-label">Item Name:</span>
+                <span class="review-value">${escapeHtml(name)}</span>
+            </div>
+            <div class="review-item-row">
+                <span class="review-label">Category & Color:</span>
+                <span class="review-value">${escapeHtml(cat)} (${escapeHtml(color)})</span>
+            </div>
+            <div class="review-item-row">
+                <span class="review-label">Location Zone:</span>
+                <span class="review-value">${escapeHtml(zone)}</span>
+            </div>
+            <div class="review-item-row">
+                <span class="review-label">Date:</span>
+                <span class="review-value">${escapeHtml(date)}</span>
+            </div>
+            <div class="review-item-row">
+                <span class="review-label">Description:</span>
+                <span class="review-value text-start ms-3" style="max-width: 60%;">${escapeHtml(desc)}</span>
+            </div>
+            <div class="review-item-row">
+                <span class="review-label">Contact Phone:</span>
+                <span class="review-value">${escapeHtml(phone)}</span>
+            </div>
+        `;
+    }
+
+    function updateStepUI() {
+        clearFeedback();
+
+        // Panes
+        for (let i = 1; i <= 5; i++) {
+            let pane = document.getElementById("step-pane-" + i);
+            if (pane) {
+                pane.classList.toggle("d-none", i !== currentStep);
+            }
+        }
+
+        // Progress bar
+        let progressBar = document.getElementById("stepper-progress-bar");
+        if (progressBar) {
+            let pct = ((currentStep - 1) / 4) * 80;
+            progressBar.style.width = pct + "%";
+        }
+
+        // Stepper Items
+        document.querySelectorAll(".stepper-item").forEach(item => {
+            let stepNum = parseInt(item.getAttribute("data-step"));
+            item.classList.toggle("active", stepNum === currentStep);
+            item.classList.toggle("completed", stepNum < currentStep);
+        });
+
+        // Nav buttons
+        let prevBtn = document.getElementById("prev-step-btn");
+        let nextBtn = document.getElementById("next-step-btn");
+
+        if (prevBtn) {
+            prevBtn.classList.toggle("disabled", currentStep === 1);
+        }
+
+        if (nextBtn) {
+            if (currentStep === 5) {
+                nextBtn.classList.add("d-none");
+            } else {
+                nextBtn.classList.remove("d-none");
+                nextBtn.innerHTML = (currentStep === 4 ? 'Review Report <i class="bi bi-file-earmark-check ms-1"></i>' : 'Next Step <i class="bi bi-arrow-right ms-1"></i>');
+            }
+        }
+
+        if (currentStep === 5) {
+            renderReviewSummary();
+        }
+
+        // Scroll to form top smoothly
+        let formCard = document.querySelector(".form-card");
+        if (formCard) {
+            formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    window.nextStep = function(dir) {
+        if (dir > 0) {
+            if (!validateStep(currentStep)) return;
+            if (currentStep < 5) currentStep++;
+        } else {
+            if (currentStep > 1) currentStep--;
+        }
+        updateStepUI();
+    };
+
+    window.jumpToStep = function(target) {
+        target = parseInt(target);
+        if (isNaN(target) || target < 1 || target > 5) return;
+
+        if (target > currentStep) {
+            for (let i = currentStep; i < target; i++) {
+                if (!validateStep(i)) {
+                    currentStep = i;
+                    updateStepUI();
+                    return;
+                }
+            }
+        }
+        currentStep = target;
+        updateStepUI();
+    };
+
+    // Initialize Step UI
+    updateStepUI();
+
     form.onsubmit = async function(e) {
         e.preventDefault();
 
@@ -974,6 +1233,13 @@ function renderTargetBanner(item, currentUser) {
     `;
 }
 
+function getConfidenceInfo(score) {
+    if (score >= 90) return { label: "Very Strong Match", badgeClass: "badge-confidence-very-strong" };
+    if (score >= 75) return { label: "Strong Match", badgeClass: "badge-confidence-strong" };
+    if (score >= 50) return { label: "Possible Match", badgeClass: "badge-confidence-possible" };
+    return { label: "Weak Match", badgeClass: "badge-confidence-weak" };
+}
+
 function renderMatchCardsList(targetReport, reports) {
     let container = document.getElementById("matches-grid");
     if (!container) return;
@@ -985,113 +1251,201 @@ function renderMatchCardsList(targetReport, reports) {
 
     if (matches.length === 0) {
         container.innerHTML = `
-            <div class="col-12 text-center py-5 text-muted bg-white rounded-3 border">
-                <i class="bi bi-search fs-2 d-block mb-2 text-primary"></i>
-                <h5 class="fw-bold text-dark">No Opposite-Type Matches Found</h5>
-                <p class="small mb-0">Create another report of opposite type (Lost vs Found) to view matches.</p>
+            <div class="col-12 text-center py-5 text-muted bg-white rounded-3 border shadow-sm">
+                <div class="py-3">
+                    <i class="bi bi-search fs-1 d-block mb-3 text-primary opacity-75"></i>
+                    <h5 class="fw-bold text-dark mb-2">No strong matches found yet</h5>
+                    <p class="small text-muted mb-0 max-w-md mx-auto">We'll show potential matches here when a similar item of opposite type (Lost vs Found) is reported by another student.</p>
+                </div>
             </div>
         `;
         return;
     }
 
     container.innerHTML = "";
-    matches.forEach(m => {
+    matches.forEach((m, idx) => {
         let item = m.candidate;
         let b = m.breakdown;
+        let conf = getConfidenceInfo(m.score);
+        let collapseId = `breakdown-collapse-${idx}`;
 
         let isCandidateFound = item.type === "found";
         let btnText = isCandidateFound ? `<i class="bi bi-shield-lock me-1"></i>Claim Item (Provide Hidden Details)` : `<i class="bi bi-bell-fill me-1"></i>Notify Owner (I Found This Item)`;
         let btnClass = isCandidateFound ? "btn-primary" : "btn-success";
 
+        // Generate student-friendly "Why this is a match" list
+        let whyMatchedHtml = "";
+        if (m.reasons && m.reasons.length > 0) {
+            whyMatchedHtml = m.reasons.map(r => `
+                <div class="match-reason-item">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i><span>${escapeHtml(r)}</span>
+                </div>
+            `).join('');
+        } else {
+            whyMatchedHtml = `
+                <div class="match-reason-item text-muted">
+                    <i class="bi bi-info-circle me-2"></i><span>Matches based on general item attributes</span>
+                </div>
+            `;
+        }
+
+        // Check claim status for this match pair
+        let currentUser = getCurrentUser();
+        let allClaims = typeof getClaims === "function" ? getClaims() : [];
+        let matchClaim = allClaims.find(c =>
+            (c.itemId === item.id || c.itemId === targetReport.id) &&
+            (
+                (c.claimedByEmail && currentUser && c.claimedByEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim()) ||
+                (c.reporterEmail && currentUser && c.reporterEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim())
+            )
+        );
+
+        let isApproved = matchClaim && (
+            matchClaim.status === "Approved & Meeting Scheduled" ||
+            matchClaim.status === "Verified" ||
+            matchClaim.status === "Recovery Arranged" ||
+            matchClaim.status === "Recovered"
+        );
+
+        let chatBtnHtml = "";
+        if (isApproved) {
+            chatBtnHtml = `
+                <button class="btn btn-success fw-bold flex-shrink-0 py-2" onclick="openOrCreateChat('${targetReport.id}', '${item.id}', ${m.score})" title="Chat Unlocked - Claim Approved">
+                    <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Chat
+                </button>
+            `;
+        } else if (matchClaim && (matchClaim.status === "Pending Founder Approval" || matchClaim.status === "Pending Approval")) {
+            chatBtnHtml = `
+                <button class="btn btn-outline-warning text-dark fw-bold flex-shrink-0 py-2" onclick="alert('🔒 Chat Locked. Your hidden details have been submitted. Chat unlocks after the Founder accepts your claim.')" title="Chat locks until Founder approves">
+                    <i class="bi bi-lock-fill me-1"></i>Awaiting Approval
+                </button>
+            `;
+        } else if (matchClaim && matchClaim.status === "Rejected") {
+            chatBtnHtml = `
+                <button class="btn btn-outline-danger fw-bold flex-shrink-0 py-2" onclick="alert('✕ Claim Rejected. The Founder did not accept the ownership details.')">
+                    <i class="bi bi-x-circle me-1"></i>Claim Rejected
+                </button>
+            `;
+        } else {
+            chatBtnHtml = `
+                <button class="btn btn-outline-secondary fw-bold flex-shrink-0 py-2" onclick="openClaimModal('${targetReport.id}', '${item.id}')" title="Submit proof to unlock chat">
+                    <i class="bi bi-lock-fill me-1"></i>Contact Finder (Locked)
+                </button>
+            `;
+        }
+
         container.innerHTML += `
             <div class="col-12 mb-4">
-                <div class="card p-4 shadow-sm border-0 rounded-3">
+                <div class="card match-result-card p-4 shadow-sm rounded-3">
                     <div class="row g-4">
-                        <div class="col-md-3">
-                            <img src="${item.image || getDefaultImage(item.category)}" class="w-100 rounded-3" style="height: 170px; object-fit: cover;">
+                        <!-- Left Column: Item Image & Header Info -->
+                        <div class="col-md-3 text-center text-md-start">
+                            <img src="${item.image || getDefaultImage(item.category)}" alt="${escapeHtml(item.itemName)}" class="w-100 rounded-3 border" style="height: 170px; object-fit: contain; background: rgba(15,23,42,0.5);">
                         </div>
+
+                        <!-- Center Column: Item Details & Why This Is a Match -->
                         <div class="col-md-5">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">${item.type.toUpperCase()}</span>
-                                <span class="badge bg-light text-dark border"><i class="bi bi-person-fill text-primary me-1"></i>Posted by: <strong>${item.postedBy}</strong></span>
+                            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'} px-2.5 py-1">${item.type.toUpperCase()}</span>
+                                <span class="badge bg-light text-dark border px-2.5 py-1"><i class="bi bi-person-fill text-primary me-1"></i>Reported by: <strong>${escapeHtml(item.postedBy)}</strong></span>
                             </div>
-                            <h4 class="fw-bold mb-1">${item.itemName}</h4>
-                            <p class="small text-muted mb-2">Category: ${item.category} | Zone: ${item.zone} | Date: ${item.date}</p>
-                            <p class="small text-muted mb-3">${item.description}</p>
+
+                            <h4 class="fw-bold mb-1.5 text-dark">${escapeHtml(item.itemName)}</h4>
+
+                            <div class="extra-small text-muted mb-3 d-flex flex-wrap gap-3">
+                                <span><i class="bi bi-tag-fill text-primary me-1"></i>${escapeHtml(item.category)}</span>
+                                ${item.color ? `<span><i class="bi bi-palette-fill text-info me-1"></i>${escapeHtml(item.color)}</span>` : ''}
+                                <span><i class="bi bi-geo-alt-fill text-danger me-1"></i>${escapeHtml(item.zone)}</span>
+                                <span><i class="bi bi-calendar-event me-1"></i>${item.date}</span>
+                            </div>
+
+                            <p class="small text-muted mb-3 line-clamp-2">${escapeHtml(item.description)}</p>
                             
-                            <div class="bg-light p-3 rounded-3 border">
-                                <strong class="small d-block mb-1 text-uppercase text-muted">Why This Matched:</strong>
-                                <ul class="list-unstyled mb-0 small">
-                                    ${m.reasons.map(r => `<li><i class="bi bi-check-circle-fill text-success me-1"></i>${r}</li>`).join('')}
-                                </ul>
+                            <!-- "Why this is a match" Checklist Box -->
+                            <div class="match-reasons-box">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong class="small fw-bold text-dark d-flex align-items-center gap-1.5">
+                                        <i class="bi bi-stars text-warning fs-6"></i>Why this is a match
+                                    </strong>
+                                </div>
+                                <div class="match-reasons-list">
+                                    ${whyMatchedHtml}
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Right Column: Score Display, Confidence Level & Action -->
                         <div class="col-md-4 border-start ps-md-4 d-flex flex-column justify-content-between">
                             <div>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="fw-bold text-dark">Calculated Score</span>
-                                    <span class="badge bg-primary fs-5">🎯 ${m.score}% Match</span>
-                                </div>
-                                <div class="p-2 bg-light rounded border mb-3 text-center small text-muted">
-                                    <strong>Formula:</strong> ${b.category.pts} + ${b.color.pts} + ${b.location.pts} + ${b.date.pts} + ${b.description.pts} + ${b.image.pts} = <strong>${m.totalPts} / 100 pts</strong>
+                                <!-- Score & Confidence Header -->
+                                <div class="match-score-box mb-3">
+                                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                                        <div class="match-score-number">${m.score}%</div>
+                                        <div class="text-start">
+                                            <div class="small fw-bold text-muted text-uppercase" style="font-size:0.7rem; letter-spacing:0.04em;">Match Score</div>
+                                            <span class="badge ${conf.badgeClass}">${conf.label}</span>
+                                        </div>
+                                    </div>
+                                    <!-- Progress Bar Visualization -->
+                                    <div class="progress mt-2" style="height: 8px; background-color: rgba(168, 85, 247, 0.15);">
+                                        <div class="progress-bar ${m.score >= 75 ? 'bg-success' : (m.score >= 50 ? 'bg-primary' : 'bg-warning')}" role="progressbar" style="width: ${m.score}%" aria-valuenow="${m.score}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
                                 </div>
 
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Category (24% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.category.pts} / ${b.category.maxPts} pts</span>
-                                    </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.category.pts / b.category.maxPts) * 100}%"></div></div>
-                                </div>
+                                <!-- Collapsible Attribute Point Breakdown -->
+                                <div class="mb-3">
+                                    <button class="btn btn-sm btn-link text-decoration-none p-0 w-100 d-flex justify-content-between align-items-center text-muted small fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false">
+                                        <span><i class="bi bi-bar-chart-steps me-1"></i>View Attribute Point Breakdown</span>
+                                        <i class="bi bi-chevron-down"></i>
+                                    </button>
+                                    <div class="collapse mt-2" id="${collapseId}">
+                                        <div class="p-2.5 bg-light rounded border small">
+                                            <div class="d-flex justify-content-between extra-small mb-1">
+                                                <span>Category (${b.category.maxPts}%)</span>
+                                                <span class="fw-bold text-primary">${b.category.pts} / ${b.category.maxPts} pts</span>
+                                            </div>
+                                            <div class="progress mb-2" style="height:4px"><div class="progress-bar bg-primary" style="width:${(b.category.pts / b.category.maxPts) * 100}%"></div></div>
 
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Color (18% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.color.pts} / ${b.color.maxPts} pts</span>
-                                    </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.color.pts / b.color.maxPts) * 100}%"></div></div>
-                                </div>
+                                            <div class="d-flex justify-content-between extra-small mb-1">
+                                                <span>Location (${b.location.maxPts}%)</span>
+                                                <span class="fw-bold text-primary">${b.location.pts} / ${b.location.maxPts} pts</span>
+                                            </div>
+                                            <div class="progress mb-2" style="height:4px"><div class="progress-bar bg-primary" style="width:${(b.location.pts / b.location.maxPts) * 100}%"></div></div>
 
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Zone (22% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.location.pts} / ${b.location.maxPts} pts</span>
-                                    </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.location.pts / b.location.maxPts) * 100}%"></div></div>
-                                </div>
+                                            <div class="d-flex justify-content-between extra-small mb-1">
+                                                <span>Color (${b.color.maxPts}%)</span>
+                                                <span class="fw-bold text-primary">${b.color.pts} / ${b.color.maxPts} pts</span>
+                                            </div>
+                                            <div class="progress mb-2" style="height:4px"><div class="progress-bar bg-primary" style="width:${(b.color.pts / b.color.maxPts) * 100}%"></div></div>
 
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Date (12% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.date.pts} / ${b.date.maxPts} pts</span>
-                                    </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.date.pts / b.date.maxPts) * 100}%"></div></div>
-                                </div>
+                                            <div class="d-flex justify-content-between extra-small mb-1">
+                                                <span>Date (${b.date.maxPts}%)</span>
+                                                <span class="fw-bold text-primary">${b.date.pts} / ${b.date.maxPts} pts</span>
+                                            </div>
+                                            <div class="progress mb-2" style="height:4px"><div class="progress-bar bg-primary" style="width:${(b.date.pts / b.date.maxPts) * 100}%"></div></div>
 
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Description (12% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.description.pts} / ${b.description.maxPts} pts</span>
-                                    </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:${(b.description.pts / b.description.maxPts) * 100}%"></div></div>
-                                </div>
+                                            <div class="d-flex justify-content-between extra-small mb-1">
+                                                <span>Description (${b.description.maxPts}%)</span>
+                                                <span class="fw-bold text-primary">${b.description.pts} / ${b.description.maxPts} pts</span>
+                                            </div>
+                                            <div class="progress mb-2" style="height:4px"><div class="progress-bar bg-primary" style="width:${(b.description.pts / b.description.maxPts) * 100}%"></div></div>
 
-                                <div class="mb-2">
-                                    <div class="d-flex justify-content-between small fw-semibold">
-                                        <span>Image (12% Wt)</span>
-                                        <span class="text-primary fw-bold">${b.image.pts} / ${b.image.maxPts} pts</span>
+                                            <div class="d-flex justify-content-between extra-small mb-1">
+                                                <span>Image Similarity (${b.image.maxPts}%)</span>
+                                                <span class="fw-bold text-info">${b.image.pts} / ${b.image.maxPts} pts</span>
+                                            </div>
+                                            <div class="progress" style="height:4px"><div class="progress-bar bg-info" style="width:${(b.image.pts / b.image.maxPts) * 100}%"></div></div>
+                                        </div>
                                     </div>
-                                    <div class="progress" style="height:6px"><div class="progress-bar bg-info" style="width:${(b.image.pts / b.image.maxPts) * 100}%"></div></div>
                                 </div>
                             </div>
 
+                            <!-- Action Buttons -->
                             <div class="d-flex gap-2 mt-3 flex-wrap">
-                                <button class="btn ${btnClass} fw-bold flex-fill" onclick="openClaimModal('${targetReport.id}', '${item.id}')">
+                                <button class="btn ${btnClass} fw-bold flex-fill py-2" onclick="openClaimModal('${targetReport.id}', '${item.id}')">
                                     ${btnText}
                                 </button>
-                                <button class="btn btn-chat-contact fw-bold flex-shrink-0" onclick="openOrCreateChat('${targetReport.id}', '${item.id}', ${m.score})" title="Open private match chat">
-                                    <i class="bi bi-chat-dots-fill me-1"></i>Contact Finder
-                                </button>
+                                ${chatBtnHtml}
                             </div>
                         </div>
                     </div>
@@ -1199,30 +1553,35 @@ function openClaimModal(targetReportId, candidateItemId) {
             modalBody.innerHTML = `
                 <div class="mb-3">
                     <span class="badge badge-found me-2">FOUND ITEM</span>
-                    <h5 class="fw-bold text-dark mb-1 fs-5">${foundReport.itemName}</h5>
+                    <h5 class="fw-bold text-dark mb-1 fs-5">${escapeHtml(foundReport.itemName)}</h5>
                     <div class="p-2 bg-light rounded border mt-2 small text-dark">
-                        <i class="bi bi-person-circle text-primary me-1"></i>Founder holding this item: <strong>${finderName}</strong> (${finderEmail})
+                        <i class="bi bi-person-circle text-primary me-1"></i>Founder holding this item: <strong>${escapeHtml(finderName)}</strong> (${escapeHtml(finderEmail)})
                     </div>
                 </div>
                 
                 <div class="p-3 bg-light rounded-3 border mb-3 small text-muted">
-                    <strong>Found Item Details:</strong> ${foundReport.description}
+                    <strong>Found Item Details:</strong> ${escapeHtml(foundReport.description)}
+                </div>
+
+                <div class="p-3 bg-primary bg-opacity-10 border border-primary-subtle rounded-3 mb-3 small text-primary-emphasis">
+                    <h6 class="fw-bold mb-1"><i class="bi bi-shield-lock-fill me-1"></i>🔐 Verify Ownership</h6>
+                    <p class="mb-0">Before contacting the finder, tell us one thing about your item that is NOT visible in the listing.</p>
                 </div>
 
                 <form id="claim-submit-form" onsubmit="handleClaimSubmit(event, '${foundReport.id}')">
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Your Name (Claimant / Person Who Lost)</label>
-                        <input type="text" id="claimant-name-input" class="form-control form-control-sm" value="${currentUser ? currentUser.username : ''}" placeholder="Enter your full name" required>
+                        <input type="text" id="claimant-name-input" class="form-control form-control-sm" value="${currentUser ? escapeHtml(currentUser.username) : ''}" placeholder="Enter your full name" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">
-                            <i class="bi bi-shield-lock-fill text-primary me-1"></i>Provide Hidden Identifying Details <span class="text-danger">*</span>
+                            <i class="bi bi-shield-lock-fill text-primary me-1"></i>What unique mark or detail does your item have? <span class="text-danger">*</span>
                         </label>
-                        <textarea id="provided-proof" rows="3" class="form-control form-control-sm" placeholder="e.g. Dell XPS charger inside, initials IS engraved, keychain design, screen lock wallpaper, serial number..." required></textarea>
-                        <small class="text-muted" style="font-size: 0.75rem;">Sent directly to Founder <strong>${finderName}</strong>. The founder will verify your hidden details, approve the claim, and schedule the handover meeting. (Claimants cannot schedule meetings directly).</small>
+                        <textarea id="provided-proof" rows="3" class="form-control form-control-sm" placeholder="e.g. Unique scratch near zipper, initials engraved, keychain design, screen lock wallpaper, serial number..." required></textarea>
+                        <small class="text-muted" style="font-size: 0.75rem;">Sent directly to Founder <strong>${escapeHtml(finderName)}</strong>. The founder will review your answer to Accept or Reject your claim before chat unlocks.</small>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 fw-bold btn-sm py-2">
-                        <i class="bi bi-shield-lock me-1"></i>Submit Hidden Details to Founder for Approval
+                        <i class="bi bi-shield-lock me-1"></i>Submit Hidden Detail to Founder
                     </button>
                 </form>
 
@@ -1378,6 +1737,19 @@ function openOrCreateChat(report1Id, report2Id, score = 90) {
     let lostReport = rep1.type === "lost" ? rep1 : rep2;
     let foundReport = rep1.type === "found" ? rep1 : rep2;
 
+    // Check if an approved claim exists for this pair
+    let claims = typeof getClaims === "function" ? getClaims() : [];
+    let approvedClaim = claims.find(c =>
+        (c.itemId === foundReport.id || c.itemId === lostReport.id) &&
+        (c.status === "Approved & Meeting Scheduled" || c.status === "Verified" || c.status === "Recovery Arranged" || c.status === "Recovered")
+    );
+
+    if (!approvedClaim) {
+        alert("🔒 Chat Locked. You must submit your hidden ownership detail and have the Founder accept your claim before chat unlocks.");
+        openClaimModal(lostReport.id, foundReport.id);
+        return;
+    }
+
     // Check if chat already exists for this pair
     let existingChat = getChats().find(c => 
         (c.lostItemId === lostReport.id && c.foundItemId === foundReport.id) ||
@@ -1450,6 +1822,9 @@ function initDashboardPage() {
     let nameEl = document.getElementById("dash-user-name");
     if (nameEl) nameEl.innerText = currentUser.username;
 
+    // Render Quick Statistics Cards (Lost Count, Found Count, Potential Matches)
+    renderDashboardQuickStats(currentUser.useremail);
+
     // Render Notifications Feed Sidebar
     renderNotificationsFeed(currentUser.useremail);
 
@@ -1462,7 +1837,7 @@ function initDashboardPage() {
     // Render Sent Claims & Founder Meeting Status
     renderSubmittedClaims(currentUser.useremail);
 
-    // Render My Submitted Reports
+    // Render My Submitted Reports (Your Lost Items & Your Found Items)
     renderMyReports(currentUser.useremail);
 
     // Reposition hash navigation after the fixed navbar and dashboard content render.
@@ -1778,6 +2153,23 @@ function renderSubmittedClaims(userEmail) {
     });
 }
 
+window.activeNotifTab = 'all';
+
+function switchNotifTab(tabName) {
+    window.activeNotifTab = tabName;
+    ['all', 'unread', 'action', 'messages', 'activity'].forEach(t => {
+        let btn = document.getElementById(`notif-tab-${t}`);
+        if (btn) {
+            btn.classList.toggle('active', t === tabName);
+        }
+    });
+
+    let currentUser = getCurrentUser();
+    if (currentUser && currentUser.useremail) {
+        renderNotificationsFeed(currentUser.useremail);
+    }
+}
+
 function renderNotificationsFeed(userEmail) {
     let container = document.getElementById("notifications-container");
     let clearBtn = document.getElementById("btn-clear-notifications");
@@ -1790,19 +2182,44 @@ function renderNotificationsFeed(userEmail) {
         clearBtn.style.opacity = notifs.length === 0 ? "0.5" : "1";
     }
 
-    if (notifs.length === 0) {
+    let activeTab = window.activeNotifTab || 'all';
+
+    let filteredNotifs = notifs.filter(n => {
+        let isUnread = n.read !== true;
+        let isChatMsg = n.type === "chat_message" || n.type === "chat_start" || n.chatId;
+        let isActionReq = n.type === "claim_request" || n.type === "more_info_requested" || n.type === "owner_notification" || (n.message && (n.message.includes("submitted hidden details") || n.message.includes("More Info Needed") || n.message.includes("Good News")));
+        let isActivity = n.type === "claim_approved" || n.type === "claim_rejected" || n.type === "item_recovered" || (n.message && (n.message.includes("Approved") || n.message.includes("Rejected") || n.message.includes("Recovered")));
+
+        if (activeTab === 'unread') return isUnread;
+        if (activeTab === 'action') return isActionReq;
+        if (activeTab === 'messages') return isChatMsg;
+        if (activeTab === 'activity') return isActivity;
+        return true; // 'all'
+    });
+
+    // Display sorting: Newest notifications first!
+    filteredNotifs.sort((a, b) => {
+        let timeA = new Date(a.date || a.timestamp || 0).getTime();
+        let timeB = new Date(b.date || b.timestamp || 0).getTime();
+        if (isNaN(timeA) || isNaN(timeB)) return 0;
+        return timeB - timeA;
+    });
+
+    if (filteredNotifs.length === 0) {
+        let tabLabel = activeTab === 'unread' ? 'unread' : (activeTab === 'action' ? 'action required' : (activeTab === 'messages' ? 'message' : (activeTab === 'activity' ? 'activity' : '')));
         container.innerHTML = `
             <div class="p-4 text-muted text-center small">
                 <i class="bi bi-bell-slash fs-3 d-block text-secondary mb-2 opacity-50"></i>
-                No notifications for this account yet.<br>
-                <span class="extra-small text-muted">When another student reports finding your item or submits hidden details, it will appear here.</span>
+                No ${tabLabel} notifications for this account.<br>
+                <span class="extra-small text-muted">When relevant updates occur, they will appear in this category.</span>
             </div>
         `;
         return;
     }
 
     container.innerHTML = "";
-    notifs.forEach(n => {
+    filteredNotifs.forEach(n => {
+        let isUnread = n.read !== true;
         let isChatMsg = n.type === "chat_message" || n.type === "chat_start" || n.chatId;
         let isOwnerAlert = n.type === "owner_notification" || (n.message && n.message.includes("Good News"));
         let isApproved = n.type === "claim_approved" || (n.message && n.message.includes("Claim Approved"));
@@ -1812,15 +2229,22 @@ function renderNotificationsFeed(userEmail) {
         let badgeText = isChatMsg ? "New Chat Message" : (isOwnerAlert ? "Item Found Alert" : (isApproved ? "Claim Approved" : (isMoreInfo ? "More Info Needed" : (isRejected ? "Claim Rejected" : "Hidden Details Received"))));
         let badgeClass = isChatMsg ? "bg-primary text-white" : (isOwnerAlert ? "bg-warning text-dark" : (isApproved ? "bg-success text-white" : (isMoreInfo ? "bg-warning text-dark" : (isRejected ? "bg-danger text-white" : "bg-info text-dark"))));
 
+        let cardStyleClass = isUnread ? "notif-card-unread" : "notif-card-read";
+
         container.innerHTML += `
-            <div class="p-3 mb-2 rounded-3 border shadow-sm position-relative" style="background-color: #120f26; border-color: rgba(168, 85, 247, 0.25) !important;">
+            <div class="p-3 mb-2 rounded-3 border shadow-sm position-relative ${cardStyleClass}">
                 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
-                    <span class="badge ${badgeClass} extra-small fw-bold px-2.5 py-1">${badgeText}</span>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="badge ${badgeClass} extra-small fw-bold px-2.5 py-1">${badgeText}</span>
+                        ${isUnread ? '<span class="badge bg-danger rounded-pill extra-small px-2 py-0.5" style="font-size:0.65rem;"><i class="bi bi-circle-fill me-1" style="font-size:0.45rem;"></i>UNREAD</span>' : '<span class="badge bg-secondary-subtle text-muted extra-small px-2 py-0.5" style="font-size:0.65rem;">Read</span>'}
+                    </div>
                     <div class="d-flex align-items-center gap-2">
                         <small class="text-muted extra-small"><i class="bi bi-clock me-1"></i>${n.date}</small>
-                        <button type="button" class="btn btn-sm btn-success text-white py-0.5 px-2.5 rounded-pill extra-small fw-bold shadow-sm" onclick="handleMarkNotificationRead('${n.id}', '${n.chatId || ''}')" title="Mark as Read & Open Chat">
-                            <i class="bi bi-check-circle-fill me-1"></i>Read
-                        </button>
+                        ${isUnread ? `
+                            <button type="button" class="btn btn-sm btn-success text-white py-0.5 px-2.5 rounded-pill extra-small fw-bold shadow-sm" onclick="handleMarkNotificationRead('${n.id}', '${n.chatId || ''}')" title="Mark as Read">
+                                <i class="bi bi-check-circle-fill me-1"></i>Mark Read
+                            </button>
+                        ` : ''}
                         <button type="button" class="btn btn-link text-secondary p-0 lh-1 hover-danger ms-1" onclick="handleDeleteSingleNotification('${n.id}')" title="Delete notification" style="font-size: 0.9rem;">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -1831,7 +2255,7 @@ function renderNotificationsFeed(userEmail) {
                 ${n.chatId ? `
                     <div class="mt-2 pt-2 border-top border-secondary-subtle d-flex justify-content-between align-items-center">
                         <span class="extra-small text-muted"><i class="bi bi-shield-lock-fill text-success me-1"></i>Private Match Chat</span>
-                        <a href="chat.html?chatId=${n.chatId}" class="btn btn-sm btn-primary fw-bold py-1 px-3 extra-small rounded-pill" onclick="deleteNotification('${n.id}')">
+                        <a href="chat.html?chatId=${n.chatId}" class="btn btn-sm btn-primary fw-bold py-1 px-3 extra-small rounded-pill" onclick="handleMarkNotificationRead('${n.id}')">
                             💬 Open Chat <i class="bi bi-arrow-right ms-1"></i>
                         </a>
                     </div>
@@ -1850,7 +2274,7 @@ function handleMarkNotificationRead(notifId, chatId) {
     let currentUser = getCurrentUser();
     if (!currentUser || !currentUser.useremail) return;
 
-    deleteNotification(notifId);
+    markNotificationAsRead(notifId);
     renderNotificationsFeed(currentUser.useremail);
     renderFoundNotices(currentUser.useremail);
     renderNavbarUser();
@@ -1871,7 +2295,7 @@ function handleClearAllNotifications() {
         return;
     }
 
-    if (confirm(`Delete all ${notifs.length} notification(s)?`)) {
+    if (confirm("Delete all notifications?\nThis will remove your notification history.")) {
         clearNotifications(currentUser.useremail);
         renderNotificationsFeed(currentUser.useremail);
         renderFoundNotices(currentUser.useremail);
@@ -1923,54 +2347,61 @@ function renderReceivedClaims(userEmail) {
                 
                 <!-- Submitted Hidden Details Box for Founder Verification -->
                 <div class="p-3 bg-light rounded-3 border mb-3 small">
-                    <strong class="text-dark d-block mb-1">
-                        <i class="bi bi-shield-lock-fill text-primary me-1"></i>Submitted Hidden Identifying Details:
-                    </strong>
-                    <div class="p-2 bg-white rounded border text-dark fw-medium">
-                        "${c.providedProof}"
+                    <div class="fw-bold text-dark mb-1">
+                        <i class="bi bi-bell-fill text-warning me-1"></i>Someone believes this is their item.
                     </div>
-                    <small class="text-muted mt-1 d-block">
-                        <i class="bi bi-info-circle me-1"></i>Verify that these hidden details match the item in your possession before approving.
-                    </small>
+                    <strong class="text-dark d-block mb-1 mt-2">
+                        <i class="bi bi-shield-lock-fill text-primary me-1"></i>Claimant's answer:
+                    </strong>
+                    <div class="p-2.5 bg-white rounded border text-dark fw-bold">
+                        "${escapeHtml(c.providedProof)}"
+                    </div>
+                    <div class="fw-semibold text-dark mt-2 mb-1">
+                        <i class="bi bi-question-circle text-primary me-1"></i>Does this answer correctly describe the item you found?
+                    </div>
                 </div>
 
                 ${isMoreInfo ? `
                     <div class="p-2.5 bg-warning bg-opacity-10 text-dark rounded border small mb-3">
                         <i class="bi bi-hourglass-split text-warning me-1"></i>
-                        <strong>You requested more info:</strong> "${c.founderFeedback || 'Please provide more details'}". Awaiting claimant response.
+                        <strong>You requested more info:</strong> "${escapeHtml(c.founderFeedback || 'Please provide more details')}". Awaiting claimant response.
                     </div>
                 ` : ''}
                 
                 ${(isPending || isMoreInfo) ? `
-                    <!-- 3 Options for Founder: Accept, Request More Info, Reject -->
+                    <!-- Primary Options for Founder: Accept or Reject -->
                     <div class="d-flex flex-wrap gap-2 pt-2 border-top">
-                        <button class="btn btn-sm btn-success fw-bold flex-fill py-1.5" onclick="openScheduleModal('${c.claimId}')">
-                            <i class="bi bi-check2-circle me-1"></i>1. Accept & Schedule
+                        <button class="btn btn-sm btn-success fw-bold flex-fill py-2" onclick="openApproveClaimModal('${c.claimId}')">
+                            <i class="bi bi-check2-circle me-1"></i>✓ Approve Claim
                         </button>
-                        <button class="btn btn-sm btn-outline-warning text-dark fw-bold flex-fill py-1.5" onclick="openRequestInfoModal('${c.claimId}')">
-                            <i class="bi bi-question-circle me-1"></i>2. Request More Info
+                        <button class="btn btn-sm btn-outline-danger fw-bold flex-fill py-2" onclick="openRejectModal('${c.claimId}')">
+                            <i class="bi bi-x-circle me-1"></i>✕ Reject Claim
                         </button>
-                        <button class="btn btn-sm btn-outline-danger fw-bold flex-fill py-1.5" onclick="openRejectModal('${c.claimId}')">
-                            <i class="bi bi-x-circle me-1"></i>3. Reject Claim
+                        <button class="btn btn-sm btn-outline-warning text-dark fw-bold py-2" onclick="openRequestInfoModal('${c.claimId}')">
+                            <i class="bi bi-question-circle me-1"></i>Request More Info
                         </button>
                     </div>
                 ` : isApproved ? `
                     <div class="p-2.5 bg-success bg-opacity-10 text-success rounded border small">
-                        <div class="fw-bold mb-1"><i class="bi bi-geo-alt-fill me-1"></i>Meeting Scheduled: ${c.meetingDetails ? c.meetingDetails.location : 'Campus Reception'} | ${c.meetingDetails ? c.meetingDetails.time : ''}</div>
-                        ${c.meetingDetails && c.meetingDetails.note ? `<div class="fw-normal text-muted">Instructions: ${c.meetingDetails.note}</div>` : ''}
+                        <div class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>Claim Approved</div>
+                        <div class="text-dark small">Ownership verified. Chat is now unlocked so you can coordinate the return.</div>
                     </div>
                 ` : `
                     <div class="p-2.5 bg-danger bg-opacity-10 text-danger rounded border small">
                         <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>Claim Rejected</div>
-                        <div class="text-dark">Reason: ${c.rejectionReason || 'Details did not match'}</div>
+                        <div class="text-dark">Reason: ${escapeHtml(c.rejectionReason || 'Details did not match')}</div>
                     </div>
                 `}
 
                 <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
-                    <span class="extra-small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Secure Encrypted Match</span>
-                    <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openClaimChat('${c.claimId}')">
-                        <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
-                    </button>
+                    <span class="extra-small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Encrypted Verification</span>
+                    ${isApproved ? `
+                        <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openClaimChat('${c.claimId}')">
+                            <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
+                        </button>
+                    ` : `
+                        <span class="badge bg-secondary-subtle text-muted border py-1.5 px-2.5">💬 Chat Locks Until Accepted</span>
+                    `}
                 </div>
             </div>
         `;
@@ -2017,6 +2448,81 @@ function openClaimChat(claimId) {
     }
 
     openOrCreateChat(lostReport.id, foundReport.id);
+}
+
+// -------------------------------------------------------------
+// Founder Option: Approve Ownership Claim (No Meeting Form)
+// -------------------------------------------------------------
+function openApproveClaimModal(claimId) {
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    let claimIdInput = document.getElementById("modal-approve-claim-id");
+    if (claimIdInput) claimIdInput.value = claimId;
+
+    let displayBox = document.getElementById("modal-approve-claimant-display");
+    if (displayBox) {
+        displayBox.innerHTML = `
+            <div class="mb-1"><strong>Item:</strong> <span class="text-primary fw-bold">${escapeHtml(claim.itemName)}</span></div>
+            <div class="mb-1"><strong>Claimant:</strong> ${escapeHtml(claim.claimedBy)} (${escapeHtml(claim.claimedByEmail)})</div>
+            <div class="p-2.5 bg-white rounded border mt-2">
+                <strong class="text-dark d-block mb-1"><i class="bi bi-shield-lock-fill text-primary me-1"></i>Claimant's Submitted Hidden Detail:</strong>
+                <div class="text-dark fw-bold fs-6">"${escapeHtml(claim.providedProof)}"</div>
+            </div>
+            <div class="fw-semibold text-dark mt-2">
+                <i class="bi bi-question-circle text-primary me-1"></i>Does this information correctly identify the item you found?
+            </div>
+        `;
+    }
+
+    let modalEl = document.getElementById("approveClaimModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+function handleApproveClaimSubmit(event) {
+    event.preventDefault();
+    let claimId = document.getElementById("modal-approve-claim-id").value;
+
+    let claims = getClaims();
+    let claim = claims.find(c => c.claimId === claimId);
+    if (!claim) return;
+
+    // Update claim status to "Approved & Meeting Scheduled" (to ensure compatibility with existing chat checks)
+    updateClaimStatus(claimId, "Approved & Meeting Scheduled");
+
+    // Send notification to Claimant (Person who lost the item)
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: claim.claimedByEmail,
+        senderName: claim.reporter,
+        senderEmail: claim.reporterEmail,
+        itemName: claim.itemName,
+        message: `🎉 Claim Approved! Founder ${claim.reporter} verified your ownership for "${claim.itemName}". Chat is now unlocked so you can coordinate the return.`,
+        date: new Date().toLocaleString(),
+        type: "claim_approved",
+        claimId: claimId
+    });
+
+    let modalEl = document.getElementById("approveClaimModal");
+    if (modalEl) {
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    // Open chat for this claim directly
+    openClaimChat(claimId);
+}
+
+function openRejectModalFromApprove() {
+    let claimIdInput = document.getElementById("modal-approve-claim-id");
+    let claimId = claimIdInput ? claimIdInput.value : "";
+    if (claimId) {
+        openRejectModal(claimId);
+    }
 }
 
 // -------------------------------------------------------------
@@ -2325,36 +2831,172 @@ function handleUpdateDetailsSubmit(event) {
     window.location.reload();
 }
 
+// Render Quick Statistics Cards (Lost Items, Found Items, Potential Matches)
+function renderDashboardQuickStats(userEmail) {
+    let lostEl = document.getElementById("dash-stat-lost-count");
+    let foundEl = document.getElementById("dash-stat-found-count");
+    let matchesEl = document.getElementById("dash-stat-matches-count");
+
+    if (!lostEl && !foundEl && !matchesEl) return;
+
+    let reports = typeof getReports === "function" ? getReports() : [];
+    let myReports = reports.filter(r => r.postedByEmail && userEmail && r.postedByEmail.toLowerCase().trim() === userEmail.toLowerCase().trim());
+
+    let lostCount = myReports.filter(r => r.type === "lost").length;
+    let foundCount = myReports.filter(r => r.type === "found").length;
+
+    // Calculate total potential matches across user's reports using matching.js findMatches
+    let totalMatches = 0;
+    if (typeof findMatches === "function") {
+        myReports.forEach(myReport => {
+            let matches = findMatches(myReport, reports);
+            let highMatches = matches.filter(m => m.matchScore >= 40);
+            totalMatches += highMatches.length;
+        });
+    }
+
+    if (lostEl) lostEl.innerText = lostCount;
+    if (foundEl) foundEl.innerText = foundCount;
+    if (matchesEl) matchesEl.innerText = totalMatches;
+}
+
 function renderMyReports(userEmail) {
-    let container = document.getElementById("my-lost-container");
-    if (!container) return;
+    let legacyContainer = document.getElementById("my-lost-container");
+    let lostContainer = document.getElementById("my-lost-items-container");
+    let foundContainer = document.getElementById("my-found-items-container");
 
     let reports = getReports();
     let myReports = reports.filter(r => r.postedByEmail && userEmail && r.postedByEmail.toLowerCase().trim() === userEmail.toLowerCase().trim());
 
-    if (myReports.length === 0) {
-        container.innerHTML = `<p class="text-muted py-2 mb-0">No reports submitted yet.</p>`;
-        return;
-    }
+    let lostItems = myReports.filter(r => r.type === "lost");
+    let foundItems = myReports.filter(r => r.type === "found");
 
-    container.innerHTML = "";
-    myReports.forEach(item => {
-        container.innerHTML += `
-            <div class="card p-3 mb-3 border shadow-sm rounded-3">
-                <div class="d-flex justify-content-between align-items-center flex-wrap">
-                    <div>
-                        <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'} mb-1">${item.type.toUpperCase()}</span>
-                        <h6 class="fw-bold mb-0">${item.itemName}</h6>
-                        <small class="text-muted">Zone: ${item.zone} | Date: ${item.date}</small>
-                    </div>
-                    <div>
-                        <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-primary me-2">View Matches</a>
-                        <button class="btn btn-sm btn-outline-danger" onclick="removeReport('${item.id}')">Delete</button>
+    // Populate legacy container if present
+    if (legacyContainer) {
+        if (myReports.length === 0) {
+            legacyContainer.innerHTML = `<p class="text-muted py-2 mb-0">No reports submitted yet.</p>`;
+        } else {
+            legacyContainer.innerHTML = myReports.map(item => `
+                <div class="card p-3 mb-3 border shadow-sm rounded-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div>
+                            <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'} mb-1">${item.type.toUpperCase()}</span>
+                            <h6 class="fw-bold mb-0">${escapeHtml(item.itemName)}</h6>
+                            <small class="text-muted">Zone: ${item.zone} | Date: ${item.date}</small>
+                        </div>
+                        <div>
+                            <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-primary me-2">View Matches</a>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeReport('${item.id}')">Delete</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-    });
+            `).join('');
+        }
+    }
+
+    // Render "Your Lost Items" section
+    if (lostContainer) {
+        if (lostItems.length === 0) {
+            lostContainer.innerHTML = `<div class="p-3 bg-light rounded-3 text-muted small text-center"><i class="bi bi-inbox me-1"></i>You haven't reported any lost items yet.</div>`;
+        } else {
+            lostContainer.innerHTML = lostItems.map(item => {
+                let matches = (typeof findMatches === "function") ? findMatches(item, reports).filter(m => m.matchScore >= 40) : [];
+                return `
+                    <div class="card user-item-card p-3 mb-3 shadow-sm border">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-3">
+                                ${item.image && !item.image.includes("placeholder") ? `
+                                    <img src="${item.image}" alt="${escapeHtml(item.itemName)}" class="rounded border" style="width: 54px; height: 54px; object-fit: cover;">
+                                ` : `
+                                    <div class="rounded bg-light d-flex align-items-center justify-content-center border" style="width: 54px; height: 54px;">
+                                        <i class="bi bi-tag text-muted fs-4"></i>
+                                    </div>
+                                `}
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge badge-lost rounded-pill px-2 py-0.5" style="font-size: 0.7rem;">LOST</span>
+                                        <span class="badge bg-secondary-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.7rem;">${escapeHtml(item.category)}</span>
+                                        ${item.color ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.7rem;">${escapeHtml(item.color)}</span>` : ''}
+                                    </div>
+                                    <h6 class="fw-bold mb-0 text-dark">${escapeHtml(item.itemName)}</h6>
+                                    <div class="extra-small text-muted mt-0.5">
+                                        <i class="bi bi-geo-alt-fill text-cyan me-1"></i>${escapeHtml(item.zone)} &nbsp;|&nbsp;
+                                        <i class="bi bi-calendar-event me-1"></i>${item.date}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                ${matches.length > 0 ? `
+                                    <a href="matches.html?id=${item.id}" class="btn btn-sm btn-primary fw-bold rounded-pill px-3">
+                                        <i class="bi bi-cpu me-1"></i>Matches (${matches.length})
+                                    </a>
+                                ` : `
+                                    <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-primary fw-semibold rounded-pill px-3">
+                                        <i class="bi bi-search me-1"></i>View Matches
+                                    </a>
+                                `}
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="removeReport('${item.id}')" title="Delete report">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    // Render "Your Found Items" section
+    if (foundContainer) {
+        if (foundItems.length === 0) {
+            foundContainer.innerHTML = `<div class="p-3 bg-light rounded-3 text-muted small text-center"><i class="bi bi-inbox me-1"></i>You haven't reported any found items yet.</div>`;
+        } else {
+            foundContainer.innerHTML = foundItems.map(item => {
+                let matches = (typeof findMatches === "function") ? findMatches(item, reports).filter(m => m.matchScore >= 40) : [];
+                return `
+                    <div class="card user-item-card p-3 mb-3 shadow-sm border">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-3">
+                                ${item.image && !item.image.includes("placeholder") ? `
+                                    <img src="${item.image}" alt="${escapeHtml(item.itemName)}" class="rounded border" style="width: 54px; height: 54px; object-fit: cover;">
+                                ` : `
+                                    <div class="rounded bg-light d-flex align-items-center justify-content-center border" style="width: 54px; height: 54px;">
+                                        <i class="bi bi-check-circle text-success fs-4"></i>
+                                    </div>
+                                `}
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge badge-found rounded-pill px-2 py-0.5" style="font-size: 0.7rem;">FOUND</span>
+                                        <span class="badge bg-secondary-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.7rem;">${escapeHtml(item.category)}</span>
+                                        ${item.color ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.7rem;">${escapeHtml(item.color)}</span>` : ''}
+                                    </div>
+                                    <h6 class="fw-bold mb-0 text-dark">${escapeHtml(item.itemName)}</h6>
+                                    <div class="extra-small text-muted mt-0.5">
+                                        <i class="bi bi-geo-alt-fill text-success me-1"></i>${escapeHtml(item.zone)} &nbsp;|&nbsp;
+                                        <i class="bi bi-calendar-event me-1"></i>${item.date}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                ${matches.length > 0 ? `
+                                    <a href="matches.html?id=${item.id}" class="btn btn-sm btn-success fw-bold rounded-pill px-3">
+                                        <i class="bi bi-cpu me-1"></i>Matches (${matches.length})
+                                    </a>
+                                ` : `
+                                    <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-success fw-semibold rounded-pill px-3">
+                                        <i class="bi bi-search me-1"></i>View Matches
+                                    </a>
+                                `}
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="removeReport('${item.id}')" title="Delete report">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
 }
 
 function removeReport(id) {
@@ -2776,4 +3418,27 @@ function setupCustomSelect(selectId) {
 document.addEventListener("click", () => {
     document.querySelectorAll(".custom-select-wrapper.is-open").forEach(w => w.classList.remove("is-open"));
 });
+
+// -------------------------------------------------------------
+// Quick Help / FAQ Accordion Toggle Handler
+// -------------------------------------------------------------
+function toggleHelpAccordion(cardEl) {
+    if (!cardEl) return;
+    let isActive = cardEl.classList.contains("active-item");
+
+    // Close all accordion cards in the section
+    let allCards = document.querySelectorAll(".help-item-card");
+    allCards.forEach(c => {
+        c.classList.remove("active-item");
+        let body = c.querySelector(".help-item-body");
+        if (body) body.style.display = "none";
+    });
+
+    // If clicked card was not active, open it
+    if (!isActive) {
+        cardEl.classList.add("active-item");
+        let body = cardEl.querySelector(".help-item-body");
+        if (body) body.style.display = "block";
+    }
+}
 
