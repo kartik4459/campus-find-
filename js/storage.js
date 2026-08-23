@@ -309,11 +309,68 @@ function saveReport(report) {
     localStorage.setItem("campus_reports", JSON.stringify(reports));
 }
 
+function sameIdString(id1, id2) {
+    if (!id1 || !id2) return false;
+    return String(id1).toLowerCase().trim() === String(id2).toLowerCase().trim();
+}
+
 /**
- * Remove a report by its ID.
+ * Remove a report by its ID with full cascade cleanup across all related storage keys.
+ * Preserves unrelated partner reports.
  */
 function deleteReport(id) {
-    var reports = getReports().filter(function(r) { return r.id !== id; });
+    if (!id) return;
+
+    // 1. Cascade clean chats associated with report id
+    var allChats = safeParseJSON(localStorage.getItem("campus_chats"), []);
+    var deletedChatIds = [];
+    var remainingChats = allChats.filter(function(c) {
+        if (!c) return false;
+        var matchesId = sameIdString(c.lostItemId, id) || sameIdString(c.foundItemId, id) ||
+                         sameIdString(c.itemId, id) || sameIdString(c.reportId, id);
+        if (matchesId) {
+            if (c.chatId) deletedChatIds.push(c.chatId);
+            return false;
+        }
+        return true;
+    });
+    localStorage.setItem("campus_chats", JSON.stringify(remainingChats));
+
+    // 2. Cascade clean claims associated with report id or deleted chats
+    var allClaims = safeParseJSON(localStorage.getItem("campus_claims"), []);
+    var deletedClaimIds = [];
+    var remainingClaims = allClaims.filter(function(c) {
+        if (!c) return false;
+        var matchesId = sameIdString(c.lostItemId, id) || sameIdString(c.foundItemId, id) ||
+                         sameIdString(c.targetItemId, id) || sameIdString(c.reportId, id) ||
+                         sameIdString(c.itemId, id);
+        var matchesDeletedChat = c.chatId && deletedChatIds.some(function(dcId) { return sameIdString(c.chatId, dcId); });
+        if (matchesId || matchesDeletedChat) {
+            if (c.claimId) deletedClaimIds.push(c.claimId);
+            return false;
+        }
+        return true;
+    });
+    localStorage.setItem("campus_claims", JSON.stringify(remainingClaims));
+
+    // 3. Cascade clean notifications associated with report id, deleted claims, or deleted chats
+    var allNotifs = safeParseJSON(localStorage.getItem("campus_notifications"), []);
+    var remainingNotifs = allNotifs.filter(function(n) {
+        if (!n) return false;
+        var hasDirectIdRef = sameIdString(n.itemId, id) || sameIdString(n.reportId, id) || sameIdString(n.targetItemId, id) ||
+                              sameIdString(n.lostItemId, id) || sameIdString(n.foundItemId, id) ||
+                              (n.link && typeof n.link === "string" && n.link.toLowerCase().indexOf(String(id).toLowerCase().trim()) !== -1);
+        var hasClaimIdRef = n.claimId && deletedClaimIds.some(function(dcId) { return sameIdString(n.claimId, dcId); });
+        var hasChatIdRef = n.chatId && deletedChatIds.some(function(dcId) { return sameIdString(n.chatId, dcId); });
+
+        return !(hasDirectIdRef || hasClaimIdRef || hasChatIdRef);
+    });
+    localStorage.setItem("campus_notifications", JSON.stringify(remainingNotifs));
+
+    // 4. Remove report id ONLY from campus_reports (Partner reports remain untouched)
+    var reports = safeParseJSON(localStorage.getItem("campus_reports"), []).filter(function(r) {
+        return r && !sameIdString(r.id, id);
+    });
     localStorage.setItem("campus_reports", JSON.stringify(reports));
 }
 
@@ -322,7 +379,38 @@ function deleteReport(id) {
 // ============================================================
 
 function getClaims() {
-    return safeParseJSON(localStorage.getItem("campus_claims"), []);
+    var claims = safeParseJSON(localStorage.getItem("campus_claims"), []);
+    var rawReports = safeParseJSON(localStorage.getItem("campus_reports"), []);
+    var reportIds = {};
+    rawReports.forEach(function(r) { if (r && r.id) reportIds[String(r.id).toLowerCase().trim()] = true; });
+
+    var validClaims = [];
+    var hasOrphansToPurge = false;
+
+    claims.forEach(function(c) {
+        if (!c) return;
+
+        // Check ONLY existing, truthy ID references
+        var isOrphan = false;
+
+        if (c.itemId && !reportIds[String(c.itemId).toLowerCase().trim()]) isOrphan = true;
+        if (c.reportId && !reportIds[String(c.reportId).toLowerCase().trim()]) isOrphan = true;
+        if (c.lostItemId && !reportIds[String(c.lostItemId).toLowerCase().trim()]) isOrphan = true;
+        if (c.foundItemId && !reportIds[String(c.foundItemId).toLowerCase().trim()]) isOrphan = true;
+        if (c.targetItemId && !reportIds[String(c.targetItemId).toLowerCase().trim()]) isOrphan = true;
+
+        if (isOrphan) {
+            hasOrphansToPurge = true;
+        } else {
+            validClaims.push(c);
+        }
+    });
+
+    if (hasOrphansToPurge) {
+        localStorage.setItem("campus_claims", JSON.stringify(validClaims));
+    }
+
+    return validClaims;
 }
 
 function saveClaim(claim) {
@@ -333,7 +421,7 @@ function saveClaim(claim) {
 
 function updateClaimStatus(claimId, status, extraData) {
     var claims = getClaims();
-    var claim = claims.find(function(c) { return c.claimId === claimId; });
+    var claim = claims.find(function(c) { return sameIdString(c.claimId, claimId); });
     if (!claim) return;
     claim.status = status;
     if (extraData) {
@@ -357,7 +445,49 @@ function getNotifications(userEmail) {
     if (!userEmail) return [];
     var all = safeParseJSON(localStorage.getItem("campus_notifications"), []);
     var target = userEmail.toLowerCase().trim();
-    return all.filter(function(n) {
+
+    var rawReports = safeParseJSON(localStorage.getItem("campus_reports"), []);
+    var validClaims = getClaims(); // uses orphan-validated claims
+    var validChats = getChats();   // uses orphan-validated chats
+
+    var reportIds = {};
+    rawReports.forEach(function(r) { if (r && r.id) reportIds[String(r.id).toLowerCase().trim()] = true; });
+
+    var claimIds = {};
+    validClaims.forEach(function(c) { if (c && c.claimId) claimIds[String(c.claimId).toLowerCase().trim()] = true; });
+
+    var chatIds = {};
+    validChats.forEach(function(c) { if (c && c.chatId) chatIds[String(c.chatId).toLowerCase().trim()] = true; });
+
+    var validNotifications = [];
+    var hasOrphansToPurge = false;
+
+    all.forEach(function(n) {
+        if (!n) return;
+
+        // Check ONLY existing, truthy ID references
+        var isOrphan = false;
+
+        if (n.reportId && !reportIds[String(n.reportId).toLowerCase().trim()]) isOrphan = true;
+        if (n.itemId && !reportIds[String(n.itemId).toLowerCase().trim()]) isOrphan = true;
+        if (n.lostItemId && !reportIds[String(n.lostItemId).toLowerCase().trim()]) isOrphan = true;
+        if (n.foundItemId && !reportIds[String(n.foundItemId).toLowerCase().trim()]) isOrphan = true;
+        if (n.targetItemId && !reportIds[String(n.targetItemId).toLowerCase().trim()]) isOrphan = true;
+        if (n.claimId && !claimIds[String(n.claimId).toLowerCase().trim()]) isOrphan = true;
+        if (n.chatId && !chatIds[String(n.chatId).toLowerCase().trim()]) isOrphan = true;
+
+        if (isOrphan) {
+            hasOrphansToPurge = true;
+        } else {
+            validNotifications.push(n);
+        }
+    });
+
+    if (hasOrphansToPurge) {
+        localStorage.setItem("campus_notifications", JSON.stringify(validNotifications));
+    }
+
+    return validNotifications.filter(function(n) {
         return n.recipientEmail && n.recipientEmail.toLowerCase().trim() === target;
     });
 }
@@ -383,7 +513,7 @@ function sendNotification(notification) {
 function markNotificationAsRead(notifId) {
     if (!notifId) return;
     var all = safeParseJSON(localStorage.getItem("campus_notifications"), []);
-    var idx = all.findIndex(function(n) { return n.id === notifId; });
+    var idx = all.findIndex(function(n) { return sameIdString(n.id, notifId); });
     if (idx >= 0) {
         all[idx].read = true;
         localStorage.setItem("campus_notifications", JSON.stringify(all));
@@ -403,7 +533,7 @@ function clearNotifications(userEmail) {
 function deleteNotification(notifId) {
     if (!notifId) return;
     var all = safeParseJSON(localStorage.getItem("campus_notifications"), []);
-    var remaining = all.filter(function(n) { return n.id !== notifId; });
+    var remaining = all.filter(function(n) { return !sameIdString(n.id, notifId); });
     localStorage.setItem("campus_notifications", JSON.stringify(remaining));
 }
 
@@ -412,7 +542,37 @@ function deleteNotification(notifId) {
 // ============================================================
 
 function getChats() {
-    return safeParseJSON(localStorage.getItem("campus_chats"), []);
+    var chats = safeParseJSON(localStorage.getItem("campus_chats"), []);
+    var rawReports = safeParseJSON(localStorage.getItem("campus_reports"), []);
+    var reportIds = {};
+    rawReports.forEach(function(r) { if (r && r.id) reportIds[String(r.id).toLowerCase().trim()] = true; });
+
+    var validChats = [];
+    var hasOrphansToPurge = false;
+
+    chats.forEach(function(c) {
+        if (!c) return;
+
+        // Check ONLY existing, truthy ID references
+        var isOrphan = false;
+
+        if (c.itemId && !reportIds[String(c.itemId).toLowerCase().trim()]) isOrphan = true;
+        if (c.reportId && !reportIds[String(c.reportId).toLowerCase().trim()]) isOrphan = true;
+        if (c.lostItemId && !reportIds[String(c.lostItemId).toLowerCase().trim()]) isOrphan = true;
+        if (c.foundItemId && !reportIds[String(c.foundItemId).toLowerCase().trim()]) isOrphan = true;
+
+        if (isOrphan) {
+            hasOrphansToPurge = true;
+        } else {
+            validChats.push(c);
+        }
+    });
+
+    if (hasOrphansToPurge) {
+        localStorage.setItem("campus_chats", JSON.stringify(validChats));
+    }
+
+    return validChats;
 }
 
 function getChatById(chatId) {

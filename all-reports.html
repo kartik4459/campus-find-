@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Campus Reports — CampusFind</title>
+    <meta name="description" content="Explore lost and found items reported across the university campus.">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="all-reports">
+
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-custom sticky-top">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <!-- Hamburger menu button -->
+                <button class="btn btn-menu me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <a class="navbar-brand" href="index.html">
+                    <img src="images/campusfind-logo.png" alt="CampusFind Logo" class="brand-logo-img">
+                    CampusFind
+                </a>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <a href="index.html" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-none d-md-inline-block">
+                    <i class="bi bi-house-door me-1"></i> Home
+                </a>
+                <a href="index.html" class="btn btn-sm btn-outline-secondary rounded-circle d-inline-flex d-md-none" style="width: 36px; height: 36px; align-items: center; justify-content: center; padding: 0;">
+                    <i class="bi bi-house-door fs-5"></i>
+                </a>
+                <!-- Dynamic User Account Status Badge -->
+                <div id="nav-user-display">
+                    <!-- Dynamic user panel rendered via app.js -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Slide-out Left Sidebar Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fw-bold d-flex align-items-center gap-2" id="sidebarMenuLabel">
+                <span class="brand-icon" style="width:32px; height:32px; font-size:0.95rem; animation:none;"><i class="bi bi-search-heart"></i></span>
+                Menu
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="sidebar-nav">
+                <a class="nav-link" href="index.html"><i class="bi bi-house-door me-2"></i>Home</a>
+                <a class="nav-link" href="my-reports.html"><i class="bi bi-folder2-open me-2"></i>My Reports</a>
+                <a class="nav-link active" href="all-reports.html"><i class="bi bi-globe me-2"></i>All Campus Reports</a>
+                <a class="nav-link" href="report.html"><i class="bi bi-plus-square me-2"></i>Report Item</a>
+                <a class="nav-link" href="matches.html"><i class="bi bi-cpu me-2"></i>Match Engine</a>
+                <a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+                <a class="nav-link text-warning" href="admin.html"><i class="bi bi-shield-lock me-2"></i>Admin</a>
+            </div>
+            
+            <div class="p-3 bg-light rounded-3 border mt-4 small text-muted">
+                <div class="fw-bold mb-1 text-primary"><i class="bi bi-lightning-charge me-1"></i>Algorithm Active</div>
+                Multi-attribute comparison matches items across zones, categories, colors, dates, and descriptions in real time.
+            </div>
+        </div>
+    </div>
+
+    <main class="py-5">
+        <div class="container">
+            <!-- Header Section -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">All Campus Reports</h2>
+                    <p class="text-muted mb-0">Explore lost and found items reported across the university.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="my-reports.html" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
+                        <i class="bi bi-folder2-open me-1"></i>My Reports
+                    </a>
+                    <a href="report.html" class="btn btn-lost btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Report Lost
+                    </a>
+                    <a href="report-found.html" class="btn btn-found btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Report Found
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="row g-3 mb-4 p-3 bg-white rounded-3 border shadow-sm" id="all-reports-filter-bar">
+                <div class="col-md-5">
+                    <input type="text" id="all-reports-search-input" class="form-control" placeholder="Search all campus reports by name, description, zone...">
+                </div>
+                <div class="col-md-3">
+                    <select id="all-reports-type-filter" class="form-select">
+                        <option value="all">All Types (Lost & Found)</option>
+                        <option value="lost">Lost Items Only</option>
+                        <option value="found">Found Items Only</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select id="all-reports-category-filter" class="form-select">
+                        <option value="all">All Categories</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Bags">Bags</option>
+                        <option value="Wallets">Wallets</option>
+                        <option value="ID Cards">ID Cards</option>
+                        <option value="Keys">Keys</option>
+                        <option value="Books">Books</option>
+                        <option value="Accessories">Accessories</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Reports Grid Container -->
+            <div class="row g-4" id="all-reports-grid-container">
+                <!-- Dynamic rendering via app.js -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.bundle.min.js"></script>
+    <!-- Local Storage Data Layer -->
+    <script src="js/storage.js"></script>
+    <!-- Matching Engine Algorithm -->
+    <script src="js/matching.js"></script>
+    <!-- App Logic -->
+    <script src="js/app.js"></script>
+</body>
+</html>

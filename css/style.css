@@ -5,6 +5,10 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
+html {
+    scroll-behavior: smooth;
+}
+
 :root {
     /* Premium Space Purple & Obsidian Palette */
     --bg-main:         #080711;
@@ -1598,7 +1602,8 @@ html.light-theme .stats-banner-section {
     font-size: 1.1rem;
 }
 
-#notifications-section {
+#notifications-section,
+#recent-reports-section {
     scroll-margin-top: 6rem;
 }
 
@@ -3021,6 +3026,47 @@ html.light-theme .recent-reports-section p.text-muted {
     -webkit-backdrop-filter: blur(14px);
 }
 
+/* View All Your Reports Button */
+.btn-view-all-reports {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2.2rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(14, 165, 233, 0.18));
+    background-color: var(--bg-card);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 50rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    transition: all 0.25s ease-in-out;
+    text-decoration: none !important;
+}
+
+.btn-view-all-reports:hover {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(14, 165, 233, 0.35));
+    border-color: rgba(168, 85, 247, 0.7);
+    box-shadow: 0 6px 22px rgba(168, 85, 247, 0.4);
+    transform: translateY(-2px);
+}
+
+html.light-theme .btn-view-all-reports {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(14, 165, 233, 0.1));
+    background-color: #ffffff;
+    color: var(--text-heading) !important;
+    border-color: rgba(168, 85, 247, 0.35);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+html.light-theme .btn-view-all-reports:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(14, 165, 233, 0.2));
+    color: var(--primary-dark) !important;
+    border-color: rgba(168, 85, 247, 0.65);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.28);
+}
+
 .recent-reports-section .form-control,
 .recent-reports-section .form-select {
     background-color: rgba(255, 255, 255, 0.05) !important;
@@ -4351,8 +4397,105 @@ body[data-page="dashboard"]::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    body[data-page="dashboard"]::before {
+    body[data-page="dashboard"]::before,
+    body[data-page="all-reports"]::before {
         animation: none !important;
+    }
+}
+
+/* ==========================================================================
+   All Campus Reports Page — Compact & Refined Card Styles (CSS-Only)
+   ========================================================================== */
+
+body[data-page="all-reports"] .user-item-card {
+    padding: 0.85rem 0.95rem !important;
+    border-radius: 12px !important;
+    background-color: #100d22 !important;
+    border: 1px solid rgba(168, 85, 247, 0.16) !important;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.22s ease,
+                box-shadow 0.22s ease !important;
+}
+
+body[data-page="all-reports"] .user-item-card:hover {
+    transform: translateY(-4px) !important;
+    border-color: rgba(168, 85, 247, 0.45) !important;
+    box-shadow: 0 10px 24px -4px rgba(168, 85, 247, 0.22), 0 4px 12px -2px rgba(6, 182, 212, 0.15) !important;
+}
+
+html.light-theme body[data-page="all-reports"] .user-item-card {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+
+html.light-theme body[data-page="all-reports"] .user-item-card:hover {
+    transform: translateY(-4px) !important;
+    border-color: rgba(124, 58, 237, 0.45) !important;
+    box-shadow: 0 8px 20px -3px rgba(124, 58, 237, 0.18) !important;
+}
+
+body[data-page="all-reports"] .user-item-card img,
+body[data-page="all-reports"] .user-item-card .rounded.bg-light {
+    height: 140px !important;
+    object-fit: cover !important;
+    margin-bottom: 0.65rem !important;
+    border-radius: 8px !important;
+}
+
+body[data-page="all-reports"] .user-item-card h5 {
+    font-size: 1.02rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.25rem !important;
+}
+
+body[data-page="all-reports"] .user-item-card p {
+    font-size: 0.8rem !important;
+    line-height: 1.35 !important;
+    margin-bottom: 0.45rem !important;
+}
+
+body[data-page="all-reports"] .user-item-card .badge {
+    font-size: 0.68rem !important;
+    padding: 0.2rem 0.5rem !important;
+}
+
+body[data-page="all-reports"] .user-item-card .extra-small.text-muted {
+    font-size: 0.72rem !important;
+    padding: 0.2rem 0.5rem !important;
+    margin-bottom: 0.45rem !important;
+}
+
+body[data-page="all-reports"] .user-item-card .btn-sm {
+    font-size: 0.8rem !important;
+    padding: 0.32rem 0.75rem !important;
+}
+
+/* ==========================================================================
+   My Reports Page — Staggered Card Entrance Animation (CSS-Only)
+   ========================================================================== */
+
+body[data-page="my-reports"] .my-reports-card-anim {
+    opacity: 0;
+    animation: myReportsCardFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: opacity, transform;
+}
+
+@keyframes myReportsCardFadeUp {
+    0% {
+        opacity: 0;
+        transform: translateY(22px) scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-page="my-reports"] .my-reports-card-anim {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
     }
 }
 

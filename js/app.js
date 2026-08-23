@@ -120,6 +120,10 @@ window.addEventListener('load', function() {
         initMatchesPage();
     } else if (path.includes("dashboard.html")) {
         initDashboardPage();
+    } else if (path.includes("my-reports.html")) {
+        initMyReportsPage();
+    } else if (path.includes("all-reports.html")) {
+        initAllReportsPage();
     } else if (path.includes("admin.html")) {
         initAdminPage();
     } else {
@@ -269,6 +273,37 @@ function handleLogout() {
     window.location.href = "login.html";
 }
 
+function scrollToMyReports(e) {
+    let section = document.getElementById("recent-reports-section");
+    if (!section) return;
+
+    if (e) e.preventDefault();
+
+    let sidebarEl = document.getElementById("sidebarMenu");
+    if (sidebarEl) {
+        let bsOffcanvas = (typeof bootstrap !== "undefined" && bootstrap.Offcanvas) ? bootstrap.Offcanvas.getInstance(sidebarEl) : null;
+        if (bsOffcanvas) {
+            bsOffcanvas.hide();
+        } else {
+            let closeBtn = sidebarEl.querySelector(".btn-close");
+            if (closeBtn) closeBtn.click();
+        }
+    }
+
+    setTimeout(function() {
+        let navbar = document.querySelector(".navbar-custom");
+        let navbarHeight = navbar ? navbar.getBoundingClientRect().height : 70;
+        let targetTop = Math.max(0, section.getBoundingClientRect().top + window.scrollY - navbarHeight - 16);
+        window.scrollTo({
+            top: targetTop,
+            behavior: "smooth"
+        });
+        if (history && history.pushState) {
+            history.pushState(null, null, "#recent-reports-section");
+        }
+    }, 150);
+}
+
 // -------------------------------------------------------------
 // 1. HOME PAGE LOGIC
 // -------------------------------------------------------------
@@ -276,11 +311,25 @@ function initHomePage() {
     let reports = getReports();
     let claims = getClaims();
 
+    if (window.location.hash === "#recent-reports-section") {
+        setTimeout(function() {
+            let section = document.getElementById("recent-reports-section");
+            if (section) {
+                let navbar = document.querySelector(".navbar-custom");
+                let navbarHeight = navbar ? navbar.getBoundingClientRect().height : 70;
+                window.scrollTo({
+                    top: Math.max(0, section.getBoundingClientRect().top + window.scrollY - navbarHeight - 16),
+                    behavior: "smooth"
+                });
+            }
+        }, 300);
+    }
+
     // Calculate real data target counts
     let targetTotal = reports.length;
     let targetLost = reports.filter(r => r.type === "lost").length;
     let targetFound = reports.filter(r => r.type === "found").length;
-    let targetRecovered = reports.filter(r => r.status === "Recovered").length;
+    let targetRecovered = reports.filter(r => r.type === "lost" && r.status === "Recovered").length;
 
     // Setup IntersectionObserver for Live Statistics Section
     let statsSection = document.getElementById("stats-section");
@@ -332,8 +381,13 @@ function initHomePage() {
     }
 
     let currentUser = getCurrentUser();
-    let myReports = currentUser && currentUser.useremail
-        ? reports.filter(item => item.status !== "Recovered" && item.postedByEmail && item.postedByEmail.toLowerCase().trim() === currentUser.useremail.toLowerCase().trim())
+    let myEmail = currentUser ? (currentUser.useremail || currentUser.email || "").toLowerCase().trim() : "";
+
+    let myReports = myEmail
+        ? reports.filter(item => {
+            let itemEmail = (item.postedByEmail || item.userEmail || item.email || "").toLowerCase().trim();
+            return itemEmail && itemEmail === myEmail;
+        })
         : [];
 
     renderRecentCards(myReports);
@@ -349,7 +403,9 @@ function initHomePage() {
         let c = catSelect ? catSelect.value : "all";
 
         let filtered = myReports.filter(item => {
-            let matchQ = item.itemName.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
+            let nameStr = (item.itemName || "").toLowerCase();
+            let descStr = (item.description || "").toLowerCase();
+            let matchQ = !q || nameStr.includes(q) || descStr.includes(q);
             let matchT = t === "all" || item.type === t;
             let matchC = c === "all" || item.category === c;
             return matchQ && matchT && matchC;
@@ -2860,6 +2916,100 @@ function renderDashboardQuickStats(userEmail) {
     if (matchesEl) matchesEl.innerText = totalMatches;
 }
 
+function isReportEligibleForRecovery(item) {
+    if (!item || item.type !== "lost" || item.status === "Recovered") return false;
+
+    let currentUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+    if (currentUser && currentUser.useremail && item.postedByEmail) {
+        if (item.postedByEmail.toLowerCase().trim() !== currentUser.useremail.toLowerCase().trim()) {
+            return false;
+        }
+    }
+
+    let claims = typeof getClaims === "function" ? getClaims() : [];
+    let chats = typeof getChats === "function" ? getChats() : [];
+
+    // 1. Check if any chat linked to this lost report is verified/approved
+    let hasVerifiedChat = chats.some(ch => {
+        if (!ch) return false;
+        var isVerifiedStatus = (ch.status === "Verified" || ch.status === "Recovery Arranged" || ch.status === "Approved" || ch.status === "Approved & Meeting Scheduled");
+        if (!isVerifiedStatus) return false;
+
+        if (sameIdString(ch.lostItemId, item.id)) return true;
+        if (ch.lostUserEmail && item.postedByEmail && ch.lostUserEmail.toLowerCase().trim() === item.postedByEmail.toLowerCase().trim() &&
+            ch.lostItemName && item.itemName && ch.lostItemName.toLowerCase().trim() === item.itemName.toLowerCase().trim()) {
+            return true;
+        }
+        return false;
+    });
+
+    if (hasVerifiedChat) return true;
+
+    // 2. Check if any claim submitted by this lost item owner is approved/verified
+    let hasApprovedClaim = claims.some(c => {
+        if (!c) return false;
+        var isApprovedStatus = (c.status === "Approved & Meeting Scheduled" || c.status === "Verified" || c.status === "Recovery Arranged" || c.status === "Approved");
+        if (!isApprovedStatus) return false;
+
+        // Direct ID match
+        if (sameIdString(c.itemId, item.id) || sameIdString(c.lostItemId, item.id) || sameIdString(c.targetItemId, item.id)) return true;
+
+        // Claimant email match (lost item owner) + item name match
+        if (c.claimedByEmail && item.postedByEmail && c.claimedByEmail.toLowerCase().trim() === item.postedByEmail.toLowerCase().trim()) {
+            if (c.itemName && item.itemName && c.itemName.toLowerCase().trim() === item.itemName.toLowerCase().trim()) return true;
+        }
+
+        return false;
+    });
+
+    return hasApprovedClaim;
+}
+
+function confirmMyReportRecovery(reportId) {
+    if (!reportId) return;
+
+    let reports = typeof getReports === "function" ? getReports() : [];
+    let rep = reports.find(r => r.id === reportId);
+    if (!rep || rep.status === "Recovered") return;
+
+    rep.status = "Recovered";
+
+    let chats = typeof getChats === "function" ? getChats() : [];
+    let linkedChat = chats.find(c => c.lostItemId === reportId || c.foundItemId === reportId);
+    if (linkedChat) {
+        if (typeof updateChatStatus === "function") {
+            updateChatStatus(linkedChat.chatId, "Recovered");
+        }
+        let otherId = (linkedChat.lostItemId === reportId) ? linkedChat.foundItemId : linkedChat.lostItemId;
+        let otherRep = reports.find(r => r.id === otherId);
+        if (otherRep && otherRep.status !== "Recovered") {
+            otherRep.status = "Recovered";
+        }
+    }
+
+    if (typeof saveReports === "function") {
+        saveReports(reports);
+    } else {
+        localStorage.setItem("campus_reports", JSON.stringify(reports));
+    }
+
+    let recoveredStatEl = document.getElementById("stat-recovered");
+    if (recoveredStatEl) {
+        let count = reports.filter(r => r.type === "lost" && r.status === "Recovered").length;
+        recoveredStatEl.innerText = count;
+    }
+
+    let currentUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+    if (currentUser && currentUser.useremail) {
+        if (typeof renderMyReports === "function") {
+            renderMyReports(currentUser.useremail);
+        }
+        if (typeof renderMyReportsPage === "function") {
+            renderMyReportsPage(currentUser.useremail);
+        }
+    }
+}
+
 function renderMyReports(userEmail) {
     let legacyContainer = document.getElementById("my-lost-container");
     let lostContainer = document.getElementById("my-lost-items-container");
@@ -2901,6 +3051,9 @@ function renderMyReports(userEmail) {
         } else {
             lostContainer.innerHTML = lostItems.map(item => {
                 let matches = (typeof findMatches === "function") ? findMatches(item, reports).filter(m => m.matchScore >= 40) : [];
+                let isEligible = isReportEligibleForRecovery(item);
+                let isRecovered = item.status === "Recovered";
+
                 return `
                     <div class="card user-item-card p-3 mb-3 shadow-sm border">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -2940,6 +3093,22 @@ function renderMyReports(userEmail) {
                                 </button>
                             </div>
                         </div>
+                        ${isRecovered ? `
+                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                    <i class="bi bi-patch-check-fill me-1"></i>🎉 Item Recovered
+                                </span>
+                            </div>
+                        ` : (isEligible ? `
+                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2 p-2 rounded-3" style="background-color: rgba(25, 135, 84, 0.08); border: 1px dashed rgba(25, 135, 84, 0.3);">
+                                <span class="small fw-semibold text-dark d-flex align-items-center gap-1">
+                                    🎉 Did you receive this item?
+                                </span>
+                                <button type="button" class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm" onclick="confirmMyReportRecovery('${item.id}')">
+                                    Yes, I received it
+                                </button>
+                            </div>
+                        ` : '')}
                     </div>
                 `;
             }).join('');
@@ -2953,6 +3122,9 @@ function renderMyReports(userEmail) {
         } else {
             foundContainer.innerHTML = foundItems.map(item => {
                 let matches = (typeof findMatches === "function") ? findMatches(item, reports).filter(m => m.matchScore >= 40) : [];
+                let isEligible = isReportEligibleForRecovery(item);
+                let isRecovered = item.status === "Recovered";
+
                 return `
                     <div class="card user-item-card p-3 mb-3 shadow-sm border">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -2992,6 +3164,22 @@ function renderMyReports(userEmail) {
                                 </button>
                             </div>
                         </div>
+                        ${isRecovered ? `
+                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                    <i class="bi bi-patch-check-fill me-1"></i>🎉 Item Recovered
+                                </span>
+                            </div>
+                        ` : (isEligible ? `
+                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2 p-2 rounded-3" style="background-color: rgba(25, 135, 84, 0.08); border: 1px dashed rgba(25, 135, 84, 0.3);">
+                                <span class="small fw-semibold text-dark d-flex align-items-center gap-1">
+                                    🎉 Did you receive this item?
+                                </span>
+                                <button type="button" class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm" onclick="confirmMyReportRecovery('${item.id}')">
+                                    Yes, I received it
+                                </button>
+                            </div>
+                        ` : '')}
                     </div>
                 `;
             }).join('');
@@ -3440,5 +3628,296 @@ function toggleHelpAccordion(cardEl) {
         let body = cardEl.querySelector(".help-item-body");
         if (body) body.style.display = "block";
     }
+}
+
+// -------------------------------------------------------------
+// DEDICATED MY REPORTS PAGE LOGIC (my-reports.html)
+// -------------------------------------------------------------
+function initMyReportsPage() {
+    let currentUser = getCurrentUser();
+    let container = document.getElementById("my-reports-grid-container");
+
+    if (!currentUser || !currentUser.useremail) {
+        if (container) {
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <div class="p-4 bg-white rounded-3 border shadow-sm max-w-md mx-auto" style="max-width: 500px;">
+                        <i class="bi bi-person-lock fs-1 text-muted d-block mb-3"></i>
+                        <h4 class="fw-bold text-dark mb-2">Please Sign In</h4>
+                        <p class="text-muted small mb-4">You must be logged in to view your reports.</p>
+                        <a href="login.html" class="btn btn-primary fw-bold px-4 rounded-pill">Sign In</a>
+                    </div>
+                </div>
+            `;
+        }
+        return;
+    }
+
+    renderMyReportsPage(currentUser.useremail);
+
+    let searchInput = document.getElementById("my-reports-search-input");
+    let typeFilter = document.getElementById("my-reports-type-filter");
+    let catFilter = document.getElementById("my-reports-category-filter");
+
+    function applyFilters() {
+        let q = searchInput ? searchInput.value.toLowerCase().trim() : "";
+        let t = typeFilter ? typeFilter.value : "all";
+        let c = catFilter ? catFilter.value : "all";
+        renderMyReportsPage(currentUser.useremail, q, t, c);
+    }
+
+    if (searchInput) searchInput.addEventListener("input", applyFilters);
+    if (typeFilter) typeFilter.addEventListener("change", applyFilters);
+    if (catFilter) catFilter.addEventListener("change", applyFilters);
+
+    setupCustomSelect("my-reports-type-filter");
+    setupCustomSelect("my-reports-category-filter");
+}
+
+function renderMyReportsPage(userEmail, searchQuery = "", typeQuery = "all", catQuery = "all") {
+    let container = document.getElementById("my-reports-grid-container");
+    if (!container) return;
+
+    let reports = getReports();
+    let myReports = reports.filter(r => r.postedByEmail && userEmail && r.postedByEmail.toLowerCase().trim() === userEmail.toLowerCase().trim());
+
+    if (myReports.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <div class="p-4 bg-white rounded-3 border shadow-sm mx-auto" style="max-width: 500px;">
+                    <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+                    <h5 class="fw-bold text-dark mb-2">No reports yet</h5>
+                    <p class="text-muted small mb-4">You haven't reported any lost or found items.</p>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <a href="report.html" class="btn btn-lost btn-sm fw-bold px-3">
+                            <i class="bi bi-plus-circle me-1"></i>Report Lost Item
+                        </a>
+                        <a href="report-found.html" class="btn btn-found btn-sm fw-bold px-3">
+                            <i class="bi bi-plus-circle me-1"></i>Report Found Item
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    let filteredReports = myReports.filter(item => {
+        let matchQ = !searchQuery || 
+            (item.itemName && item.itemName.toLowerCase().includes(searchQuery)) || 
+            (item.description && item.description.toLowerCase().includes(searchQuery)) || 
+            (item.zone && item.zone.toLowerCase().includes(searchQuery));
+        let matchT = typeQuery === "all" || item.type === typeQuery;
+        let matchC = catQuery === "all" || item.category === catQuery;
+        return matchQ && matchT && matchC;
+    });
+
+    if (filteredReports.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5 text-muted">
+                <i class="bi bi-search fs-3 d-block mb-2"></i>
+                No reports match your search criteria.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filteredReports.map((item, index) => {
+        let matches = (typeof findMatches === "function") ? findMatches(item, reports).filter(m => m.matchScore >= 40) : [];
+        let isEligible = (typeof isReportEligibleForRecovery === "function") ? isReportEligibleForRecovery(item) : false;
+        let isRecovered = item.status === "Recovered";
+        let animDelay = Math.min(index * 90, 900);
+
+        return `
+            <div class="col-12 col-md-6 col-lg-4 my-reports-card-anim" style="animation-delay: ${animDelay}ms;">
+                <div class="card user-item-card p-3 h-100 shadow-sm border d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'} rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                ${item.type ? item.type.toUpperCase() : 'REPORT'}
+                            </span>
+                            <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 30px; height: 30px;" onclick="removeReport('${item.id}')" title="Delete report">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+                        ${item.image && !item.image.includes("placeholder") ? `
+                            <img src="${item.image}" alt="${escapeHtml(item.itemName)}" class="rounded border w-100 mb-3" style="height: 150px; object-fit: cover;">
+                        ` : `
+                            <div class="rounded bg-light d-flex align-items-center justify-content-center border w-100 mb-3" style="height: 150px;">
+                                <i class="bi ${item.type === 'found' ? 'bi-check-circle text-success' : 'bi-tag text-muted'} fs-1"></i>
+                            </div>
+                        `}
+                        <h5 class="fw-bold mb-1 text-dark">${escapeHtml(item.itemName)}</h5>
+                        <p class="small text-muted mb-2 line-clamp-2">${escapeHtml(item.description || 'No description provided.')}</p>
+                        <div class="d-flex flex-wrap gap-1 mb-2">
+                            <span class="badge bg-secondary-subtle text-light border border-secondary-subtle extra-small">${escapeHtml(item.category)}</span>
+                            ${item.color ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle extra-small">${escapeHtml(item.color)}</span>` : ''}
+                        </div>
+                        <div class="extra-small text-muted mb-3">
+                            <i class="bi bi-geo-alt-fill ${item.type === 'found' ? 'text-success' : 'text-cyan'} me-1"></i>${escapeHtml(item.zone)} &nbsp;|&nbsp;
+                            <i class="bi bi-calendar-event me-1"></i>${item.date}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between gap-2 pt-2 border-top">
+                            ${matches.length > 0 ? `
+                                <a href="matches.html?id=${item.id}" class="btn btn-sm ${item.type === 'found' ? 'btn-success' : 'btn-primary'} fw-bold rounded-pill px-3 flex-grow-1 text-center">
+                                    <i class="bi bi-cpu me-1"></i>Matches (${matches.length})
+                                </a>
+                            ` : `
+                                <a href="matches.html?id=${item.id}" class="btn btn-sm ${item.type === 'found' ? 'btn-outline-success' : 'btn-outline-primary'} fw-semibold rounded-pill px-3 flex-grow-1 text-center">
+                                    <i class="bi bi-search me-1"></i>View Matches
+                                </a>
+                            `}
+                        </div>
+                        ${isRecovered ? `
+                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-center">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                    <i class="bi bi-patch-check-fill me-1"></i>🎉 Item Recovered
+                                </span>
+                            </div>
+                        ` : (isEligible ? `
+                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2 p-2 rounded-3" style="background-color: rgba(25, 135, 84, 0.08); border: 1px dashed rgba(25, 135, 84, 0.3);">
+                                <span class="small fw-semibold text-dark">🎉 Did you receive this item?</span>
+                                <button type="button" class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm" onclick="confirmMyReportRecovery('${item.id}')">
+                                    Yes, I received it
+                                </button>
+                            </div>
+                        ` : '')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// -------------------------------------------------------------
+// DEDICATED ALL CAMPUS REPORTS PAGE LOGIC (all-reports.html)
+// -------------------------------------------------------------
+function initAllReportsPage() {
+    renderAllReportsPage();
+
+    let searchInput = document.getElementById("all-reports-search-input");
+    let typeFilter = document.getElementById("all-reports-type-filter");
+    let catFilter = document.getElementById("all-reports-category-filter");
+
+    function applyFilters() {
+        let q = searchInput ? searchInput.value.toLowerCase().trim() : "";
+        let t = typeFilter ? typeFilter.value : "all";
+        let c = catFilter ? catFilter.value : "all";
+        renderAllReportsPage(q, t, c);
+    }
+
+    if (searchInput) searchInput.addEventListener("input", applyFilters);
+    if (typeFilter) typeFilter.addEventListener("change", applyFilters);
+    if (catFilter) catFilter.addEventListener("change", applyFilters);
+
+    setupCustomSelect("all-reports-type-filter");
+    setupCustomSelect("all-reports-category-filter");
+}
+
+function renderAllReportsPage(searchQuery = "", typeQuery = "all", catQuery = "all") {
+    let container = document.getElementById("all-reports-grid-container");
+    if (!container) return;
+
+    let reports = getReports();
+    let currentUser = getCurrentUser();
+    let myEmail = currentUser ? currentUser.useremail.toLowerCase().trim() : "";
+
+    if (reports.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <div class="p-4 bg-white rounded-3 border shadow-sm mx-auto" style="max-width: 500px;">
+                    <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+                    <h5 class="fw-bold text-dark mb-2">No reports found</h5>
+                    <p class="text-muted small mb-4">There are currently no lost or found reports in the system.</p>
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        <a href="report.html" class="btn btn-lost btn-sm fw-bold px-3">
+                            <i class="bi bi-plus-circle me-1"></i>Report Lost Item
+                        </a>
+                        <a href="report-found.html" class="btn btn-found btn-sm fw-bold px-3">
+                            <i class="bi bi-plus-circle me-1"></i>Report Found Item
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    let filteredReports = reports.filter(item => {
+        let matchQ = !searchQuery || 
+            (item.itemName && item.itemName.toLowerCase().includes(searchQuery)) || 
+            (item.description && item.description.toLowerCase().includes(searchQuery)) || 
+            (item.zone && item.zone.toLowerCase().includes(searchQuery));
+        let matchT = typeQuery === "all" || item.type === typeQuery;
+        let matchC = catQuery === "all" || item.category === catQuery;
+        return matchQ && matchT && matchC;
+    });
+
+    if (filteredReports.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center py-5 text-muted">
+                <i class="bi bi-search fs-3 d-block mb-2"></i>
+                No campus reports match your search criteria.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filteredReports.map(item => {
+        let isMine = item.postedByEmail && myEmail && item.postedByEmail.toLowerCase().trim() === myEmail;
+        let isRecovered = item.status === "Recovered";
+
+        return `
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card user-item-card p-3 h-100 shadow-sm border d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'} rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                                ${item.type ? item.type.toUpperCase() : 'REPORT'}
+                            </span>
+                            ${isMine ? `
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 extra-small fw-bold">
+                                    <i class="bi bi-person-fill me-1"></i>Your Report
+                                </span>
+                            ` : ''}
+                        </div>
+                        ${item.image && !item.image.includes("placeholder") ? `
+                            <img src="${item.image}" alt="${escapeHtml(item.itemName)}" class="rounded border w-100 mb-3" style="height: 150px; object-fit: cover;">
+                        ` : `
+                            <div class="rounded bg-light d-flex align-items-center justify-content-center border w-100 mb-3" style="height: 150px;">
+                                <i class="bi ${item.type === 'found' ? 'bi-check-circle text-success' : 'bi-tag text-muted'} fs-1"></i>
+                            </div>
+                        `}
+                        <h5 class="fw-bold mb-1 text-dark">${escapeHtml(item.itemName)}</h5>
+                        <p class="small text-muted mb-2 line-clamp-2">${escapeHtml(item.description || 'No description provided.')}</p>
+                        <div class="d-flex flex-wrap gap-1 mb-2">
+                            <span class="badge bg-secondary-subtle text-light border border-secondary-subtle extra-small">${escapeHtml(item.category)}</span>
+                            ${item.color ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle extra-small">${escapeHtml(item.color)}</span>` : ''}
+                        </div>
+                        <div class="extra-small text-muted mb-3">
+                            <i class="bi bi-geo-alt-fill ${item.type === 'found' ? 'text-success' : 'text-cyan'} me-1"></i>${escapeHtml(item.zone)} &nbsp;|&nbsp;
+                            <i class="bi bi-calendar-event me-1"></i>${item.date}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between gap-2 pt-2 border-top">
+                            <a href="matches.html?id=${item.id}" class="btn btn-sm ${item.type === 'found' ? 'btn-outline-success' : 'btn-outline-primary'} fw-bold rounded-pill px-3 flex-grow-1 text-center">
+                                <i class="bi bi-cpu me-1"></i>View Item Matches
+                            </a>
+                        </div>
+                        ${isRecovered ? `
+                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-center">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                    <i class="bi bi-patch-check-fill me-1"></i>🎉 Item Recovered
+                                </span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
