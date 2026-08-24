@@ -615,6 +615,25 @@ function updateChatStatus(chatId, status, recoveryDetails) {
     localStorage.setItem("campus_chats", JSON.stringify(chats));
 }
 
+// ── Handoff Code Verification (Secure Item Return) ───────────
+function setChatHandoffCode(chatId, code) {
+    var chats = getChats();
+    var chat = chats.find(function(c) { return c.chatId === chatId; });
+    if (!chat) return;
+    chat.handoffCode = code;
+    chat.handoffCodeGeneratedAt = new Date().toISOString();
+    localStorage.setItem("campus_chats", JSON.stringify(chats));
+}
+
+function lockChatAsReadOnly(chatId) {
+    var chats = getChats();
+    var chat = chats.find(function(c) { return c.chatId === chatId; });
+    if (!chat) return;
+    chat.readOnly = true;
+    chat.updatedAt = new Date().toISOString();
+    localStorage.setItem("campus_chats", JSON.stringify(chats));
+}
+
 function getUnreadChatCount(userEmail) {
     if (!userEmail) return 0;
     var count = 0;
