@@ -1,4 +1,4 @@
-// FindIt Secure Match Chat Logic (chat.js)
+// CampusFind Secure Match Chat Logic (chat.js)
 
 let currentChatId = null;
 let currentChat = null;
@@ -565,7 +565,7 @@ function finderApproveOwnership() {
     let systemMsg = {
         id: "MSG-" + Date.now(),
         senderId: "SYSTEM",
-        senderName: "FindIt System",
+        senderName: "CampusFind System",
         text: `✓ Ownership Verified by Finder (${currentUser.username}). Status updated to VERIFIED. Chat is now unlocked so you can coordinate the return.`,
         type: "system",
         timestamp: new Date().toISOString(),
@@ -612,7 +612,7 @@ function finderRejectClaim() {
     let systemMsg = {
         id: "MSG-" + Date.now(),
         senderId: "SYSTEM",
-        senderName: "FindIt System",
+        senderName: "CampusFind System",
         text: `✕ Claim Rejected by Finder (${currentUser.username}): "${reason}"`,
         type: "system",
         timestamp: new Date().toISOString(),
@@ -643,7 +643,7 @@ function finderRequestMoreInfo() {
     let systemMsg = {
         id: "MSG-" + Date.now(),
         senderId: "SYSTEM",
-        senderName: "FindIt System",
+        senderName: "CampusFind System",
         text: `❓ Finder (${currentUser.username}) requested more information: "${q}"`,
         type: "system",
         timestamp: new Date().toISOString(),
@@ -692,7 +692,7 @@ function handleConfirmRecoveryPlan(event) {
     let systemMsg = {
         id: "MSG-" + Date.now(),
         senderId: "SYSTEM",
-        senderName: "FindIt System",
+        senderName: "CampusFind System",
         text: `📦 Recovery Arranged — ${location} | ${date} · ${time} ${notes ? '(' + notes + ')' : ''}`,
         type: "system",
         timestamp: new Date().toISOString(),
@@ -749,7 +749,7 @@ function confirmItemReceipt(isReceived) {
         let systemMsg = {
             id: "MSG-" + Date.now(),
             senderId: "SYSTEM",
-            senderName: "FindIt System",
+            senderName: "CampusFind System",
             text: `🎉 Item receipt confirmed by owner (${currentUser.username}). Status updated to RECOVERED!`,
             type: "system",
             timestamp: new Date().toISOString(),
@@ -785,7 +785,7 @@ function confirmItemReceipt(isReceived) {
         let systemMsg = {
             id: "MSG-" + Date.now(),
             senderId: "SYSTEM",
-            senderName: "FindIt System",
+            senderName: "CampusFind System",
             text: `⏳ Owner indicated item is not yet received. Recovery coordination continues in chat.`,
             type: "system",
             timestamp: new Date().toISOString(),

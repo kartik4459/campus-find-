@@ -366,6 +366,9 @@ function initHomePage() {
     // Initialize How It Works Sequential Process Timeline Animation
     initHowItWorksAnimation();
 
+    // Initialize Campus Insights Data Visualization Section
+    initCampusInsights();
+
     // Setup IntersectionObserver for Last Section Entrance Animation
     let recentSection = document.getElementById("recent-reports-section");
     if (recentSection) {
@@ -1838,7 +1841,7 @@ function openOrCreateChat(report1Id, report2Id, score = 90) {
             {
                 id: "MSG-" + Date.now(),
                 senderId: "SYSTEM",
-                senderName: "FindIt System",
+                senderName: "CampusFind System",
                 text: `🔒 Private match chat initiated for ${lostReport.itemName} (${score}% Match). Use this chat to verify ownership details and arrange item recovery securely.`,
                 type: "system",
                 timestamp: new Date().toISOString(),
@@ -3920,4 +3923,179 @@ function renderAllReportsPage(searchQuery = "", typeQuery = "all", catQuery = "a
         `;
     }).join('');
 }
+
+// -------------------------------------------------------------
+// Campus Insights Data Visualization Controller
+// -------------------------------------------------------------
+function initCampusInsights() {
+    let section = document.getElementById("campus-insights-section");
+    if (!section) return;
+
+    let reports = typeof getReports === "function" ? getReports() : [];
+    let totalCount = reports.length;
+
+    // 1. Process Category Breakdown
+    let catCounts = {};
+    reports.forEach(r => {
+        let cat = (r.category || "Others").trim();
+        cat = cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
+    });
+
+    let catList = Object.keys(catCounts).map(name => ({
+        name: name,
+        count: catCounts[name],
+        pct: totalCount > 0 ? Math.round((catCounts[name] / totalCount) * 100) : 0
+    }));
+
+    catList.sort((a, b) => b.count - a.count);
+
+    // Default top categories if array empty/small
+    if (catList.length === 0) {
+        catList = [
+            { name: "Electronics", count: 0, pct: 0 },
+            { name: "Accessories", count: 0, pct: 0 },
+            { name: "Documents", count: 0, pct: 0 },
+            { name: "Others", count: 0, pct: 0 }
+        ];
+    } else if (catList.length < 4) {
+        let defaults = ["Electronics", "Accessories", "Documents", "Others"];
+        defaults.forEach(d => {
+            if (catList.length < 4 && !catList.some(c => c.name.toLowerCase() === d.toLowerCase())) {
+                catList.push({ name: d, count: 0, pct: 0 });
+            }
+        });
+    }
+
+    let topCats = catList.slice(0, 4);
+
+    let iconMap = {
+        "accessories": { icon: "bi-backpack", boxClass: "icon-purple", pctClass: "text-purple" },
+        "wallets": { icon: "bi-wallet2", boxClass: "icon-blue", pctClass: "text-blue" },
+        "electronics": { icon: "bi-laptop", boxClass: "icon-cyan", pctClass: "text-cyan" },
+        "documents": { icon: "bi-file-earmark-text", boxClass: "icon-amber", pctClass: "text-amber" },
+        "clothing": { icon: "bi-bag-check", boxClass: "icon-purple", pctClass: "text-purple" },
+        "keys": { icon: "bi-key", boxClass: "icon-cyan", pctClass: "text-cyan" },
+        "others": { icon: "bi-box-seam", boxClass: "icon-purple", pctClass: "text-purple" }
+    };
+
+    let catContainer = document.getElementById("insights-category-list");
+    if (catContainer) {
+        catContainer.innerHTML = topCats.map((cat, idx) => {
+            let key = cat.name.toLowerCase();
+            let conf = iconMap[key] || { icon: "bi-box-seam", boxClass: "icon-purple", pctClass: "text-purple" };
+            return `
+                <div class="campus-insights-cat-row position-relative">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <div class="campus-insights-cat-box ${conf.boxClass}">
+                                <i class="bi ${conf.icon}"></i>
+                            </div>
+                            <span class="campus-insights-cat-name">${escapeHtml(cat.name)}</span>
+                        </div>
+                        <span class="campus-insights-cat-pct ${conf.pctClass}">${cat.pct}%</span>
+                    </div>
+                    <div class="campus-insights-cat-track">
+                        <div class="campus-insights-cat-fill" id="insights-bar-fill-${idx}" style="width: 0%;" data-target-width="${cat.pct}%"></div>
+                    </div>
+                    <div class="campus-insights-tooltip">
+                        <i class="bi bi-info-circle me-1 text-purple"></i>${cat.count} ${cat.count === 1 ? 'report' : 'reports'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 2. Process Status Breakdown
+    let countLost = reports.filter(r => r.type === "lost" && r.status !== "Recovered").length;
+    let countFound = reports.filter(r => r.type === "found" && r.status !== "Recovered").length;
+    let countRecovered = reports.filter(r => r.status === "Recovered").length;
+
+    let pctLost = totalCount > 0 ? Math.round((countLost / totalCount) * 100) : 0;
+    let pctFound = totalCount > 0 ? Math.round((countFound / totalCount) * 100) : 0;
+    let pctRecovered = totalCount > 0 ? Math.round((countRecovered / totalCount) * 100) : 0;
+    let recoveryRate = totalCount > 0 ? Math.round((countRecovered / totalCount) * 100) : 0;
+
+    let elCountLost = document.getElementById("insights-count-lost");
+    let elPctLost = document.getElementById("insights-pct-lost");
+    if (elCountLost) elCountLost.textContent = `${countLost} ${countLost === 1 ? 'report' : 'reports'}`;
+    if (elPctLost) elPctLost.textContent = `${pctLost}%`;
+
+    let elCountFound = document.getElementById("insights-count-found");
+    let elPctFound = document.getElementById("insights-pct-found");
+    if (elCountFound) elCountFound.textContent = `${countFound} ${countFound === 1 ? 'report' : 'reports'}`;
+    if (elPctFound) elPctFound.textContent = `${pctFound}%`;
+
+    let elCountRecovered = document.getElementById("insights-count-recovered");
+    let elPctRecovered = document.getElementById("insights-pct-recovered");
+    if (elCountRecovered) elCountRecovered.textContent = `${countRecovered} ${countRecovered === 1 ? 'report' : 'reports'}`;
+    if (elPctRecovered) elPctRecovered.textContent = `${pctRecovered}%`;
+
+    let elRecRate = document.getElementById("insights-recovery-rate");
+    if (elRecRate) elRecRate.textContent = `${recoveryRate}%`;
+
+    // Calculate Donut Arcs (Circumference = 440)
+    let CIRCUMFERENCE = 440;
+    let arcLost = document.getElementById("donut-arc-lost");
+    let arcFound = document.getElementById("donut-arc-found");
+    let arcRecovered = document.getElementById("donut-arc-recovered");
+
+    let lenLost = (pctLost / 100) * CIRCUMFERENCE;
+    let lenFound = (pctFound / 100) * CIRCUMFERENCE;
+    let lenRecovered = (pctRecovered / 100) * CIRCUMFERENCE;
+
+    let rotLost = -90;
+    let rotFound = -90 + (pctLost / 100) * 360;
+    let rotRecovered = -90 + ((pctLost + pctFound) / 100) * 360;
+
+    // 3. Intersection Observer for Entrance Animation
+    let observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                section.classList.add("is-visible");
+
+                // Animate Category Progress Bars Fill
+                topCats.forEach((_, idx) => {
+                    let fillBar = document.getElementById(`insights-bar-fill-${idx}`);
+                    if (fillBar) {
+                        let targetWidth = fillBar.getAttribute("data-target-width");
+                        setTimeout(() => {
+                            fillBar.style.width = targetWidth;
+                        }, idx * 100 + 100);
+                    }
+                });
+
+                // Animate Donut SVG Arcs
+                if (arcLost) {
+                    arcLost.setAttribute("transform", `rotate(${rotLost} 100 100)`);
+                    arcLost.style.strokeDasharray = `${lenLost} ${CIRCUMFERENCE}`;
+                }
+                if (arcFound) {
+                    arcFound.setAttribute("transform", `rotate(${rotFound} 100 100)`);
+                    arcFound.style.strokeDasharray = `${lenFound} ${CIRCUMFERENCE}`;
+                }
+                if (arcRecovered) {
+                    arcRecovered.setAttribute("transform", `rotate(${rotRecovered} 100 100)`);
+                    arcRecovered.style.strokeDasharray = `${lenRecovered} ${CIRCUMFERENCE}`;
+                }
+
+                // Count up numbers
+                if (typeof animateCountUp === "function") {
+                    animateCountUp("insights-cat-total-count", totalCount);
+                    animateCountUp("insights-donut-total-count", totalCount);
+                } else {
+                    let catTotEl = document.getElementById("insights-cat-total-count");
+                    let donutTotEl = document.getElementById("insights-donut-total-count");
+                    if (catTotEl) catTotEl.textContent = totalCount;
+                    if (donutTotEl) donutTotEl.textContent = totalCount;
+                }
+
+                observer.unobserve(section);
+            }
+        });
+    }, { threshold: 0.2 });
+
+    observer.observe(section);
+}
+
 

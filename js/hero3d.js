@@ -1,4 +1,4 @@
-// FindIt Smart Recovery Engine - 3D Interactive Hero Visualization (Three.js)
+// CampusFind Smart Recovery Engine - 3D Interactive Hero Visualization (Three.js)
 
 (function() {
     document.addEventListener("DOMContentLoaded", function() {

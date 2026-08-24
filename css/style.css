@@ -1590,73 +1590,15 @@ html.light-theme .stats-banner-section {
     background-color: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-color);
 }
-
-.nav-notification-bell:hover {
-    color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
-    background-color: var(--primary-light) !important;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
-}
-
-.nav-notification-bell .bi-bell {
-    font-size: 1.1rem;
-}
-
-#notifications-section,
-#recent-reports-section {
-    scroll-margin-top: 6rem;
-}
-
-/* Card Wrapper Links */
-.card-wrapper-link {
-    display: block;
-    color: inherit;
-    text-decoration: none;
-}
-
-.card-wrapper-link:hover .card-featured {
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1) !important;
-    transform: translateY(-4px);
-}
-
-.card-featured {
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.card-item-title {
-    color: #a78bfa !important; /* Premium light purple for dark mode cards */
-}
-
-html.light-theme .card-item-title {
-    color: #7c3aed !important; /* Premium violet purple for light mode cards */
-}
-
-/* Contrasting Background for Recent Reports Feed Section */
-.recent-reports-section {
-    background-color: #17152b !important;
-    border-top: 1px solid rgba(168, 85, 247, 0.08) !important;
-    border-bottom: 1px solid rgba(168, 85, 247, 0.08) !important;
-    padding: 8.5rem 0 !important;
-}
-
-html.light-theme .recent-reports-section {
-    background-color: var(--bg-card) !important;
-    background-image: url('../images/light2.png') !important;
-    background-size: cover !important;
-    background-position: center top !important;
-    background-repeat: no-repeat !important;
-    border-color: var(--border-color) !important;
-}
-
-/* Taller sections to remove congested layout */
-.how-it-works-section {
-    padding: 8.5rem 0 !important;
-}
-
 /* =============================================================
-   FINDIT SECURE MATCH CHAT STYLES
+   FINDIT SECURE MATCH CHAT STYLES - HIGH VISIBILITY & CONTRAST
    ============================================================= */
+
+body[data-page="chat"] .bg-card {
+    background-color: #120f26 !important;
+    border: 1px solid rgba(168, 85, 247, 0.25) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
 
 .btn-chat-contact {
     background-color: rgba(168, 85, 247, 0.12) !important;
@@ -1672,28 +1614,120 @@ html.light-theme .recent-reports-section {
     box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
 }
 
-.chat-bubble-self {
-    background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%) !important;
+/* Chat Pane Header */
+.chat-pane-header {
+    background-color: #161330 !important;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.25) !important;
+}
+
+.chat-pane-header .text-heading {
     color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+}
+
+.chat-pane-header small,
+.chat-pane-header .text-muted,
+#chat-header-item,
+#chat-header-finder {
+    color: #e2e8f0 !important;
+    opacity: 1 !important;
+    font-weight: 500 !important;
+}
+
+/* Sidebar Details Panel Text Visibility */
+#sidebar-item-name {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.card .text-muted,
+.col-lg-4 .text-muted {
+    color: #a7b7cd !important;
+    opacity: 1 !important;
+}
+
+#sidebar-lost-zone,
+#sidebar-found-zone,
+#sidebar-lost-owner,
+#sidebar-finder-name {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.chat-privacy-box {
+    background-color: #161330 !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+    color: #e2e8f0 !important;
+    opacity: 1 !important;
+}
+
+.chat-privacy-box strong {
+    color: #10b981 !important;
+}
+
+/* Safety Reminder Banner */
+#chat-safety-tip {
+    background-color: rgba(16, 185, 129, 0.08) !important;
+    border-bottom: 1px solid rgba(16, 185, 129, 0.25) !important;
+    color: #e2e8f0 !important;
+    font-weight: 500 !important;
+}
+
+#chat-safety-tip strong {
+    color: #10b981 !important;
+}
+
+/* Finder Action Panel */
+#finder-action-bar {
+    background-color: rgba(168, 85, 247, 0.12) !important;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.3) !important;
+    color: #e2e8f0 !important;
+}
+
+#finder-claim-proof-display {
+    background-color: #161330 !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+    color: #ffffff !important;
+}
+
+#finder-claim-proof-display strong {
+    color: #c084fc !important;
+}
+
+/* Chat Messages Container & Bubbles */
+#chat-messages-container {
+    background-color: #0d0b1d !important;
+}
+
+.chat-bubble-self {
+    background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(168, 85, 247, 0.4) !important;
     border-bottom-right-radius: 4px !important;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25) !important;
 }
 
 .chat-bubble-other {
-    background-color: #1e1b38 !important;
-    color: #f1f5f9 !important;
-    border: 1px solid rgba(168, 85, 247, 0.18) !important;
+    background-color: #1c1936 !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(168, 85, 247, 0.25) !important;
     border-bottom-left-radius: 4px !important;
-}
-
-html.light-theme .chat-bubble-other {
-    background-color: #f1f5f9 !important;
-    color: #0f172a !important;
-    border-color: #cbd5e1 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
 .chat-bubble-self, .chat-bubble-other {
     line-height: 1.5;
-    font-size: 0.93rem;
+    font-size: 0.95rem;
+    padding: 0.85rem 1.1rem !important;
+}
+
+/* Message Sender Name & Timestamps */
+#chat-messages-container .text-muted {
+    color: #cbd5e1 !important;
+    opacity: 1 !important;
+    font-size: 0.76rem !important;
+    font-weight: 500 !important;
 }
 
 #chat-messages-container::-webkit-scrollbar {
@@ -1705,7 +1739,7 @@ html.light-theme .chat-bubble-other {
 }
 
 #chat-messages-container::-webkit-scrollbar-thumb {
-    background: rgba(168, 85, 247, 0.2);
+    background: rgba(168, 85, 247, 0.3);
     border-radius: 10px;
 }
 
@@ -4233,7 +4267,125 @@ body[data-page="dashboard"] .btn-outline-success:hover {
 }
 
 .help-item-card.active-item {
-    border-color: rgba(168, 85, 247, 0.55) !important;
+    border-color: rgba(168, 85, /* =============================================================
+   ACCOUNT / PROFILE DROPDOWN MENU VISIBILITY & CONTRAST STYLES
+   ============================================================= */
+
+.navbar .dropdown-menu {
+    background-color: #120f26 !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+    border-radius: 1rem !important;
+    padding: 0.75rem !important;
+    min-width: 280px !important;
+}
+
+/* Active Account Top Card */
+.navbar .dropdown-menu .active-account-card {
+    background-color: rgba(22, 19, 48, 0.95) !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+    border-radius: 0.75rem !important;
+    padding: 0.85rem 1rem !important;
+}
+
+.navbar .dropdown-menu .active-account-card .text-uppercase {
+    color: #a7b7cd !important;
+    letter-spacing: 0.05em !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+}
+
+.navbar .dropdown-menu .active-account-card strong {
+    color: #ffffff !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+}
+
+.navbar .dropdown-menu .active-account-card .text-muted {
+    color: #cbd5e1 !important;
+    font-size: 0.8rem !important;
+    opacity: 1 !important;
+}
+
+/* Roll Number & Department Badges */
+.navbar .dropdown-menu .badge-account-info {
+    background-color: rgba(168, 85, 247, 0.15) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(168, 85, 247, 0.35) !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: 0.5rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.navbar .dropdown-menu .badge-account-info i {
+    color: #00f5c4 !important;
+    font-size: 0.85rem !important;
+}
+
+/* Saved Accounts Items */
+.navbar .dropdown-menu .dropdown-item {
+    color: #ffffff !important;
+    border-radius: 0.6rem !important;
+    padding: 0.55rem 0.75rem !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.navbar .dropdown-menu .dropdown-item:hover {
+    background-color: rgba(168, 85, 247, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.navbar .dropdown-menu .dropdown-item.active-account-item {
+    background-color: rgba(168, 85, 247, 0.16) !important;
+    border: 1px solid rgba(168, 85, 247, 0.35) !important;
+}
+
+.navbar .dropdown-menu .avatar-circle-mini {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.8rem !important;
+    background-color: rgba(168, 85, 247, 0.2) !important;
+    color: #c084fc !important;
+    border: 1px solid rgba(168, 85, 247, 0.35) !important;
+}
+
+.navbar .dropdown-menu .dropdown-item .leading-tight {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+}
+
+.navbar .dropdown-menu .dropdown-item .text-muted {
+    color: #cbd5e1 !important;
+    font-size: 0.78rem !important;
+    opacity: 1 !important;
+}
+
+/* Active Status Badge */
+.navbar .dropdown-menu .badge-active-status {
+    background-color: #a855f7 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 0.68rem !important;
+    padding: 0.25rem 0.65rem !important;
+    border-radius: 999px !important;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.4) !important;
+}
+
+/* =============================================================
+   CAMPUSFIND SECURE MATCH CHAT STYLES - HIGH VISIBILITY & CONTRAST
+   ============================================================= */
+
+body[data-page="chat"] .bg-card {
+    background-color: #120f26 !important;
+    border: 1px solid rgba(168, 85, 247, 0.25) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}x rgba(168, 85, 247, 0.18) !important;
     background-color: #161233 !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 18px rgba(168, 85, 247, 0.18) !important;
 }
@@ -4498,6 +4650,349 @@ body[data-page="my-reports"] .my-reports-card-anim {
         transform: none !important;
     }
 }
+
+/* ==========================================================================
+   Campus Insights - Data Visualization Component Styles (Holographic Tech Theme)
+   ========================================================================== */
+
+.campus-insights-section {
+    position: relative;
+    background: radial-gradient(circle at 50% 30%, rgba(168, 85, 247, 0.08) 0%, rgba(8, 7, 17, 0) 70%), var(--bg-main, #080711);
+    overflow: hidden;
+}
+
+.campus-insights-badge-text {
+    color: var(--primary-color, #a855f7);
+    letter-spacing: 0.15em;
+}
+
+.text-gradient-insights {
+    background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.campus-insights-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 auto;
+    max-width: 200px;
+}
+
+.campus-insights-divider-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.5), transparent);
+}
+
+.campus-insights-divider-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #06b6d4;
+    box-shadow: 0 0 8px #06b6d4;
+}
+
+.campus-insights-card {
+    background: linear-gradient(145deg, rgba(16, 14, 34, 0.85) 0%, rgba(8, 7, 20, 0.95) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    border-radius: 1.25rem;
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.campus-insights-card:hover {
+    transform: translateY(-4px) rotateX(1deg) rotateY(-1deg);
+    border-color: rgba(6, 182, 212, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(168, 85, 247, 0.25), 0 0 35px rgba(6, 182, 212, 0.18);
+}
+
+/* Glitch-Tech Light Segment along top border */
+.campus-insights-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #06b6d4, #a855f7, transparent);
+    animation: campusInsightsBorderBeam 6s linear infinite;
+    opacity: 0.75;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes campusInsightsBorderBeam {
+    0% {
+        left: -60%;
+    }
+    100% {
+        left: 160%;
+    }
+}
+
+/* Low-opacity Holographic Scanlines Texture */
+.campus-insights-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.012) 0px, rgba(255, 255, 255, 0.012) 1px, transparent 1px, transparent 3px);
+    pointer-events: none;
+    opacity: 0.6;
+    border-radius: 1.25rem;
+    z-index: 0;
+}
+
+.campus-insights-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.box-purple {
+    background: rgba(168, 85, 247, 0.12);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+}
+
+.box-cyan {
+    background: rgba(6, 182, 212, 0.12);
+    color: #06b6d4;
+    border: 1px solid rgba(6, 182, 212, 0.25);
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+}
+
+/* Category List Rows */
+.campus-insights-categories-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
+    margin-top: 0.25rem;
+    margin-bottom: auto;
+    position: relative;
+    z-index: 2;
+}
+
+.campus-insights-cat-row {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.75rem;
+    transition: background-color 0.25s ease;
+    cursor: default;
+}
+
+.campus-insights-cat-row:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.campus-insights-cat-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.campus-insights-cat-row:hover .campus-insights-cat-box {
+    transform: scale(1.06);
+}
+
+.icon-purple {
+    background: rgba(192, 66, 255, 0.1);
+    color: #c042ff;
+    border: 1px solid rgba(192, 66, 255, 0.25);
+    box-shadow: 0 0 10px rgba(192, 66, 255, 0.15);
+}
+
+.icon-blue {
+    background: rgba(0, 191, 255, 0.1);
+    color: #00bfff;
+    border: 1px solid rgba(0, 191, 255, 0.25);
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.15);
+}
+
+.icon-cyan {
+    background: rgba(0, 245, 196, 0.1);
+    color: #00f5c4;
+    border: 1px solid rgba(0, 245, 196, 0.25);
+    box-shadow: 0 0 10px rgba(0, 245, 196, 0.15);
+}
+
+.icon-amber {
+    background: rgba(255, 184, 0, 0.1);
+    color: #ffb800;
+    border: 1px solid rgba(255, 184, 0, 0.25);
+    box-shadow: 0 0 10px rgba(255, 184, 0, 0.15);
+}
+
+.text-purple {
+    color: #c042ff !important;
+}
+
+.text-blue {
+    color: #00bfff !important;
+}
+
+.text-cyan {
+    color: #00f5c4 !important;
+}
+
+.text-amber {
+    color: #ffb800 !important;
+}
+
+.campus-insights-cat-name {
+    font-weight: 600;
+    font-size: 0.96rem;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.campus-insights-cat-pct {
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.campus-insights-cat-track {
+    width: 100%;
+    height: 6px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background: rgba(10, 14, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.campus-insights-cat-fill {
+    height: 100%;
+    min-height: 6px;
+    display: block;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #c042ff 0%, #00bfff 100%);
+    box-shadow: 0 0 8px rgba(0, 191, 255, 0.6), 0 0 14px rgba(192, 66, 255, 0.5);
+    transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease;
+}
+
+.campus-insights-cat-row:hover .campus-insights-cat-fill {
+    filter: brightness(1.25);
+    box-shadow: 0 0 12px rgba(0, 191, 255, 0.8), 0 0 18px rgba(192, 66, 255, 0.7);
+}
+
+/* Hover Tooltip */
+.campus-insights-tooltip {
+    position: absolute;
+    top: -26px;
+    right: 12px;
+    background: rgba(16, 14, 35, 0.95);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 12px rgba(168, 85, 247, 0.3);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px) scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+.campus-insights-cat-row:hover .campus-insights-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+/* Donut Chart SVG */
+.campus-insights-donut-wrapper {
+    position: relative;
+    width: 180px;
+    height: 180px;
+}
+
+.campus-insights-donut-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.35)) drop-shadow(0 0 20px rgba(168, 85, 247, 0.2));
+}
+
+.campus-insights-donut-svg circle {
+    transition: stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.campus-insights-donut-svg circle {
+    transition: stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.campus-insights-donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+/* Legend items */
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot-lost {
+    background-color: #a855f7;
+    box-shadow: 0 0 8px #a855f7;
+}
+
+.dot-found {
+    background-color: #06b6d4;
+    box-shadow: 0 0 8px #06b6d4;
+}
+
+.dot-recovered {
+    background-color: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+/* Entrance Animations */
+.campus-insights-card {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.campus-insights-section.is-visible .campus-insights-card {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 
 
 

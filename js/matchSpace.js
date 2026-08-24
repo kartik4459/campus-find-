@@ -1,4 +1,4 @@
-// FindIt Personalized 3D Match Space — 100% Real User & Algorithmic Data Engine (Vanilla JS + CSS 3D)
+// CampusFind Personalized 3D Match Space — 100% Real User & Algorithmic Data Engine (Vanilla JS + CSS 3D)
 
 let currentMatchSpaceData = null;
 let activeSelectedItemId = null;

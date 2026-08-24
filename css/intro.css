@@ -1,0 +1,738 @@
+/* ==========================================================================
+   CampusFind - Isolated Animated Loading / Intro Screen Stylesheet
+   Strictly isolated under .campus-intro-* to prevent any side effects
+   ========================================================================== */
+
+/* Root Overflow Lock when Intro is Active */
+html:has(#campus-intro-overlay:not(.fade-out):not([style*="display: none"])),
+body:has(#campus-intro-overlay:not(.fade-out):not([style*="display: none"])) {
+    overflow: hidden !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+}
+
+/* Fullscreen Overlay Container */
+.campus-intro-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    z-index: 999999;
+    background-color: #040613;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem 1.5rem 1.25rem 1.5rem;
+    box-sizing: border-box;
+    font-family: 'Outfit', 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #ffffff;
+    overflow: hidden !important;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Background Artwork */
+.campus-intro-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+/* Concentric Orbital Rings */
+.campus-intro-orbit-svg {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 900px;
+    height: 900px;
+    opacity: 0.25;
+}
+
+/* Ambient Radial Background Glow */
+.campus-intro-radial-glow {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 650px;
+    height: 650px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, rgba(26, 144, 255, 0.12) 40%, rgba(4, 6, 19, 0) 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+}
+
+/* Bottom Fluid Neon Waves */
+.campus-intro-waves-svg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 45%;
+    opacity: 0.85;
+}
+
+/* Bottom Dark Campus Silhouette */
+.campus-intro-silhouette {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 900px;
+    height: 140px;
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+/* Main Content Wrapper */
+.campus-intro-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 820px;
+    margin: auto 0;
+}
+
+/* Top Section: Logo & Brand */
+.campus-intro-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 2.75rem;
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+    animation: campusIntroFadeDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+}
+
+.campus-intro-logo-box {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.campus-intro-logo-glow {
+    position: absolute;
+    inset: -10px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.45), rgba(0, 245, 196, 0.2), transparent 70%);
+    filter: blur(14px);
+    border-radius: 50%;
+    animation: campusIntroPulseGlow 3s ease-in-out infinite alternate;
+}
+
+.campus-intro-logo-svg {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.6));
+}
+
+.campus-intro-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    color: #ffffff;
+    margin: 0 0 0.5rem 0;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.25), 0 0 40px rgba(168, 85, 247, 0.4);
+    text-transform: uppercase;
+}
+
+.campus-intro-tagline {
+    font-size: 1.05rem;
+    font-weight: 400;
+    color: #8da4c4;
+    margin: 0;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    animation: campusIntroFadeIn 0.6s ease 0.3s forwards;
+}
+
+/* Middle Section: 4 Stages Horizontal Journey */
+.campus-intro-journey {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 680px;
+    margin-bottom: 2.5rem;
+    position: relative;
+}
+
+.campus-intro-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Stage Circle */
+.campus-intro-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(12, 16, 35, 0.75);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+}
+
+.campus-intro-stage-icon {
+    width: 36px;
+    height: 36px;
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.5s ease;
+}
+
+.campus-intro-stage-label {
+    margin-top: 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    transition: all 0.5s ease;
+}
+
+/* Connecting Line Between Stages */
+.campus-intro-connector {
+    flex: 1;
+    height: 2px;
+    position: relative;
+    margin: 0 6px;
+    top: -14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.campus-intro-connector-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0px, rgba(255, 255, 255, 0.15) 4px, transparent 4px, transparent 10px);
+}
+
+.campus-intro-connector-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--line-start-color, #c042ff), var(--line-end-color, #7b52ff));
+    box-shadow: 0 0 10px var(--line-end-color, #7b52ff);
+    transition: width 0.5s ease-in-out;
+}
+
+.campus-intro-connector-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    z-index: 1;
+    transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* Active States for Stages */
+
+/* Stage 1: LOST (Purple) */
+.campus-intro-stage[data-stage="lost"].active .campus-intro-circle {
+    border-color: #c042ff;
+    box-shadow: 0 0 25px rgba(192, 66, 255, 0.5), inset 0 0 15px rgba(192, 66, 255, 0.25);
+    background: rgba(192, 66, 255, 0.12);
+    transform: scale(1.06);
+}
+.campus-intro-stage[data-stage="lost"].active .campus-intro-stage-icon {
+    color: #e094ff;
+    filter: drop-shadow(0 0 8px #c042ff);
+}
+.campus-intro-stage[data-stage="lost"].active .campus-intro-stage-label {
+    color: #c042ff;
+    text-shadow: 0 0 12px rgba(192, 66, 255, 0.6);
+}
+
+/* Stage 2: SEARCHING (Violet/Indigo) */
+.campus-intro-stage[data-stage="searching"].active .campus-intro-circle {
+    border-color: #7b52ff;
+    box-shadow: 0 0 25px rgba(123, 82, 255, 0.5), inset 0 0 15px rgba(123, 82, 255, 0.25);
+    background: rgba(123, 82, 255, 0.12);
+    transform: scale(1.06);
+}
+.campus-intro-stage[data-stage="searching"].active .campus-intro-stage-icon {
+    color: #a485ff;
+    filter: drop-shadow(0 0 8px #7b52ff);
+}
+.campus-intro-stage[data-stage="searching"].active .campus-intro-stage-label {
+    color: #7b52ff;
+    text-shadow: 0 0 12px rgba(123, 82, 255, 0.6);
+}
+/* Radar Sweep Animation for SEARCHING icon */
+.campus-intro-stage[data-stage="searching"].active .campus-intro-radar-sweep {
+    transform-origin: 18px 18px;
+    animation: campusIntroRadarSpin 2s linear infinite;
+}
+
+/* Stage 3: FOUND (Bright Blue) */
+.campus-intro-stage[data-stage="found"].active .campus-intro-circle {
+    border-color: #1a90ff;
+    box-shadow: 0 0 25px rgba(26, 144, 255, 0.5), inset 0 0 15px rgba(26, 144, 255, 0.25);
+    background: rgba(26, 144, 255, 0.12);
+    transform: scale(1.06);
+}
+.campus-intro-stage[data-stage="found"].active .campus-intro-stage-icon {
+    color: #6bb9ff;
+    filter: drop-shadow(0 0 8px #1a90ff);
+}
+.campus-intro-stage[data-stage="found"].active .campus-intro-stage-label {
+    color: #1a90ff;
+    text-shadow: 0 0 12px rgba(26, 144, 255, 0.6);
+}
+
+/* Stage 4: REUNITED (Mint / Cyan) */
+.campus-intro-stage[data-stage="reunited"].active .campus-intro-circle {
+    border-color: #00f5c4;
+    box-shadow: 0 0 30px rgba(0, 245, 196, 0.65), inset 0 0 18px rgba(0, 245, 196, 0.3);
+    background: rgba(0, 245, 196, 0.14);
+    transform: scale(1.08);
+}
+.campus-intro-stage[data-stage="reunited"].active .campus-intro-stage-icon {
+    color: #5effdf;
+    filter: drop-shadow(0 0 10px #00f5c4);
+}
+.campus-intro-stage[data-stage="reunited"].active .campus-intro-stage-label {
+    color: #00f5c4;
+    text-shadow: 0 0 14px rgba(0, 245, 196, 0.7);
+}
+
+/* Activated Connector Fill states */
+.campus-intro-connector.active-1 .campus-intro-connector-fill {
+    width: 100%;
+    --line-start-color: #c042ff;
+    --line-end-color: #7b52ff;
+}
+.campus-intro-connector.active-1 .campus-intro-connector-dot {
+    background-color: #7b52ff;
+    box-shadow: 0 0 6px #7b52ff;
+}
+
+.campus-intro-connector.active-2 .campus-intro-connector-fill {
+    width: 100%;
+    --line-start-color: #7b52ff;
+    --line-end-color: #1a90ff;
+}
+.campus-intro-connector.active-2 .campus-intro-connector-dot {
+    background-color: #1a90ff;
+    box-shadow: 0 0 6px #1a90ff;
+}
+
+.campus-intro-connector.active-3 .campus-intro-connector-fill {
+    width: 100%;
+    --line-start-color: #1a90ff;
+    --line-end-color: #00f5c4;
+}
+.campus-intro-connector.active-3 .campus-intro-connector-dot {
+    background-color: #00f5c4;
+    box-shadow: 0 0 6px #00f5c4;
+}
+
+/* Bottom Section: Progress Bar & Status */
+.campus-intro-progress-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 520px;
+    opacity: 0;
+    animation: campusIntroFadeIn 0.5s ease 0.4s forwards;
+}
+
+.campus-intro-progress-status {
+    font-size: 0.92rem;
+    color: #8da4c4;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+}
+
+.campus-intro-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    width: 100%;
+}
+
+.campus-intro-progress-track {
+    flex: 1;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.campus-intro-progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #c042ff 0%, #7b52ff 35%, #1a90ff 70%, #00f5c4 100%);
+    box-shadow: 0 0 12px rgba(0, 245, 196, 0.6), 0 0 24px rgba(168, 85, 247, 0.4);
+    position: relative;
+    transition: width 0.08s linear;
+}
+
+/* Bright trailing light at edge of progress bar */
+.campus-intro-progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 12px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ffffff, 0 0 18px #00f5c4;
+    opacity: 0.9;
+}
+
+.campus-intro-progress-percent {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #7b94b8;
+    min-width: 42px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s ease;
+}
+
+/* Footer Slogan Message */
+.campus-intro-footer {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.86rem;
+    color: #5e7292;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    animation: campusIntroFadeIn 0.6s ease 0.6s forwards;
+    margin-top: auto;
+}
+
+.campus-intro-footer-heart {
+    color: #7b52ff;
+    display: inline-block;
+    animation: campusIntroHeartPulse 2s ease-in-out infinite;
+}
+
+/* Keyframe Animations */
+@keyframes campusIntroFadeDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes campusIntroFadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes campusIntroPulseGlow {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1.15);
+        opacity: 0.85;
+    }
+}
+
+@keyframes campusIntroRadarSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes campusIntroHeartPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.25);
+        color: #c042ff;
+    }
+}
+
+/* Fade Out State for Intro Overlay */
+.campus-intro-overlay.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Responsive Scaling */
+@media (max-width: 640px) {
+    .campus-intro-overlay {
+        padding: 2rem 1rem 1.25rem 1rem;
+    }
+
+    .campus-intro-title {
+        font-size: 1.85rem;
+        letter-spacing: 0.14em;
+    }
+
+    .campus-intro-tagline {
+        font-size: 0.9rem;
+    }
+
+    .campus-intro-circle {
+        width: 58px;
+        height: 58px;
+    }
+
+    .campus-intro-stage-icon {
+        width: 26px;
+        height: 26px;
+    }
+
+    .campus-intro-stage-label {
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+        margin-top: 0.5rem;
+    }
+
+    .campus-intro-connector {
+        margin: 0 2px;
+        top: -10px;
+    }
+
+    .campus-intro-logo-box {
+        width: 68px;
+        height: 68px;
+        margin-bottom: 0.85rem;
+    }
+
+    .campus-intro-progress-box {
+        max-width: 90%;
+    }
+
+    .campus-intro-footer {
+        font-size: 0.78rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .campus-intro-circle {
+        width: 48px;
+        height: 48px;
+    }
+
+    .campus-intro-stage-icon {
+        width: 22px;
+        height: 22px;
+    }
+
+    .campus-intro-stage-label {
+        font-size: 0.6rem;
+    }
+}
+
+/* ==========================================================================
+   CampusFind Intro Screen - Light Theme Overrides
+   ========================================================================== */
+
+html.light-theme .campus-intro-overlay {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+html.light-theme .campus-intro-radial-glow {
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.14) 0%, rgba(6, 182, 212, 0.12) 40%, rgba(248, 250, 252, 0) 70%) !important;
+}
+
+html.light-theme .campus-intro-orbit-svg {
+    opacity: 0.35 !important;
+}
+
+html.light-theme .campus-intro-orbit-svg circle {
+    stroke: rgba(147, 51, 234, 0.25) !important;
+}
+
+html.light-theme .campus-intro-waves-svg {
+    opacity: 0.4 !important;
+}
+
+html.light-theme .campus-intro-silhouette {
+    opacity: 0.12 !important;
+}
+
+html.light-theme .campus-intro-logo-glow {
+    background: radial-gradient(circle, rgba(147, 51, 234, 0.3), rgba(2, 132, 199, 0.15), transparent 70%) !important;
+}
+
+html.light-theme .campus-intro-logo-svg {
+    filter: drop-shadow(0 0 10px rgba(147, 51, 234, 0.4)) !important;
+}
+
+html.light-theme .campus-intro-title {
+    color: #0f172a !important;
+    text-shadow: 0 2px 10px rgba(147, 51, 234, 0.15) !important;
+}
+
+html.light-theme .campus-intro-tagline {
+    color: #475569 !important;
+}
+
+html.light-theme .campus-intro-circle {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light-theme .campus-intro-stage-icon {
+    color: #94a3b8 !important;
+}
+
+html.light-theme .campus-intro-stage-label {
+    color: #64748b !important;
+}
+
+/* Stage Active States in Light Theme */
+html.light-theme .campus-intro-stage[data-stage="lost"].active .campus-intro-circle {
+    border-color: #9333ea !important;
+    background: rgba(147, 51, 234, 0.08) !important;
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.25) !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="lost"].active .campus-intro-stage-icon {
+    color: #9333ea !important;
+    filter: drop-shadow(0 0 6px rgba(147, 51, 234, 0.4)) !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="lost"].active .campus-intro-stage-label {
+    color: #9333ea !important;
+    text-shadow: none !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="searching"].active .campus-intro-circle {
+    border-color: #6366f1 !important;
+    background: rgba(99, 102, 241, 0.08) !important;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.25) !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="searching"].active .campus-intro-stage-icon {
+    color: #6366f1 !important;
+    filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.4)) !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="searching"].active .campus-intro-stage-label {
+    color: #6366f1 !important;
+    text-shadow: none !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="found"].active .campus-intro-circle {
+    border-color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.08) !important;
+    box-shadow: 0 0 20px rgba(2, 132, 199, 0.25) !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="found"].active .campus-intro-stage-icon {
+    color: #0284c7 !important;
+    filter: drop-shadow(0 0 6px rgba(2, 132, 199, 0.4)) !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="found"].active .campus-intro-stage-label {
+    color: #0284c7 !important;
+    text-shadow: none !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="reunited"].active .campus-intro-circle {
+    border-color: #059669 !important;
+    background: rgba(5, 150, 105, 0.08) !important;
+    box-shadow: 0 0 25px rgba(5, 150, 105, 0.3) !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="reunited"].active .campus-intro-stage-icon {
+    color: #059669 !important;
+    filter: drop-shadow(0 0 8px rgba(5, 150, 105, 0.4)) !important;
+}
+
+html.light-theme .campus-intro-stage[data-stage="reunited"].active .campus-intro-stage-label {
+    color: #059669 !important;
+    text-shadow: none !important;
+}
+
+/* Connectors & Tracks in Light Theme */
+html.light-theme .campus-intro-connector-line {
+    background: repeating-linear-gradient(90deg, #cbd5e1 0px, #cbd5e1 4px, transparent 4px, transparent 10px) !important;
+}
+
+html.light-theme .campus-intro-connector-dot {
+    background-color: #cbd5e1 !important;
+}
+
+html.light-theme .campus-intro-progress-status {
+    color: #475569 !important;
+}
+
+html.light-theme .campus-intro-progress-track {
+    background: #e2e8f0 !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light-theme .campus-intro-progress-fill {
+    background: linear-gradient(90deg, #9333ea 0%, #6366f1 35%, #0284c7 70%, #059669 100%) !important;
+    box-shadow: 0 0 10px rgba(2, 132, 199, 0.35) !important;
+}
+
+html.light-theme .campus-intro-progress-percent {
+    color: #0284c7 !important;
+}
+
+html.light-theme .campus-intro-footer {
+    color: #64748b !important;
+}

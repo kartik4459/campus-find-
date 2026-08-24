@@ -8,10 +8,230 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script>
+        (function() {
+            if (localStorage.getItem("theme") === "light") {
+                document.documentElement.classList.add("light-theme");
+            }
+        })();
+    </script>
     <!-- Custom Styles -->
     <link rel="stylesheet" href="css/style.css">
+    <!-- Intro / Loading Screen Styles -->
+    <link rel="stylesheet" href="css/intro.css">
 </head>
 <body data-page="home">
+
+    <!-- CampusFind Animated Intro / Loading Screen Overlay -->
+    <div id="campus-intro-overlay" class="campus-intro-overlay">
+        <!-- Background Elements -->
+        <div class="campus-intro-bg">
+            <div class="campus-intro-radial-glow"></div>
+            
+            <!-- Concentric Orbital Circles SVG -->
+            <svg class="campus-intro-orbit-svg" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="400" cy="400" r="150" stroke="url(#orbit-grad-1)" stroke-width="1.5" stroke-dasharray="4 6"/>
+                <circle cx="400" cy="400" r="260" stroke="url(#orbit-grad-2)" stroke-width="1" opacity="0.6"/>
+                <circle cx="400" cy="400" r="370" stroke="url(#orbit-grad-3)" stroke-width="1" stroke-dasharray="8 8" opacity="0.4"/>
+                <defs>
+                    <linearGradient id="orbit-grad-1" x1="0" y1="0" x2="800" y2="800">
+                        <stop offset="0%" stop-color="#c042ff"/>
+                        <stop offset="100%" stop-color="#00f5c4"/>
+                    </linearGradient>
+                    <linearGradient id="orbit-grad-2" x1="800" y1="0" x2="0" y2="800">
+                        <stop offset="0%" stop-color="#1a90ff"/>
+                        <stop offset="100%" stop-color="#7b52ff"/>
+                    </linearGradient>
+                    <linearGradient id="orbit-grad-3" x1="400" y1="0" x2="400" y2="800">
+                        <stop offset="0%" stop-color="#7b52ff"/>
+                        <stop offset="100%" stop-color="#1a90ff"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+
+            <!-- Bottom Glowing Fluid Neon Waves SVG -->
+            <svg class="campus-intro-waves-svg" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M-100,220 C200,320 450,140 720,240 C990,340 1250,180 1540,280 L1540,360 L-100,360 Z" fill="url(#wave-grad-1)" opacity="0.4"/>
+                <path d="M-100,260 C180,160 480,300 750,200 C1020,100 1280,260 1540,190 L1540,360 L-100,360 Z" fill="url(#wave-grad-2)" opacity="0.3"/>
+                <!-- Thin Glowing Neon Lines -->
+                <path d="M-50,220 C200,310 450,130 720,230 C990,330 1250,170 1500,270" stroke="url(#neon-line-1)" stroke-width="2.5" fill="none" filter="drop-shadow(0 0 8px #c042ff)"/>
+                <path d="M-50,250 C180,150 480,290 750,190 C1020,90 1280,250 1500,180" stroke="url(#neon-line-2)" stroke-width="2.5" fill="none" filter="drop-shadow(0 0 10px #00f5c4)"/>
+                <defs>
+                    <linearGradient id="wave-grad-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#c042ff"/>
+                        <stop offset="50%" stop-color="#7b52ff"/>
+                        <stop offset="100%" stop-color="#1a90ff"/>
+                    </linearGradient>
+                    <linearGradient id="wave-grad-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#1a90ff"/>
+                        <stop offset="100%" stop-color="#00f5c4"/>
+                    </linearGradient>
+                    <linearGradient id="neon-line-1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#c042ff"/>
+                        <stop offset="100%" stop-color="#7b52ff"/>
+                    </linearGradient>
+                    <linearGradient id="neon-line-2" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#1a90ff"/>
+                        <stop offset="100%" stop-color="#00f5c4"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+
+            <!-- Subtle Campus Skyline Silhouette SVG -->
+            <svg class="campus-intro-silhouette" viewBox="0 0 1000 160" preserveAspectRatio="xMidYMax slice" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,160 L0,140 L40,140 L40,120 L70,120 L70,140 L130,140 L130,110 L160,110 L160,140 L210,140 L210,90 L230,90 L230,70 L240,50 L250,70 L250,90 L270,90 L270,140 L340,140 L340,115 L380,115 L380,140 L440,140 L440,80 L470,80 L485,30 L500,10 L515,30 L530,80 L560,80 L560,140 L620,140 L620,105 L660,105 L660,140 L720,140 L720,85 L740,85 L750,60 L760,85 L780,85 L780,140 L840,140 L840,115 L880,115 L880,140 L930,140 L930,120 L960,120 L960,140 L1000,140 L1000,160 Z" fill="#080c20" opacity="0.9"/>
+            </svg>
+        </div>
+
+        <!-- Main Content -->
+        <div class="campus-intro-content">
+            <!-- Header: Logo, Brand & Tagline -->
+            <div class="campus-intro-header">
+                <div class="campus-intro-logo-box">
+                    <div class="campus-intro-logo-glow"></div>
+                    <svg class="campus-intro-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Graduation Cap -->
+                        <path d="M50 14L15 32L50 50L85 32L50 14Z" fill="url(#logo-grad-1)"/>
+                        <path d="M80 35.5V52.5C80 52.5 76 58 76 62" stroke="url(#logo-grad-1)" stroke-width="3" stroke-linecap="round"/>
+                        <circle cx="76" cy="64" r="3.5" fill="#00f5c4"/>
+                        
+                        <!-- Magnifying Glass Base & Ring -->
+                        <circle cx="50" cy="58" r="22" stroke="url(#logo-grad-2)" stroke-width="6" fill="none"/>
+                        <circle cx="50" cy="58" r="14" fill="url(#logo-grad-inner)" opacity="0.4"/>
+                        <circle cx="50" cy="58" r="8" stroke="url(#logo-grad-1)" stroke-width="3" fill="none"/>
+                        <!-- Handle -->
+                        <path d="M66 74L82 90" stroke="url(#logo-grad-2)" stroke-width="7" stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="logo-grad-1" x1="15" y1="14" x2="85" y2="50">
+                                <stop offset="0%" stop-color="#c042ff"/>
+                                <stop offset="100%" stop-color="#7b52ff"/>
+                            </linearGradient>
+                            <linearGradient id="logo-grad-2" x1="28" y1="36" x2="82" y2="90">
+                                <stop offset="0%" stop-color="#7b52ff"/>
+                                <stop offset="50%" stop-color="#1a90ff"/>
+                                <stop offset="100%" stop-color="#00f5c4"/>
+                            </linearGradient>
+                            <radialGradient id="logo-grad-inner" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#00f5c4" stop-opacity="0.6"/>
+                                <stop offset="100%" stop-color="#7b52ff" stop-opacity="0"/>
+                            </radialGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h1 class="campus-intro-title">CampusFind</h1>
+                <p class="campus-intro-tagline">Reuniting people with what they thought was lost.</p>
+            </div>
+
+            <!-- 4 Stage Visual Journey -->
+            <div class="campus-intro-journey">
+                <!-- Stage 1: LOST -->
+                <div class="campus-intro-stage" data-stage="lost">
+                    <div class="campus-intro-circle">
+                        <svg class="campus-intro-stage-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <!-- Backpack Icon -->
+                            <path d="M11 11C11 7.13401 14.134 4 18 4C21.866 4 25 7.13401 25 11V30H11V11Z"/>
+                            <path d="M7 15C7 13.3431 8.34315 12 10 12H26C27.6569 12 29 13.3431 29 15V29C29 30.6569 27.6569 32 26 32H10C8.34315 32 7 30.6569 7 29V15Z"/>
+                            <path d="M14 18H22"/>
+                            <!-- Exclamation Badge -->
+                            <circle cx="27" cy="27" r="5" fill="#c042ff" stroke="#040613" stroke-width="1.5"/>
+                            <path d="M27 24.5V27.5M27 29.5H27.01" stroke="#ffffff" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <span class="campus-intro-stage-label">Lost</span>
+                </div>
+
+                <!-- Connector 1 -->
+                <div class="campus-intro-connector" data-connector="1">
+                    <div class="campus-intro-connector-line"></div>
+                    <div class="campus-intro-connector-fill"></div>
+                    <div class="campus-intro-connector-dot"></div>
+                    <div class="campus-intro-connector-dot"></div>
+                    <div class="campus-intro-connector-dot"></div>
+                </div>
+
+                <!-- Stage 2: SEARCHING -->
+                <div class="campus-intro-stage" data-stage="searching">
+                    <div class="campus-intro-circle">
+                        <svg class="campus-intro-stage-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <!-- Radar Target Icon -->
+                            <circle cx="18" cy="18" r="14"/>
+                            <circle cx="18" cy="18" r="9"/>
+                            <circle cx="18" cy="18" r="4"/>
+                            <path d="M18 4V32M4 18H32"/>
+                            <!-- Rotating Sweep Line -->
+                            <line class="campus-intro-radar-sweep" x1="18" y1="18" x2="28" y2="8" stroke="#7b52ff" stroke-width="2.5"/>
+                        </svg>
+                    </div>
+                    <span class="campus-intro-stage-label">Searching</span>
+                </div>
+
+                <!-- Connector 2 -->
+                <div class="campus-intro-connector" data-connector="2">
+                    <div class="campus-intro-connector-line"></div>
+                    <div class="campus-intro-connector-fill"></div>
+                    <div class="campus-intro-connector-dot"></div>
+                    <div class="campus-intro-connector-dot"></div>
+                    <div class="campus-intro-connector-dot"></div>
+                </div>
+
+                <!-- Stage 3: FOUND -->
+                <div class="campus-intro-stage" data-stage="found">
+                    <div class="campus-intro-circle">
+                        <svg class="campus-intro-stage-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <!-- Magnifying Glass Inspection Icon -->
+                            <circle cx="16" cy="16" r="10"/>
+                            <path d="M23 23L31 31"/>
+                            <path d="M13 16H19M16 13V19" stroke-width="1.5" stroke-dasharray="2 2"/>
+                        </svg>
+                    </div>
+                    <span class="campus-intro-stage-label">Found</span>
+                </div>
+
+                <!-- Connector 3 -->
+                <div class="campus-intro-connector" data-connector="3">
+                    <div class="campus-intro-connector-line"></div>
+                    <div class="campus-intro-connector-fill"></div>
+                    <div class="campus-intro-connector-dot"></div>
+                    <div class="campus-intro-connector-dot"></div>
+                    <div class="campus-intro-connector-dot"></div>
+                </div>
+
+                <!-- Stage 4: REUNITED -->
+                <div class="campus-intro-stage" data-stage="reunited">
+                    <div class="campus-intro-circle">
+                        <svg class="campus-intro-stage-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <!-- Package in Care/Handover Icon -->
+                            <path d="M11 11L18 7L25 11L18 15L11 11Z"/>
+                            <path d="M11 11V18L18 22V15"/>
+                            <path d="M25 11V18L18 22"/>
+                            <!-- Supporting Hands -->
+                            <path d="M6 26C8 24 11 25 13 27L18 30L23 27C25 25 28 24 30 26" stroke-width="2"/>
+                            <!-- Checkmark Badge -->
+                            <circle cx="27" cy="9" r="4.5" fill="#00f5c4" stroke="#040613" stroke-width="1.2"/>
+                            <path d="M25 9L26.5 10.5L29 8" stroke="#040613" stroke-width="1.8"/>
+                        </svg>
+                    </div>
+                    <span class="campus-intro-stage-label">Reunited</span>
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="campus-intro-progress-box">
+                <div class="campus-intro-progress-status">Connecting the dots...</div>
+                <div class="campus-intro-progress-row">
+                    <div class="campus-intro-progress-track">
+                        <div class="campus-intro-progress-fill"></div>
+                    </div>
+                    <div class="campus-intro-progress-percent">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Note -->
+        <div class="campus-intro-footer">
+            <span class="campus-intro-footer-heart">♥</span> Making campuses better, one match at a time.
+        </div>
+    </div>
 
     <!-- Header / Navbar -->
     <nav class="navbar navbar-custom sticky-top">
@@ -76,7 +296,7 @@
                             <span>Find it faster with intelligent matching.</span>
                         </h1>
                         <p class="hero-subtitle mb-4">
-                            FindIt compares category, color, campus zone, dates, and description details to connect lost and found items automatically.
+                            CampusFind compares category, color, campus zone, dates, and description details to connect lost and found items automatically.
                         </p>
 
                         <div class="d-flex flex-wrap gap-3 mb-3">
@@ -181,7 +401,7 @@
                         <i class="bi bi-diagram-3 me-1"></i>PROCESS WORKFLOW
                     </p>
                     <h2 class="fw-bold text-heading mb-2" style="font-size: 2.1rem; letter-spacing: -0.01em;">
-                        How FindIt Works
+                        How CampusFind Works
                     </h2>
                     <p class="text-muted mx-auto mb-0" style="max-width: 540px; font-size: 0.95rem;">
                         Four simple steps connecting lost and found items on campus with intelligent attribute matching.
@@ -220,7 +440,7 @@
                                     <i class="bi bi-cpu-fill"></i>
                                 </div>
                                 <h4 class="step-title">Smart Match</h4>
-                                <p class="step-description">FindIt compares multiple attributes to identify relevant matches.</p>
+                                <p class="step-description">CampusFind compares multiple attributes to identify relevant matches.</p>
                             </div>
                         </div>
 
@@ -262,6 +482,162 @@
                             </div>
                         </div>
 
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Campus Insights Data Visualization Section -->
+        <section class="py-5 campus-insights-section" id="campus-insights-section">
+            <div class="container">
+                <!-- Section Header -->
+                <div class="text-center mb-5 campus-insights-header-anim">
+                    <p class="text-uppercase fw-bold extra-small mb-1 campus-insights-badge-text">
+                        <i class="bi bi-bar-chart-line-fill me-1"></i>DATA AT A GLANCE
+                    </p>
+                    <h2 class="fw-bold text-heading mb-2 campus-insights-main-title">
+                        Campus <span class="text-gradient-insights">Insights<i class="bi bi-stars ms-1 text-cyan"></i></span>
+                    </h2>
+                    <p class="text-muted mx-auto mb-3" style="max-width: 500px; font-size: 0.95rem;">
+                        See what's happening across your campus.
+                    </p>
+                    <div class="campus-insights-divider">
+                        <span class="campus-insights-divider-line"></span>
+                        <span class="campus-insights-divider-dot"></span>
+                        <span class="campus-insights-divider-line"></span>
+                    </div>
+                </div>
+
+                <!-- Two-Card Layout Grid -->
+                <div class="row g-4 align-items-stretch">
+                    <!-- Left Card: Category Distribution -->
+                    <div class="col-lg-6">
+                        <div class="campus-insights-card shadow-lg h-100">
+                            <!-- Card Header -->
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="campus-insights-icon-box box-purple">
+                                        <i class="bi bi-pie-chart-fill"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="fw-bold mb-0 text-white fs-5">Category Distribution</h4>
+                                        <span class="small text-muted">What gets lost & found most?</span>
+                                    </div>
+                                </div>
+                                <span class="badge bg-purple-subtle text-purple border border-purple-subtle rounded-pill px-3 py-1.5 extra-small">
+                                    Based on all reports <i class="bi bi-info-circle ms-1"></i>
+                                </span>
+                            </div>
+
+                            <!-- Dynamic Category Progress Bars Container -->
+                            <div class="campus-insights-categories-list" id="insights-category-list">
+                                <!-- Populated dynamically by app.js -->
+                            </div>
+
+                            <!-- Card Footer Total -->
+                            <div class="campus-insights-card-footer d-flex align-items-center justify-content-between mt-4 pt-3 border-top border-secondary-subtle">
+                                <div class="d-flex align-items-center gap-2 text-muted small fw-semibold">
+                                    <i class="bi bi-graph-up-arrow text-purple fs-5"></i>
+                                    <span>Total Reports</span>
+                                </div>
+                                <span class="fs-4 fw-bold text-purple" id="insights-cat-total-count">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Card: Campus Report Status -->
+                    <div class="col-lg-6">
+                        <div class="campus-insights-card shadow-lg h-100">
+                            <!-- Card Header -->
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="campus-insights-icon-box box-cyan">
+                                        <i class="bi bi-donut-chart-fill"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="fw-bold mb-0 text-white fs-5">Campus Report Status</h4>
+                                        <span class="small text-muted">Current status of reported items</span>
+                                    </div>
+                                </div>
+                                <span class="badge bg-cyan-subtle text-cyan border border-cyan-subtle rounded-pill px-3 py-1.5 extra-small">
+                                    All Time <i class="bi bi-chevron-down ms-1"></i>
+                                </span>
+                            </div>
+
+                            <!-- Donut Chart & Legend Row -->
+                            <div class="row align-items-center g-4 my-auto">
+                                <!-- Donut SVG Canvas -->
+                                <div class="col-sm-6 text-center">
+                                    <div class="campus-insights-donut-wrapper mx-auto">
+                                        <svg class="campus-insights-donut-svg" viewBox="0 0 200 200">
+                                            <!-- Background Ring Track -->
+                                            <circle cx="100" cy="100" r="70" stroke="rgba(255, 255, 255, 0.06)" stroke-width="22" fill="none"/>
+                                            <!-- Lost Arc (Purple) -->
+                                            <circle id="donut-arc-lost" cx="100" cy="100" r="70" stroke="#a855f7" stroke-width="22" fill="none" stroke-dasharray="0 440" stroke-linecap="round" transform="rotate(-90 100 100)"/>
+                                            <!-- Found Arc (Blue) -->
+                                            <circle id="donut-arc-found" cx="100" cy="100" r="70" stroke="#06b6d4" stroke-width="22" fill="none" stroke-dasharray="0 440" stroke-linecap="round" transform="rotate(-90 100 100)"/>
+                                            <!-- Recovered Arc (Cyan/Emerald) -->
+                                            <circle id="donut-arc-recovered" cx="100" cy="100" r="70" stroke="#10b981" stroke-width="22" fill="none" stroke-dasharray="0 440" stroke-linecap="round" transform="rotate(-90 100 100)"/>
+                                        </svg>
+                                        <!-- Donut Center Text -->
+                                        <div class="campus-insights-donut-center">
+                                            <span class="extra-small text-uppercase fw-bold text-muted tracking-wider">TOTAL</span>
+                                            <span class="fs-2 fw-bold text-white lh-1 my-1" id="insights-donut-total-count">0</span>
+                                            <span class="extra-small text-muted">Reports</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Donut Legend & Stats -->
+                                <div class="col-sm-6">
+                                    <div class="d-flex flex-column gap-2" id="insights-donut-legend">
+                                        <!-- Lost Legend Item -->
+                                        <div class="campus-insights-legend-item d-flex align-items-center justify-content-between py-2.5 border-bottom border-secondary-subtle">
+                                            <div class="d-flex align-items-center gap-2.5">
+                                                <span class="legend-dot dot-lost"></span>
+                                                <div>
+                                                    <div class="fw-bold text-white small">Lost</div>
+                                                    <div class="extra-small text-muted" id="insights-count-lost">0 reports</div>
+                                                </div>
+                                            </div>
+                                            <span class="fw-bold text-purple fs-6" id="insights-pct-lost">0%</span>
+                                        </div>
+
+                                        <!-- Found Legend Item -->
+                                        <div class="campus-insights-legend-item d-flex align-items-center justify-content-between py-2.5 border-bottom border-secondary-subtle">
+                                            <div class="d-flex align-items-center gap-2.5">
+                                                <span class="legend-dot dot-found"></span>
+                                                <div>
+                                                    <div class="fw-bold text-white small">Found</div>
+                                                    <div class="extra-small text-muted" id="insights-count-found">0 reports</div>
+                                                </div>
+                                            </div>
+                                            <span class="fw-bold text-blue fs-6" id="insights-pct-found">0%</span>
+                                        </div>
+
+                                        <!-- Recovered Legend Item -->
+                                        <div class="campus-insights-legend-item d-flex align-items-center justify-content-between py-2.5">
+                                            <div class="d-flex align-items-center gap-2.5">
+                                                <span class="legend-dot dot-recovered"></span>
+                                                <div>
+                                                    <div class="fw-bold text-white small">Recovered</div>
+                                                    <div class="extra-small text-muted" id="insights-count-recovered">0 reports</div>
+                                                </div>
+                                            </div>
+                                            <span class="fw-bold text-emerald fs-6" id="insights-pct-recovered">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Recovery Rate Banner -->
+                            <div class="campus-insights-card-footer mt-4 pt-3 border-top border-secondary-subtle">
+                                <div class="campus-insights-banner p-2.5 rounded-3 d-flex align-items-center gap-2 text-white small" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);">
+                                    <i class="bi bi-shield-check text-emerald fs-5"></i>
+                                    <span><strong class="text-emerald" id="insights-recovery-rate">0%</strong> of reported items are successfully recovered!</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -463,5 +839,6 @@
     <script src="js/matching.js"></script>
     <script src="js/app.js"></script>
     <script src="js/matchSpace.js"></script>
+    <script src="js/intro.js"></script>
 </body>
 </html>
