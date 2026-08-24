@@ -72,7 +72,15 @@ function initChatPage() {
     )) || currentChat.status === "Verified" || currentChat.status === "Recovery Arranged" || currentChat.status === "Recovered" || currentChatId === "CHAT-DEMO-001";
 
     let isRejected = (linkedClaim && linkedClaim.status === "Rejected") || currentChat.status === "Rejected";
+    let isClosed = currentChat.readOnly === true;
+    if (isClosed) isApproved = false; // Force-lock messaging once handoff is verified
 
+        // Self-heal: sync chat status if it was approved via the Dashboard claim flow
+    // instead of the in-chat "Approve Ownership" button
+    if (isApproved && !isClosed && currentChat.status !== "Verified" && currentChat.status !== "Recovery Arranged" && currentChat.status !== "Recovered") {
+        updateChatStatus(currentChatId, "Verified");
+        currentChat = getChatById(currentChatId);
+    }
     // Mark messages sent by the other user as read
     markChatMessagesRead(currentChatId, currentUser.useremail);
 
@@ -80,8 +88,7 @@ function initChatPage() {
     renderChatSidebar(isApproved, isRejected);
     renderChatHeader(isApproved, isRejected);
     renderFinderActionPanel(isFinder, isApproved, isRejected, linkedClaim);
-    renderChatInputState(isApproved, isFinder, isRejected);
-    renderQuickActionChips(isApproved);
+    renderChatInputState(isApproved, isFinder, isRejected, isClosed);    renderQuickActionChips(isApproved);
     renderRecoveryStatusBar();
     renderChatMessages();
 
@@ -190,7 +197,7 @@ function renderFinderActionPanel(isFinder, isApproved, isRejected, linkedClaim) 
     }
 }
 
-function renderChatInputState(isApproved, isFinder, isRejected) {
+function renderChatInputState(isApproved, isFinder, isRejected, isClosed) {
     let chatInput = document.getElementById("chat-input");
     let sendBtn = document.getElementById("chat-send-btn");
     let lockBanner = document.getElementById("chat-lock-banner");
@@ -217,7 +224,17 @@ function renderChatInputState(isApproved, isFinder, isRejected) {
 
         if (lockBanner) {
             lockBanner.classList.remove("d-none");
-            if (isRejected) {
+            if (isClosed) {
+                lockBanner.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 text-success">
+                        <i class="bi bi-check-circle-fill fs-5"></i>
+                        <div>
+                            <strong class="d-block">✓ Handoff Verified — Report Closed</strong>
+                            <span class="small">This item has been securely returned and confirmed. This conversation is now read-only for record-keeping.</span>
+                        </div>
+                    </div>
+                `;
+            } else if (isRejected) {
                 lockBanner.innerHTML = `
                     <div class="d-flex align-items-center gap-2 text-danger">
                         <i class="bi bi-x-circle-fill fs-5"></i>
@@ -414,11 +431,9 @@ function renderRecoveryStatusBar() {
                 <button class="btn btn-sm btn-primary fw-bold extra-small py-1.5 px-3" onclick="openArrangeRecoveryModal()">
                     <i class="bi bi-calendar-event me-1"></i>${rec ? 'Update Recovery Plan' : 'Arrange Recovery'}
                 </button>
-                ${isLostOwner ? `
-                    <button class="btn btn-sm btn-success fw-bold extra-small py-1.5 px-3" onclick="confirmItemReceipt(true)">
-                        <i class="bi bi-check-circle-fill me-1"></i>Mark Item as Recovered
-                    </button>
-                ` : ''}
+                <button class="btn btn-sm btn-success fw-bold extra-small py-1.5 px-3" onclick="openHandoffCodeModal()">
+                    <i class="bi bi-shield-lock-fill me-1"></i>Secure Handoff Verification
+                </button>
             </div>
         `;
     } else {
@@ -728,6 +743,133 @@ function handleConfirmRecoveryPlan(event) {
     renderChatHeader();
     renderRecoveryStatusBar();
     renderChatMessages();
+}
+
+// -------------------------------------------------------------
+// SECURE HANDOFF CODE VERIFICATION
+// -------------------------------------------------------------
+function openHandoffCodeModal() {
+    let currentUser = getCurrentUser();
+    let myEmail = currentUser.useremail.toLowerCase().trim();
+    let isLostOwner = (currentChat.lostUserEmail || "").toLowerCase().trim() === myEmail;
+    let body = document.getElementById("handoff-modal-body");
+
+    if (isLostOwner) {
+        let existingCode = currentChat.handoffCode || null;
+        body.innerHTML = `
+            <p class="small text-muted">Generate a one-time code and read it aloud to the finder ONLY once you have the item physically in hand at your meeting. Do not send it in chat or screenshot it.</p>
+            <div class="text-center p-4 bg-input rounded-3 border border-secondary-subtle mb-3">
+                <div class="extra-small text-muted text-uppercase fw-bold mb-2">Your Handoff Code</div>
+                <div id="handoff-code-display" class="fs-2 fw-bold text-primary" style="letter-spacing: 0.3em;">
+                    ${existingCode ? existingCode : "------"}
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary w-100 fw-bold py-2 rounded-3" onclick="generateHandoffCode()">
+                <i class="bi bi-arrow-repeat me-1"></i>${existingCode ? "Regenerate Code" : "Generate Code"}
+            </button>
+        `;
+    } else {
+        body.innerHTML = `
+            <p class="small text-muted">Ask the lost item owner for the handoff code shown on their screen and enter it below to confirm the item has been returned.</p>
+            <form onsubmit="submitHandoffCode(event)">
+                <input type="text" id="handoff-code-input" class="form-control bg-input border-secondary-subtle text-light text-center fs-4 mb-2" style="letter-spacing: 0.3em;" maxlength="6" placeholder="------" required autocomplete="off">
+                <div id="handoff-code-error" class="text-danger small mb-2 d-none">Incorrect code. Please try again.</div>
+                <button type="submit" class="btn btn-success w-100 fw-bold py-2 rounded-3">
+                    <i class="bi bi-check-circle-fill me-1"></i>Confirm Handoff
+                </button>
+            </form>
+        `;
+    }
+
+    let modalEl = document.getElementById("handoffCodeModal");
+    let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+}
+
+function generateHandoffCode() {
+    let code = String(Math.floor(100000 + Math.random() * 900000));
+    setChatHandoffCode(currentChatId, code);
+    currentChat = getChatById(currentChatId);
+
+    let display = document.getElementById("handoff-code-display");
+    if (display) display.innerText = code;
+
+    let systemMsg = {
+        id: "MSG-" + Date.now(),
+        senderId: "SYSTEM",
+        senderName: "CampusFind System",
+        text: `🔐 A secure handoff code has been generated by the owner. Ask them for it in person to confirm the return.`,
+        type: "system",
+        timestamp: new Date().toISOString(),
+        read: true
+    };
+    sendChatMessage(currentChatId, systemMsg);
+    renderChatMessages();
+}
+
+function submitHandoffCode(event) {
+    event.preventDefault();
+    let input = document.getElementById("handoff-code-input");
+    let entered = input.value.trim();
+    let errorEl = document.getElementById("handoff-code-error");
+
+    if (!currentChat.handoffCode) {
+        if (errorEl) {
+            errorEl.innerText = "No code has been generated yet. Ask the owner to generate one.";
+            errorEl.classList.remove("d-none");
+        }
+        return;
+    }
+
+    if (entered !== currentChat.handoffCode) {
+        if (errorEl) {
+            errorEl.innerText = "Incorrect code. Please try again.";
+            errorEl.classList.remove("d-none");
+        }
+        return;
+    }
+
+    // Code matches — finalize recovery and lock the chat
+    let currentUser = getCurrentUser();
+    updateChatStatus(currentChatId, "Recovered");
+    lockChatAsReadOnly(currentChatId);
+
+    let reports = getReports();
+    let lostRep = reports.find(r => r.id === currentChat.lostItemId);
+    let foundRep = reports.find(r => r.id === currentChat.foundItemId);
+    if (lostRep) lostRep.status = "Recovered";
+    if (foundRep) foundRep.status = "Recovered";
+    localStorage.setItem("campus_reports", JSON.stringify(reports));
+
+    let systemMsg = {
+        id: "MSG-" + Date.now(),
+        senderId: "SYSTEM",
+        senderName: "CampusFind System",
+        text: `✅ Handoff verified via secure code by ${currentUser.username}. Item marked as Recovered. This conversation is now read-only.`,
+        type: "system",
+        timestamp: new Date().toISOString(),
+        read: true
+    };
+    sendChatMessage(currentChatId, systemMsg);
+
+    sendNotification({
+        id: "NOTIF-" + Date.now(),
+        recipientEmail: currentChat.lostUserEmail,
+        senderName: currentUser.username,
+        senderEmail: currentUser.useremail,
+        itemName: currentChat.lostItemName,
+        message: `✅ Handoff verified for "${currentChat.lostItemName}". The report is now closed.`,
+        chatId: currentChatId,
+        type: "item_recovered",
+        date: new Date().toLocaleString()
+    });
+
+    let modalEl = document.getElementById("handoffCodeModal");
+    let modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+
+    alert("✅ Handoff verified! The report is now closed and read-only.");
+    initChatPage();
 }
 
 function confirmItemReceipt(isReceived) {
