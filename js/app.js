@@ -1933,7 +1933,7 @@ function initDashboardPage() {
     }
 }
 
-// Render Found Item Alerts prominently in the main dashboard column
+// Render Found Item Alerts as a compact summary preview in the dashboard
 function renderFoundNotices(userEmail) {
     let container = document.getElementById("found-notices-container");
     let badgeEl = document.getElementById("found-notices-badge");
@@ -1961,93 +1961,164 @@ function renderFoundNotices(userEmail) {
         let finderEmail = n.senderEmail || "finder@example.com";
         let finderName = n.senderName || "Founder";
         let itemName = n.itemName || "Lost Item";
-        let noticeMsg = n.message;
 
-        // Check if claimant has already submitted hidden details for this alert
         let existingClaim = allClaims.find(c => 
             c.claimedByEmail && userEmail && c.claimedByEmail.toLowerCase().trim() === userEmail.toLowerCase().trim() &&
             c.reporterEmail && finderEmail && c.reporterEmail.toLowerCase().trim() === finderEmail.toLowerCase().trim() &&
             (c.itemId === n.itemId || c.itemName === itemName)
         );
 
-        let actionHtml = "";
-        if (existingClaim) {
-            if (existingClaim.status === "Approved & Meeting Scheduled" && existingClaim.meetingDetails) {
-                actionHtml = `
-                    <div class="w-100 p-2 bg-success bg-opacity-10 text-success rounded border small fw-bold">
-                        <i class="bi bi-check2-circle me-1"></i>Approved by Founder! Meeting at ${existingClaim.meetingDetails.location} | ${existingClaim.meetingDetails.time}
-                    </div>
-                `;
-            } else if (existingClaim.status === "More Info Requested") {
-                actionHtml = `
-                    <div class="w-100 p-2 bg-warning bg-opacity-10 text-dark rounded border small">
-                        <div class="fw-bold text-warning-emphasis mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Founder (${finderName}) requested more details:</div>
-                        <div class="mb-2">"${existingClaim.founderFeedback || 'Please provide more details'}"</div>
-                        <button type="button" class="btn btn-sm btn-warning text-dark fw-bold" onclick="openUpdateDetailsModal('${existingClaim.claimId}')">
-                            <i class="bi bi-pencil-square me-1"></i>Provide Additional / Correct Details
-                        </button>
-                    </div>
-                `;
-            } else if (existingClaim.status === "Rejected") {
-                actionHtml = `
-                    <div class="w-100 p-2 bg-danger bg-opacity-10 text-danger rounded border small">
-                        <i class="bi bi-x-circle-fill me-1"></i><strong>Claim Rejected:</strong> ${existingClaim.rejectionReason || 'Details did not match'}
-                    </div>
-                `;
-            } else {
-                actionHtml = `
-                    <div class="w-100 p-2 bg-warning bg-opacity-10 text-dark rounded border small">
-                        <i class="bi bi-hourglass-split text-warning me-1"></i><strong>Hidden Details Submitted:</strong> "${existingClaim.providedProof}". Awaiting Founder (${finderName}) to verify & schedule meeting.
-                    </div>
-                `;
-            }
-        } else {
-            actionHtml = `
-                <button type="button" class="btn btn-sm btn-primary fw-bold ms-auto" onclick="openProvideHiddenDetailsModal('${n.id}')">
-                    <i class="bi bi-shield-lock me-1"></i>Provide Hidden Details to Founder
-                </button>
-            `;
-        }
+        let badgeLabel = existingClaim ? "⚠️ Hidden Details Submitted" : "Founder Found Your Item!";
 
         container.innerHTML += `
-            <div class="card p-3 mb-3 border border-warning-subtle shadow-sm rounded-3 bg-light-subtle">
-                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                    <span class="badge bg-warning text-dark fw-bold">
-                        <i class="bi bi-bell-fill me-1"></i>Founder Found Your Item!
+            <div class="card p-2.5 mb-2 border border-warning-subtle shadow-sm rounded-3 bg-light-subtle">
+                <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                    <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.72rem;">
+                        <i class="bi bi-bell-fill me-1"></i>${badgeLabel}
                     </span>
-                    <small class="text-muted"><i class="bi bi-clock"></i> ${n.date}</small>
+                    <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-clock me-1"></i>${n.date}</small>
                 </div>
-
-                <h6 class="fw-bold mb-1 text-dark">
-                    <i class="bi bi-search-heart text-primary me-1"></i>Lost Item: <span class="text-primary">${itemName}</span>
-                </h6>
-                
-                <p class="small text-muted mb-2">
-                    <strong>Founder:</strong> ${finderName} (${finderEmail})
-                </p>
-
-                <div class="p-3 bg-white rounded border mb-3 small text-dark">
-                    <div class="text-muted extra-small text-uppercase fw-bold mb-1">Message from Founder (${finderName}):</div>
-                    <div class="text-dark">${noticeMsg}</div>
-                </div>
-
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <a href="tel:${finderPhone}" class="btn btn-sm btn-outline-success fw-semibold">
-                        <i class="bi bi-telephone-fill me-1"></i>Call (${finderPhone})
-                    </a>
-                    <a href="mailto:${finderEmail}?subject=Regarding Found Item: ${encodeURIComponent(itemName)}" class="btn btn-sm btn-outline-primary fw-semibold">
-                        <i class="bi bi-envelope-fill me-1"></i>Email Founder
-                    </a>
-                    ${actionHtml}
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-1">
+                    <div>
+                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                            Lost Item: <span class="text-primary">${itemName}</span>
+                        </div>
+                        <div class="small text-muted" style="font-size: 0.78rem;">
+                            Found by: <strong>${finderName}</strong>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-1 align-items-center">
+                        <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-2.5" style="font-size: 0.75rem;" onclick="openProvideHiddenDetailsModal('${n.id}')">
+                            <i class="bi bi-shield-lock me-1"></i>Provide Hidden Details
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold py-1 px-2.5" style="font-size: 0.75rem;" onclick="openFoundNoticeDetailModal('${n.id}')">
+                            View Details <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
     });
 }
 
+function openFoundNoticeDetailModal(notifId) {
+    let currentUser = getCurrentUser();
+    let userEmail = currentUser ? currentUser.email : "";
+    let notifs = getNotifications(userEmail);
+    let n = notifs.find(item => item.id === notifId);
+    if (!n) return;
+
+    let modalBody = document.getElementById("modal-found-notice-details-body");
+    if (!modalBody) return;
+
+    let finderPhone = n.senderPhone || "+91 98123 45678";
+    let finderEmail = n.senderEmail || "finder@example.com";
+    let finderName = n.senderName || "Founder";
+    let itemName = n.itemName || "Lost Item";
+    let noticeMsg = n.message || "No message provided.";
+
+    let allClaims = getClaims();
+    let existingClaim = allClaims.find(c => 
+        c.claimedByEmail && userEmail && c.claimedByEmail.toLowerCase().trim() === userEmail.toLowerCase().trim() &&
+        c.reporterEmail && finderEmail && c.reporterEmail.toLowerCase().trim() === finderEmail.toLowerCase().trim() &&
+        (c.itemId === n.itemId || c.itemName === itemName)
+    );
+
+    let actionHtml = "";
+    if (existingClaim) {
+        if (existingClaim.status === "Approved & Meeting Scheduled" && existingClaim.meetingDetails) {
+            actionHtml = `
+                <div class="w-100 p-2.5 bg-success bg-opacity-10 text-success rounded border small fw-bold mt-2">
+                    <i class="bi bi-check2-circle me-1"></i>Approved by Founder! Meeting at ${existingClaim.meetingDetails.location} | ${existingClaim.meetingDetails.time}
+                </div>
+            `;
+        } else if (existingClaim.status === "More Info Requested") {
+            actionHtml = `
+                <div class="w-100 p-2.5 bg-warning bg-opacity-10 text-dark rounded border small mt-2">
+                    <div class="fw-bold text-warning-emphasis mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Founder (${finderName}) requested more details:</div>
+                    <div class="mb-2">"${existingClaim.founderFeedback || 'Please provide more details'}"</div>
+                    <button type="button" class="btn btn-sm btn-warning text-dark fw-bold" onclick="bootstrap.Modal.getInstance(document.getElementById('foundNoticeDetailModal')).hide(); openUpdateDetailsModal('${existingClaim.claimId}')">
+                        <i class="bi bi-pencil-square me-1"></i>Provide Additional / Correct Details
+                    </button>
+                </div>
+            `;
+        } else if (existingClaim.status === "Rejected") {
+            actionHtml = `
+                <div class="w-100 p-2.5 bg-danger bg-opacity-10 text-danger rounded border small mt-2">
+                    <i class="bi bi-x-circle-fill me-1"></i><strong>Claim Rejected:</strong> ${existingClaim.rejectionReason || 'Details did not match'}
+                </div>
+            `;
+        } else {
+            actionHtml = `
+                <div class="w-100 p-2.5 bg-warning bg-opacity-10 text-dark rounded border small mt-2">
+                    <i class="bi bi-hourglass-split text-warning me-1"></i><strong>Hidden Details Submitted:</strong> "${existingClaim.providedProof}". Awaiting Founder (${finderName}) to verify & schedule meeting.
+                </div>
+            `;
+        }
+    } else {
+        actionHtml = `
+            <button type="button" class="btn btn-sm btn-primary fw-bold ms-auto mt-2" onclick="bootstrap.Modal.getInstance(document.getElementById('foundNoticeDetailModal')).hide(); openProvideHiddenDetailsModal('${n.id}')">
+                <i class="bi bi-shield-lock me-1"></i>Provide Hidden Details to Founder
+            </button>
+        `;
+    }
+
+    modalBody.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <span class="badge bg-warning text-dark fw-bold">
+                <i class="bi bi-bell-fill me-1"></i>Founder Found Your Item!
+            </span>
+            <small class="text-muted"><i class="bi bi-clock"></i> ${n.date}</small>
+        </div>
+
+        <h6 class="fw-bold mb-2 text-dark fs-5">
+            <i class="bi bi-search-heart text-primary me-1"></i>Lost Item: <span class="text-primary">${itemName}</span>
+        </h6>
+        
+        <p class="small text-muted mb-3">
+            <strong>Founder:</strong> ${finderName} (${finderEmail})
+        </p>
+
+        <div class="p-3 bg-light rounded border mb-3 small text-dark">
+            <div class="text-muted extra-small text-uppercase fw-bold mb-1">Message from Founder (${finderName}):</div>
+            <div class="text-dark">${noticeMsg}</div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a href="tel:${finderPhone}" class="btn btn-sm btn-outline-success fw-semibold">
+                <i class="bi bi-telephone-fill me-1"></i>Call (${finderPhone})
+            </a>
+            <a href="mailto:${finderEmail}?subject=Regarding Found Item: ${encodeURIComponent(itemName)}" class="btn btn-sm btn-outline-primary fw-semibold">
+                <i class="bi bi-envelope-fill me-1"></i>Email Founder
+            </a>
+            ${actionHtml}
+        </div>
+    `;
+
+    let modalEl = document.getElementById("foundNoticeDetailModal");
+    if (modalEl) {
+        let bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        bsModal.show();
+    }
+}
+
 function openProvideHiddenDetailsModal(notifId) {
     let notifs = JSON.parse(localStorage.getItem("campus_notifications")) || [];
-    let notif = notifs.find(n => n.id === notifId);
+    let notif = notifs.find(n => n.id === notifId || n.claimId === notifId);
+    
+    // Fallback: check claims list if not directly matched in notifications array
+    if (!notif) {
+        let claims = getClaims();
+        let claim = claims.find(c => c.claimId === notifId || c.itemId === notifId);
+        if (claim) {
+            notif = {
+                id: claim.claimId,
+                senderName: claim.reporter || claim.claimedBy || "Founder",
+                senderEmail: claim.reporterEmail || claim.claimedByEmail || "",
+                itemName: claim.itemName || "Item"
+            };
+        }
+    }
     if (!notif) return;
 
     let notifIdInput = document.getElementById("handover-notif-id");
@@ -2135,6 +2206,77 @@ function handleProvideHiddenDetailsSubmit(event) {
     window.location.reload();
 }
 
+function renderReceivedClaims(userEmail) {
+    let container = document.getElementById("received-claims-container");
+    if (!container) return;
+
+    let claims = getClaims();
+    let received = claims.filter(c => c.reporterEmail && userEmail && c.reporterEmail.toLowerCase().trim() === userEmail.toLowerCase().trim());
+
+    if (received.length === 0) {
+        container.innerHTML = `<p class="text-muted small py-2 mb-0">No claim requests received for your found items yet.</p>`;
+        return;
+    }
+
+    container.innerHTML = "";
+    received.forEach(c => {
+        let isPending = c.status === "Pending Founder Approval" || c.status === "Pending Approval";
+        let isMoreInfo = c.status === "More Info Requested";
+        let isApproved = c.status === "Approved & Meeting Scheduled";
+        let isRejected = c.status === "Rejected";
+
+        let badgeClass = isApproved ? "bg-success" : (isRejected ? "bg-danger" : (isMoreInfo ? "bg-warning text-dark" : "bg-warning text-dark"));
+        let badgeLabel = isPending ? "🔐 Ownership Claim Request" : c.status;
+
+        container.innerHTML += `
+            <div class="card p-2.5 mb-2 border shadow-sm rounded-3 bg-light-subtle">
+                <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                    <span class="badge ${badgeClass}" style="font-size: 0.72rem;">
+                        ${isApproved ? '<i class="bi bi-check-circle me-1"></i>' : (isRejected ? '<i class="bi bi-x-circle me-1"></i>' : '<i class="bi bi-shield-lock me-1"></i>')}${badgeLabel}
+                    </span>
+                    <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-clock me-1"></i>${c.date}</small>
+                </div>
+                <div class="mt-1 mb-1">
+                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                        Item: <span class="text-primary">${escapeHtml(c.itemName)}</span>
+                    </div>
+                    <div class="small text-muted" style="font-size: 0.78rem;">
+                        Claimant: <strong>${escapeHtml(c.claimedBy)}</strong>
+                    </div>
+                    ${(isPending || isMoreInfo) && c.providedProof ? `
+                        <div class="p-1.5 bg-light rounded border mt-1 small text-muted" style="font-size: 0.75rem;">
+                            <strong class="text-dark"><i class="bi bi-shield-lock text-primary me-1"></i>Claimant's Hidden Details:</strong> "${escapeHtml(c.providedProof)}"
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-1 mt-1 pt-1.5 border-top">
+                    ${(isPending || isMoreInfo) ? `
+                        <div class="d-flex gap-1 flex-wrap align-items-center">
+                            <button type="button" class="btn btn-sm btn-success fw-bold py-1 px-2" style="font-size: 0.73rem;" onclick="openApproveClaimModal('${c.claimId}')">
+                                <i class="bi bi-check-lg me-1"></i>Approve Claim
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold py-1 px-2" style="font-size: 0.73rem;" onclick="openRequestInfoModal('${c.claimId}')">
+                                <i class="bi bi-chat-dots me-1"></i>Request More Info
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger fw-bold py-1 px-2" style="font-size: 0.73rem;" onclick="openRejectModal('${c.claimId}')">
+                                <i class="bi bi-x-lg me-1"></i>Reject Claim
+                            </button>
+                        </div>
+                    ` : ''}
+                    ${isApproved ? `
+                        <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-2.5" style="font-size: 0.75rem;" onclick="openClaimChat('${c.claimId}')">
+                            💬 Open Match Chat
+                        </button>
+                    ` : ''}
+                    <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold py-1 px-2.5 ms-auto" style="font-size: 0.75rem;" onclick="openReceivedClaimDetailModal('${c.claimId}')">
+                        View Details <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+}
+
 function renderSubmittedClaims(userEmail) {
     let container = document.getElementById("submitted-claims-container");
     if (!container) return;
@@ -2155,61 +2297,117 @@ function renderSubmittedClaims(userEmail) {
         
         let badgeClass = isApproved ? "bg-success" : (isRejected ? "bg-danger" : (isMoreInfo ? "bg-warning text-dark" : "bg-warning text-dark"));
         let badgeIcon = isApproved ? "bi-check-circle" : (isRejected ? "bi-x-circle" : (isMoreInfo ? "bi-question-circle" : "bi-clock"));
+        let founderName = c.reporter || "Founder";
 
         container.innerHTML += `
-            <div class="card p-3 mb-3 border shadow-sm rounded-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="badge ${badgeClass}">
+            <div class="card p-2.5 mb-2 border shadow-sm rounded-3 bg-light-subtle">
+                <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                    <span class="badge ${badgeClass}" style="font-size: 0.72rem;">
                         <i class="bi ${badgeIcon} me-1"></i>${c.status}
                     </span>
-                    <small class="text-muted"><i class="bi bi-clock"></i> ${c.date}</small>
+                    <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-clock me-1"></i>${c.date}</small>
                 </div>
-                <h6 class="fw-bold mb-1">Item: ${c.itemName}</h6>
-                <p class="small text-muted mb-1"><strong>Founder Holding Item:</strong> ${c.reporter} (${c.reporterEmail})</p>
-                <div class="p-2 bg-light rounded border mb-2 small text-muted">
-                    <strong class="text-dark"><i class="bi bi-shield-lock text-primary me-1"></i>My Submitted Hidden Details:</strong> "${c.providedProof}"
-                </div>
-
-                ${isApproved && c.meetingDetails ? `
-                    <div class="p-3 bg-success bg-opacity-10 text-success rounded border small">
-                        <div class="fw-bold fs-6 mb-1"><i class="bi bi-geo-alt-fill me-1"></i>Meeting Scheduled by Founder</div>
-                        <div><strong>Location:</strong> ${c.meetingDetails.location}</div>
-                        <div><strong>Time:</strong> ${c.meetingDetails.time}</div>
-                        ${c.meetingDetails.note ? `<div class="mt-1 text-muted"><strong>Instructions:</strong> ${c.meetingDetails.note}</div>` : ''}
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-1">
+                    <div>
+                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                            Item: <span class="text-primary">${c.itemName}</span>
+                        </div>
+                        <div class="small text-muted" style="font-size: 0.78rem;">
+                            Founder Holding Item: <strong>${founderName}</strong>
+                        </div>
                     </div>
-                ` : isMoreInfo ? `
-                    <div class="p-3 bg-warning bg-opacity-10 rounded border small">
-                        <div class="fw-bold text-warning-emphasis mb-1">
-                            <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Founder (${c.reporter}) Requested Additional / Correct Details:
-                        </div>
-                        <div class="p-2 bg-white rounded border mb-2 text-dark">
-                            "${c.founderFeedback || 'Please provide more specific details.'}"
-                        </div>
-                        <button class="btn btn-sm btn-warning text-dark fw-bold w-100" onclick="openUpdateDetailsModal('${c.claimId}')">
-                            <i class="bi bi-pencil-square me-1"></i>Provide Additional / Correct Details
+                    <div class="d-flex gap-1 align-items-center">
+                        <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-2.5" style="font-size: 0.75rem;" onclick="openClaimChat('${c.claimId}')">
+                            💬 Open Match Chat
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold py-1 px-2.5" style="font-size: 0.75rem;" onclick="openSubmittedClaimDetailModal('${c.claimId}')">
+                            View Details <i class="bi bi-arrow-right ms-1"></i>
                         </button>
                     </div>
-                ` : isRejected ? `
-                    <div class="p-3 bg-danger bg-opacity-10 text-danger rounded border small">
-                        <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>Claim Rejected by Founder (${c.reporter})</div>
-                        <div class="text-dark"><strong>Reason:</strong> ${c.rejectionReason || 'The hidden details provided did not match the item found.'}</div>
-                    </div>
-                ` : `
-                    <div class="p-2 bg-light rounded border small text-muted mb-2">
-                        <i class="bi bi-hourglass-split text-warning me-1"></i>
-                        <strong>Awaiting Founder Approval:</strong> Founder <strong>${c.reporter}</strong> is reviewing your hidden details. Once approved, the Founder will schedule the meeting location and time.
-                    </div>
-                `}
-
-                <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
-                    <span class="extra-small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Secure Encrypted Match</span>
-                    <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openClaimChat('${c.claimId}')">
-                        <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
-                    </button>
                 </div>
             </div>
         `;
     });
+}
+
+function openSubmittedClaimDetailModal(claimId) {
+    let claims = getClaims();
+    let c = claims.find(item => item.claimId === claimId);
+    if (!c) return;
+
+    let modalBody = document.getElementById("modal-submitted-claim-details-body");
+    if (!modalBody) return;
+
+    let isApproved = c.status === "Approved & Meeting Scheduled";
+    let isRejected = c.status === "Rejected";
+    let isMoreInfo = c.status === "More Info Requested";
+    
+    let badgeClass = isApproved ? "bg-success" : (isRejected ? "bg-danger" : (isMoreInfo ? "bg-warning text-dark" : "bg-warning text-dark"));
+    let badgeIcon = isApproved ? "bi-check-circle" : (isRejected ? "bi-x-circle" : (isMoreInfo ? "bi-question-circle" : "bi-clock"));
+    let founderName = c.reporter || "Founder";
+
+    modalBody.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <span class="badge ${badgeClass} fs-6">
+                <i class="bi ${badgeIcon} me-1"></i>${c.status}
+            </span>
+            <small class="text-muted"><i class="bi bi-clock"></i> ${c.date}</small>
+        </div>
+
+        <h5 class="fw-bold mb-1 text-dark">
+            Item: <span class="text-primary">${c.itemName}</span>
+        </h5>
+        <p class="small text-muted mb-3">
+            <strong>Founder Holding Item:</strong> ${founderName} (${c.reporterEmail || 'finder@example.com'})
+        </p>
+
+        <div class="p-3 bg-light rounded border mb-3 small text-muted">
+            <strong class="text-dark"><i class="bi bi-shield-lock text-primary me-1"></i>My Submitted Hidden Details:</strong> "${escapeHtml(c.providedProof)}"
+        </div>
+
+        ${isApproved && c.meetingDetails ? `
+            <div class="p-3 bg-success bg-opacity-10 text-success rounded border small mb-3">
+                <div class="fw-bold fs-6 mb-1"><i class="bi bi-geo-alt-fill me-1"></i>Meeting Scheduled by Founder</div>
+                <div><strong>Location:</strong> ${c.meetingDetails.location}</div>
+                <div><strong>Time:</strong> ${c.meetingDetails.time}</div>
+                ${c.meetingDetails.note ? `<div class="mt-1 text-muted"><strong>Instructions:</strong> ${c.meetingDetails.note}</div>` : ''}
+            </div>
+        ` : isMoreInfo ? `
+            <div class="p-3 bg-warning bg-opacity-10 rounded border small mb-3">
+                <div class="fw-bold text-warning-emphasis mb-1">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Founder (${founderName}) Requested Additional / Correct Details:
+                </div>
+                <div class="p-2 bg-white rounded border mb-2 text-dark">
+                    "${escapeHtml(c.founderFeedback || 'Please provide more specific details.')}"
+                </div>
+                <button class="btn btn-sm btn-warning text-dark fw-bold w-100" onclick="bootstrap.Modal.getInstance(document.getElementById('submittedClaimDetailModal')).hide(); openUpdateDetailsModal('${c.claimId}')">
+                    <i class="bi bi-pencil-square me-1"></i>Provide Additional / Correct Details
+                </button>
+            </div>
+        ` : isRejected ? `
+            <div class="p-3 bg-danger bg-opacity-10 text-danger rounded border small mb-3">
+                <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>Claim Rejected by Founder (${founderName})</div>
+                <div class="text-dark"><strong>Reason:</strong> ${escapeHtml(c.rejectionReason || 'The hidden details provided did not match the item found.')}</div>
+            </div>
+        ` : `
+            <div class="p-3 bg-light rounded border small text-muted mb-3">
+                <i class="bi bi-hourglass-split text-warning me-1"></i>
+                <strong>Awaiting Founder Approval:</strong> Founder <strong>${founderName}</strong> is reviewing your hidden details. Once approved, the Founder will schedule the meeting location and time.
+            </div>
+        `}
+
+        <div class="d-flex justify-content-end pt-2 border-top">
+            <button class="btn btn-primary fw-bold" onclick="bootstrap.Modal.getInstance(document.getElementById('submittedClaimDetailModal')).hide(); openClaimChat('${c.claimId}')">
+                <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
+            </button>
+        </div>
+    `;
+
+    let modalEl = document.getElementById("submittedClaimDetailModal");
+    if (modalEl) {
+        let bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        bsModal.show();
+    }
 }
 
 window.activeNotifTab = 'all';
@@ -2386,7 +2584,6 @@ function renderReceivedClaims(userEmail) {
 
     container.innerHTML = "";
     received.forEach(c => {
-        let isPending = c.status === "Pending Founder Approval" || c.status === "Pending Approval";
         let isMoreInfo = c.status === "More Info Requested";
         let isApproved = c.status === "Approved & Meeting Scheduled";
         let isRejected = c.status === "Rejected";
@@ -2394,77 +2591,127 @@ function renderReceivedClaims(userEmail) {
         let badgeClass = isApproved ? "bg-success" : (isRejected ? "bg-danger" : (isMoreInfo ? "bg-warning text-dark" : "bg-warning text-dark"));
 
         container.innerHTML += `
-            <div class="card p-3 mb-3 border shadow-sm rounded-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="badge ${badgeClass}">
+            <div class="card p-2.5 mb-2 border shadow-sm rounded-3 bg-light-subtle">
+                <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                    <span class="badge ${badgeClass}" style="font-size: 0.72rem;">
                         ${isApproved ? '<i class="bi bi-check-circle me-1"></i>' : (isRejected ? '<i class="bi bi-x-circle me-1"></i>' : '<i class="bi bi-clock me-1"></i>')}${c.status}
                     </span>
-                    <small class="text-muted"><i class="bi bi-clock"></i> ${c.date}</small>
+                    <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-clock me-1"></i>${c.date}</small>
                 </div>
-                <h6 class="fw-bold mb-1">Item: ${c.itemName}</h6>
-                <p class="small text-muted mb-2"><strong>Claimant (Lost Item Owner):</strong> ${c.claimedBy} (${c.claimedByEmail})</p>
-                
-                <!-- Submitted Hidden Details Box for Founder Verification -->
-                <div class="p-3 bg-light rounded-3 border mb-3 small">
-                    <div class="fw-bold text-dark mb-1">
-                        <i class="bi bi-bell-fill text-warning me-1"></i>Someone believes this is their item.
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-1">
+                    <div>
+                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                            Item: <span class="text-primary">${c.itemName}</span>
+                        </div>
+                        <div class="small text-muted" style="font-size: 0.78rem;">
+                            Claimant: <strong>${c.claimedBy}</strong>
+                        </div>
                     </div>
-                    <strong class="text-dark d-block mb-1 mt-2">
-                        <i class="bi bi-shield-lock-fill text-primary me-1"></i>Claimant's answer:
-                    </strong>
-                    <div class="p-2.5 bg-white rounded border text-dark fw-bold">
-                        "${escapeHtml(c.providedProof)}"
-                    </div>
-                    <div class="fw-semibold text-dark mt-2 mb-1">
-                        <i class="bi bi-question-circle text-primary me-1"></i>Does this answer correctly describe the item you found?
-                    </div>
-                </div>
-
-                ${isMoreInfo ? `
-                    <div class="p-2.5 bg-warning bg-opacity-10 text-dark rounded border small mb-3">
-                        <i class="bi bi-hourglass-split text-warning me-1"></i>
-                        <strong>You requested more info:</strong> "${escapeHtml(c.founderFeedback || 'Please provide more details')}". Awaiting claimant response.
-                    </div>
-                ` : ''}
-                
-                ${(isPending || isMoreInfo) ? `
-                    <!-- Primary Options for Founder: Accept or Reject -->
-                    <div class="d-flex flex-wrap gap-2 pt-2 border-top">
-                        <button class="btn btn-sm btn-success fw-bold flex-fill py-2" onclick="openApproveClaimModal('${c.claimId}')">
-                            <i class="bi bi-check2-circle me-1"></i>✓ Approve Claim
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger fw-bold flex-fill py-2" onclick="openRejectModal('${c.claimId}')">
-                            <i class="bi bi-x-circle me-1"></i>✕ Reject Claim
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning text-dark fw-bold py-2" onclick="openRequestInfoModal('${c.claimId}')">
-                            <i class="bi bi-question-circle me-1"></i>Request More Info
+                    <div class="d-flex gap-1 align-items-center">
+                        ${isApproved ? `
+                            <button type="button" class="btn btn-sm btn-primary fw-bold py-1 px-2.5" style="font-size: 0.75rem;" onclick="openClaimChat('${c.claimId}')">
+                                💬 Open Match Chat
+                            </button>
+                        ` : ''}
+                        <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold py-1 px-2.5" style="font-size: 0.75rem;" onclick="openReceivedClaimDetailModal('${c.claimId}')">
+                            View Details <i class="bi bi-arrow-right ms-1"></i>
                         </button>
                     </div>
-                ` : isApproved ? `
-                    <div class="p-2.5 bg-success bg-opacity-10 text-success rounded border small">
-                        <div class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>Claim Approved</div>
-                        <div class="text-dark small">Ownership verified. Chat is now unlocked so you can coordinate the return.</div>
-                    </div>
-                ` : `
-                    <div class="p-2.5 bg-danger bg-opacity-10 text-danger rounded border small">
-                        <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>Claim Rejected</div>
-                        <div class="text-dark">Reason: ${escapeHtml(c.rejectionReason || 'Details did not match')}</div>
-                    </div>
-                `}
-
-                <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
-                    <span class="extra-small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Encrypted Verification</span>
-                    ${isApproved ? `
-                        <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openClaimChat('${c.claimId}')">
-                            <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
-                        </button>
-                    ` : `
-                        <span class="badge bg-secondary-subtle text-muted border py-1.5 px-2.5">💬 Chat Locks Until Accepted</span>
-                    `}
                 </div>
             </div>
         `;
     });
+}
+
+function openReceivedClaimDetailModal(claimId) {
+    let claims = getClaims();
+    let c = claims.find(item => item.claimId === claimId);
+    if (!c) return;
+
+    let modalBody = document.getElementById("modal-received-claim-details-body");
+    if (!modalBody) return;
+
+    let isPending = c.status === "Pending Founder Approval" || c.status === "Pending Approval";
+    let isMoreInfo = c.status === "More Info Requested";
+    let isApproved = c.status === "Approved & Meeting Scheduled";
+    let isRejected = c.status === "Rejected";
+
+    let badgeClass = isApproved ? "bg-success" : (isRejected ? "bg-danger" : (isMoreInfo ? "bg-warning text-dark" : "bg-warning text-dark"));
+
+    modalBody.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <span class="badge ${badgeClass} fs-6">
+                ${isApproved ? '<i class="bi bi-check-circle me-1"></i>' : (isRejected ? '<i class="bi bi-x-circle me-1"></i>' : '<i class="bi bi-clock me-1"></i>')}${c.status}
+            </span>
+            <small class="text-muted"><i class="bi bi-clock"></i> ${c.date}</small>
+        </div>
+
+        <h5 class="fw-bold mb-1 text-dark">
+            Item: <span class="text-primary">${c.itemName}</span>
+        </h5>
+        <p class="small text-muted mb-3">
+            <strong>Claimant (Lost Item Owner):</strong> ${c.claimedBy} (${c.claimedByEmail})
+        </p>
+        
+        <!-- Submitted Hidden Details Box -->
+        <div class="p-3 bg-light rounded-3 border mb-3 small">
+            <div class="fw-bold text-dark mb-1">
+                <i class="bi bi-bell-fill text-warning me-1"></i>Someone believes this is their item.
+            </div>
+            <strong class="text-dark d-block mb-1 mt-2">
+                <i class="bi bi-shield-lock-fill text-primary me-1"></i>Claimant's answer:
+            </strong>
+            <div class="p-2.5 bg-white rounded border text-dark fw-bold">
+                "${escapeHtml(c.providedProof)}"
+            </div>
+            <div class="fw-semibold text-dark mt-2 mb-1">
+                <i class="bi bi-question-circle text-primary me-1"></i>Does this answer correctly describe the item you found?
+            </div>
+        </div>
+
+        ${isMoreInfo ? `
+            <div class="p-2.5 bg-warning bg-opacity-10 text-dark rounded border small mb-3">
+                <i class="bi bi-hourglass-split text-warning me-1"></i>
+                <strong>You requested more info:</strong> "${escapeHtml(c.founderFeedback || 'Please provide more details')}". Awaiting claimant response.
+            </div>
+        ` : ''}
+        
+        ${(isPending || isMoreInfo) ? `
+            <!-- Primary Options for Founder: Accept or Reject -->
+            <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+                <button class="btn btn-sm btn-success fw-bold flex-fill py-2" onclick="bootstrap.Modal.getInstance(document.getElementById('receivedClaimDetailModal')).hide(); openApproveClaimModal('${c.claimId}')">
+                    <i class="bi bi-check2-circle me-1"></i>✓ Approve Claim
+                </button>
+                <button class="btn btn-sm btn-outline-danger fw-bold flex-fill py-2" onclick="bootstrap.Modal.getInstance(document.getElementById('receivedClaimDetailModal')).hide(); openRejectModal('${c.claimId}')">
+                    <i class="bi bi-x-circle me-1"></i>✕ Reject Claim
+                </button>
+                <button class="btn btn-sm btn-outline-warning text-dark fw-bold py-2" onclick="bootstrap.Modal.getInstance(document.getElementById('receivedClaimDetailModal')).hide(); openRequestInfoModal('${c.claimId}')">
+                    <i class="bi bi-question-circle me-1"></i>Request More Info
+                </button>
+            </div>
+        ` : isApproved ? `
+            <div class="p-2.5 bg-success bg-opacity-10 text-success rounded border small mb-3">
+                <div class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>Claim Approved</div>
+                <div class="text-dark small">Ownership verified. Chat is now unlocked so you can coordinate the return.</div>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-primary fw-bold" onclick="bootstrap.Modal.getInstance(document.getElementById('receivedClaimDetailModal')).hide(); openClaimChat('${c.claimId}')">
+                    <i class="bi bi-chat-dots-fill me-1"></i>💬 Open Match Chat
+                </button>
+            </div>
+        ` : `
+            <div class="p-2.5 bg-danger bg-opacity-10 text-danger rounded border small">
+                <div class="fw-bold mb-1"><i class="bi bi-x-circle-fill me-1"></i>Claim Rejected</div>
+                <div class="text-dark">Reason: ${escapeHtml(c.rejectionReason || 'Details did not match')}</div>
+            </div>
+        `}
+    `;
+
+    let modalEl = document.getElementById("receivedClaimDetailModal");
+    if (modalEl) {
+        let bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        bsModal.show();
+    }
 }
 
 function openClaimChat(claimId) {
@@ -3018,6 +3265,9 @@ function renderMyReports(userEmail) {
     let lostContainer = document.getElementById("my-lost-items-container");
     let foundContainer = document.getElementById("my-found-items-container");
 
+    let currentUser = (typeof getCurrentUser === "function") ? getCurrentUser() : null;
+    let showDeleteBtn = (typeof isAdminUser === "function") && currentUser && isAdminUser(currentUser);
+
     let reports = getReports();
     let myReports = reports.filter(r => r.postedByEmail && userEmail && r.postedByEmail.toLowerCase().trim() === userEmail.toLowerCase().trim());
 
@@ -3039,7 +3289,7 @@ function renderMyReports(userEmail) {
                         </div>
                         <div>
                             <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-primary me-2">View Matches</a>
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeReport('${item.id}')">Delete</button>
+                            ${showDeleteBtn ? `<button class="btn btn-sm btn-outline-danger" onclick="removeReport('${item.id}')">Delete</button>` : ''}
                         </div>
                     </div>
                 </div>
@@ -3058,60 +3308,66 @@ function renderMyReports(userEmail) {
                 let isRecovered = item.status === "Recovered";
 
                 return `
-                    <div class="card user-item-card p-3 mb-3 shadow-sm border">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-3">
-                                ${item.image && !item.image.includes("placeholder") ? `
-                                    <img src="${item.image}" alt="${escapeHtml(item.itemName)}" class="rounded border" style="width: 54px; height: 54px; object-fit: cover;">
-                                ` : `
-                                    <div class="rounded bg-light d-flex align-items-center justify-content-center border" style="width: 54px; height: 54px;">
-                                        <i class="bi bi-tag text-muted fs-4"></i>
-                                    </div>
-                                `}
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="badge badge-lost rounded-pill px-2 py-0.5" style="font-size: 0.7rem;">LOST</span>
-                                        <span class="badge bg-secondary-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.7rem;">${escapeHtml(item.category)}</span>
-                                        ${item.color ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.7rem;">${escapeHtml(item.color)}</span>` : ''}
-                                    </div>
-                                    <h6 class="fw-bold mb-0 text-dark">${escapeHtml(item.itemName)}</h6>
-                                    <div class="extra-small text-muted mt-0.5">
-                                        <i class="bi bi-geo-alt-fill text-cyan me-1"></i>${escapeHtml(item.zone)} &nbsp;|&nbsp;
-                                        <i class="bi bi-calendar-event me-1"></i>${item.date}
+                    <div class="card user-item-card p-2.5 shadow-sm border">
+                        <div class="d-flex flex-column h-100 justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-start gap-2 mb-2">
+                                    ${item.image && !item.image.includes("placeholder") ? `
+                                        <img src="${item.image}" alt="${escapeHtml(item.itemName)}" class="rounded border flex-shrink-0" style="width: 46px; height: 46px; object-fit: cover;">
+                                    ` : `
+                                        <div class="rounded bg-light d-flex align-items-center justify-content-center border flex-shrink-0" style="width: 46px; height: 46px;">
+                                            <i class="bi bi-tag text-muted fs-5"></i>
+                                        </div>
+                                    `}
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
+                                            <span class="badge badge-lost rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">LOST</span>
+                                            <span class="badge bg-secondary-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.68rem;">${escapeHtml(item.category)}</span>
+                                            ${item.color ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.68rem;">${escapeHtml(item.color)}</span>` : ''}
+                                        </div>
+                                        <h6 class="fw-bold mb-1 text-dark text-truncate" title="${escapeHtml(item.itemName)}" style="font-size: 0.88rem;">${escapeHtml(item.itemName)}</h6>
+                                        <div class="extra-small text-muted text-truncate" title="${escapeHtml(item.zone)}">
+                                            <i class="bi bi-geo-alt-fill text-cyan me-1"></i>${escapeHtml(item.zone)}
+                                        </div>
+                                        <div class="extra-small text-muted">
+                                            <i class="bi bi-calendar-event me-1"></i>${item.date}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                ${matches.length > 0 ? `
-                                    <a href="matches.html?id=${item.id}" class="btn btn-sm btn-primary fw-bold rounded-pill px-3">
-                                        <i class="bi bi-cpu me-1"></i>Matches (${matches.length})
-                                    </a>
-                                ` : `
-                                    <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-primary fw-semibold rounded-pill px-3">
-                                        <i class="bi bi-search me-1"></i>View Matches
-                                    </a>
-                                `}
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="removeReport('${item.id}')" title="Delete report">
-                                    <i class="bi bi-trash3"></i>
-                                </button>
+                            <div>
+                                <div class="pt-2 border-top mt-1 d-flex align-items-center justify-content-between gap-1 flex-wrap">
+                                    ${matches.length > 0 ? `
+                                        <a href="matches.html?id=${item.id}" class="btn btn-sm btn-primary fw-bold rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-cpu me-1"></i>Matches (${matches.length})
+                                        </a>
+                                    ` : `
+                                        <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-primary fw-semibold rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-search me-1"></i>View Matches
+                                        </a>
+                                    `}
+                                    ${showDeleteBtn ? `
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 30px; height: 30px;" onclick="removeReport('${item.id}')" title="Delete report">
+                                            <i class="bi bi-trash3" style="font-size: 0.8rem;"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                                ${isRecovered ? `
+                                    <div class="mt-2 pt-1 border-top d-flex align-items-center justify-content-between">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill fw-bold" style="font-size: 0.7rem;">
+                                            <i class="bi bi-patch-check-fill me-1"></i>🎉 Item Recovered
+                                        </span>
+                                    </div>
+                                ` : (isEligible ? `
+                                    <div class="mt-2 pt-1.5 border-top d-flex align-items-center justify-content-between gap-1 p-1.5 rounded-3" style="background-color: rgba(25, 135, 84, 0.08); border: 1px dashed rgba(25, 135, 84, 0.3);">
+                                        <span class="extra-small fw-semibold text-dark">Received?</span>
+                                        <button type="button" class="btn btn-sm btn-success fw-bold rounded-pill px-2 py-0.5" style="font-size: 0.72rem;" onclick="confirmMyReportRecovery('${item.id}')">
+                                            Yes, I received it
+                                        </button>
+                                    </div>
+                                ` : '')}
                             </div>
                         </div>
-                        ${isRecovered ? `
-                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
-                                    <i class="bi bi-patch-check-fill me-1"></i>🎉 Item Recovered
-                                </span>
-                            </div>
-                        ` : (isEligible ? `
-                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2 p-2 rounded-3" style="background-color: rgba(25, 135, 84, 0.08); border: 1px dashed rgba(25, 135, 84, 0.3);">
-                                <span class="small fw-semibold text-dark d-flex align-items-center gap-1">
-                                    🎉 Did you receive this item?
-                                </span>
-                                <button type="button" class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm" onclick="confirmMyReportRecovery('${item.id}')">
-                                    Yes, I received it
-                                </button>
-                            </div>
-                        ` : '')}
                     </div>
                 `;
             }).join('');
@@ -3129,60 +3385,66 @@ function renderMyReports(userEmail) {
                 let isRecovered = item.status === "Recovered";
 
                 return `
-                    <div class="card user-item-card p-3 mb-3 shadow-sm border">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-3">
-                                ${item.image && !item.image.includes("placeholder") ? `
-                                    <img src="${item.image}" alt="${escapeHtml(item.itemName)}" class="rounded border" style="width: 54px; height: 54px; object-fit: cover;">
-                                ` : `
-                                    <div class="rounded bg-light d-flex align-items-center justify-content-center border" style="width: 54px; height: 54px;">
-                                        <i class="bi bi-check-circle text-success fs-4"></i>
-                                    </div>
-                                `}
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="badge badge-found rounded-pill px-2 py-0.5" style="font-size: 0.7rem;">FOUND</span>
-                                        <span class="badge bg-secondary-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.7rem;">${escapeHtml(item.category)}</span>
-                                        ${item.color ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.7rem;">${escapeHtml(item.color)}</span>` : ''}
-                                    </div>
-                                    <h6 class="fw-bold mb-0 text-dark">${escapeHtml(item.itemName)}</h6>
-                                    <div class="extra-small text-muted mt-0.5">
-                                        <i class="bi bi-geo-alt-fill text-success me-1"></i>${escapeHtml(item.zone)} &nbsp;|&nbsp;
-                                        <i class="bi bi-calendar-event me-1"></i>${item.date}
+                    <div class="card user-item-card p-2.5 shadow-sm border">
+                        <div class="d-flex flex-column h-100 justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-start gap-2 mb-2">
+                                    ${item.image && !item.image.includes("placeholder") ? `
+                                        <img src="${item.image}" alt="${escapeHtml(item.itemName)}" class="rounded border flex-shrink-0" style="width: 46px; height: 46px; object-fit: cover;">
+                                    ` : `
+                                        <div class="rounded bg-light d-flex align-items-center justify-content-center border flex-shrink-0" style="width: 46px; height: 46px;">
+                                            <i class="bi bi-check-circle text-success fs-5"></i>
+                                        </div>
+                                    `}
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
+                                            <span class="badge badge-found rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">FOUND</span>
+                                            <span class="badge bg-secondary-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.68rem;">${escapeHtml(item.category)}</span>
+                                            ${item.color ? `<span class="badge bg-dark-subtle text-light border border-secondary-subtle px-2 py-0.5" style="font-size: 0.68rem;">${escapeHtml(item.color)}</span>` : ''}
+                                        </div>
+                                        <h6 class="fw-bold mb-1 text-dark text-truncate" title="${escapeHtml(item.itemName)}" style="font-size: 0.88rem;">${escapeHtml(item.itemName)}</h6>
+                                        <div class="extra-small text-muted text-truncate" title="${escapeHtml(item.zone)}">
+                                            <i class="bi bi-geo-alt-fill text-success me-1"></i>${escapeHtml(item.zone)}
+                                        </div>
+                                        <div class="extra-small text-muted">
+                                            <i class="bi bi-calendar-event me-1"></i>${item.date}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                ${matches.length > 0 ? `
-                                    <a href="matches.html?id=${item.id}" class="btn btn-sm btn-success fw-bold rounded-pill px-3">
-                                        <i class="bi bi-cpu me-1"></i>Matches (${matches.length})
-                                    </a>
-                                ` : `
-                                    <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-success fw-semibold rounded-pill px-3">
-                                        <i class="bi bi-search me-1"></i>View Matches
-                                    </a>
-                                `}
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="removeReport('${item.id}')" title="Delete report">
-                                    <i class="bi bi-trash3"></i>
-                                </button>
+                            <div>
+                                <div class="pt-2 border-top mt-1 d-flex align-items-center justify-content-between gap-1 flex-wrap">
+                                    ${matches.length > 0 ? `
+                                        <a href="matches.html?id=${item.id}" class="btn btn-sm btn-success fw-bold rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-cpu me-1"></i>Matches (${matches.length})
+                                        </a>
+                                    ` : `
+                                        <a href="matches.html?id=${item.id}" class="btn btn-sm btn-outline-success fw-semibold rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                            <i class="bi bi-search me-1"></i>View Matches
+                                        </a>
+                                    `}
+                                    ${showDeleteBtn ? `
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 30px; height: 30px;" onclick="removeReport('${item.id}')" title="Delete report">
+                                            <i class="bi bi-trash3" style="font-size: 0.8rem;"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                                ${isRecovered ? `
+                                    <div class="mt-2 pt-1 border-top d-flex align-items-center justify-content-between">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill fw-bold" style="font-size: 0.7rem;">
+                                            <i class="bi bi-patch-check-fill me-1"></i>🎉 Item Recovered
+                                        </span>
+                                    </div>
+                                ` : (isEligible ? `
+                                    <div class="mt-2 pt-1.5 border-top d-flex align-items-center justify-content-between gap-1 p-1.5 rounded-3" style="background-color: rgba(25, 135, 84, 0.08); border: 1px dashed rgba(25, 135, 84, 0.3);">
+                                        <span class="extra-small fw-semibold text-dark">Received?</span>
+                                        <button type="button" class="btn btn-sm btn-success fw-bold rounded-pill px-2 py-0.5" style="font-size: 0.72rem;" onclick="confirmMyReportRecovery('${item.id}')">
+                                            Yes, I received it
+                                        </button>
+                                    </div>
+                                ` : '')}
                             </div>
                         </div>
-                        ${isRecovered ? `
-                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
-                                    <i class="bi bi-patch-check-fill me-1"></i>🎉 Item Recovered
-                                </span>
-                            </div>
-                        ` : (isEligible ? `
-                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2 p-2 rounded-3" style="background-color: rgba(25, 135, 84, 0.08); border: 1px dashed rgba(25, 135, 84, 0.3);">
-                                <span class="small fw-semibold text-dark d-flex align-items-center gap-1">
-                                    🎉 Did you receive this item?
-                                </span>
-                                <button type="button" class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm" onclick="confirmMyReportRecovery('${item.id}')">
-                                    Yes, I received it
-                                </button>
-                            </div>
-                        ` : '')}
                     </div>
                 `;
             }).join('');
