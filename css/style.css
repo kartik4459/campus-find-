@@ -4457,6 +4457,10 @@ body[data-page="my-reports"] .my-reports-card-anim {
     will-change: opacity, transform;
 }
 
+body[data-page="my-reports"] .user-item-card img {
+    object-fit: contain !important;
+}
+
 @keyframes myReportsCardFadeUp {
     0% {
         opacity: 0;
