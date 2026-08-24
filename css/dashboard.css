@@ -1,0 +1,393 @@
+/* ==========================================================================
+   Campus Lost & Found System — Dashboard UI Refinement Stylesheet
+   Scope: Dashboard page ONLY (body[data-page="dashboard"])
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Theme Variables & Base Layout Container Width
+   -------------------------------------------------------------------------- */
+body[data-page="dashboard"] {
+    background-color: #0b0e17 !important;
+    color: #cbd5e1;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Step 1: Controlled maximum width and centered layout for Dashboard content container */
+body[data-page="dashboard"] .container {
+    max-width: 1200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/* Step 2: Main Column Width Ratio Adjustment (Desktop: ~64% Left / 36% Right) */
+@media (min-width: 992px) {
+    body[data-page="dashboard"] .row.g-4 > .col-lg-6:nth-child(1) {
+        flex: 0 0 auto !important;
+        width: 64% !important;
+    }
+    body[data-page="dashboard"] .row.g-4 > .col-lg-6:nth-child(2) {
+        flex: 0 0 auto !important;
+        width: 36% !important;
+    }
+}
+
+html.light-theme body[data-page="dashboard"] {
+    background-color: #f8fafc !important;
+    color: #334155;
+}
+
+:root {
+    --dash-bg: #0b0e17;
+    --dash-surface: #121724;
+    --dash-surface-hover: #182030;
+    --dash-border: #1e2638;
+    --dash-border-subtle: #171e2e;
+    
+    --dash-text-main: #f1f5f9;
+    --dash-text-muted: #94a3b8;
+    --dash-text-subtle: #64748b;
+    
+    --dash-purple: #8b5cf6;
+    --dash-purple-bg: rgba(139, 92, 246, 0.1);
+    --dash-purple-border: rgba(139, 92, 246, 0.25);
+    
+    --dash-green: #10b981;
+    --dash-green-bg: rgba(16, 185, 129, 0.1);
+    
+    --dash-amber: #f59e0b;
+    --dash-amber-bg: rgba(245, 158, 11, 0.1);
+    
+    --dash-red: #ef4444;
+    --dash-red-bg: rgba(239, 68, 68, 0.1);
+    
+    --dash-blue: #3b82f6;
+    --dash-blue-bg: rgba(59, 130, 246, 0.1);
+}
+
+html.light-theme {
+    --dash-bg: #f8fafc;
+    --dash-surface: #ffffff;
+    --dash-surface-hover: #f1f5f9;
+    --dash-border: #e2e8f0;
+    --dash-border-subtle: #f1f5f9;
+    
+    --dash-text-main: #0f172a;
+    --dash-text-muted: #64748b;
+    --dash-text-subtle: #94a3b8;
+    
+    --dash-purple-bg: rgba(139, 92, 246, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   2. Refined Navigation & Drawer Styling
+   -------------------------------------------------------------------------- */
+body[data-page="dashboard"] .offcanvas {
+    background-color: var(--dash-surface) !important;
+    border-right: 1px solid var(--dash-border) !important;
+    color: var(--dash-text-main) !important;
+}
+
+body[data-page="dashboard"] .offcanvas-header {
+    border-bottom: 1px solid var(--dash-border-subtle);
+}
+
+body[data-page="dashboard"] .sidebar-nav .nav-link {
+    color: var(--dash-text-muted);
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 0.375rem;
+    white-space: nowrap;
+    transition: all 0.12s ease;
+}
+
+body[data-page="dashboard"] .sidebar-nav .nav-link:hover {
+    color: var(--dash-text-main);
+    background-color: var(--dash-surface-hover);
+}
+
+body[data-page="dashboard"] .sidebar-nav .nav-link.active {
+    background-color: var(--dash-purple-bg);
+    color: var(--dash-purple);
+    font-weight: 600;
+    border-left: 3px solid var(--dash-purple);
+}
+
+/* --------------------------------------------------------------------------
+   3. Summary Statistics Cards (Step 3 & 4: Compact Padding & Refined Font)
+   -------------------------------------------------------------------------- */
+.dash-stat-card {
+    background-color: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 0.5rem;
+    padding: 0.75rem 0.95rem;
+    height: 100%;
+    transition: border-color 0.15s ease;
+}
+
+.dash-stat-card:hover {
+    border-color: var(--dash-purple-border);
+}
+
+.dash-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 0.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.icon-lost-bg { background-color: var(--dash-red-bg); color: var(--dash-red); }
+.icon-found-bg { background-color: var(--dash-green-bg); color: var(--dash-green); }
+.icon-match-bg { background-color: var(--dash-purple-bg); color: var(--dash-purple); }
+
+.dash-stat-number {
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
+    color: var(--dash-text-main);
+    line-height: 1.15 !important;
+}
+
+.dash-stat-label {
+    font-size: 0.775rem !important;
+    font-weight: 600 !important;
+    color: var(--dash-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   4. Clean Card Structure (Step 3: Reduced Internal Vertical Padding)
+   -------------------------------------------------------------------------- */
+.dash-card {
+    background-color: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 0.5rem;
+    padding: 0.8rem 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.dash-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--dash-border-subtle);
+}
+
+.dash-card-title {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    color: var(--dash-text-main);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: -0.01em;
+}
+
+.dash-card-body {
+    flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   5. Notification Center (Step 5: Compact & Polished SaaS Panel Refinements)
+   -------------------------------------------------------------------------- */
+#notifications-section {
+    height: auto !important;
+    align-self: flex-start !important;
+    padding: 0.7rem 0.9rem;
+}
+
+#notifications-section .dash-card-header {
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.35rem;
+}
+
+#notifications-section .dash-card-body {
+    flex: 0 0 auto !important;
+}
+
+.notif-tab-nav {
+    display: flex;
+    gap: 0.2rem;
+    margin-bottom: 0.45rem;
+    border-bottom: 1px solid var(--dash-border-subtle);
+    padding-bottom: 0.3rem;
+    overflow-x: auto;
+}
+
+.notif-tab-nav .nav-link {
+    color: var(--dash-text-muted);
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.25rem;
+    border: none;
+    background: transparent;
+    white-space: nowrap;
+    transition: all 0.12s ease;
+}
+
+.notif-tab-nav .nav-link:hover {
+    color: var(--dash-text-main);
+    background-color: var(--dash-surface-hover);
+}
+
+.notif-tab-nav .nav-link.active {
+    background-color: var(--dash-purple-bg);
+    color: var(--dash-purple);
+    font-weight: 600;
+}
+
+/* Compact max-height for notification list (~240px) */
+#notifications-container {
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+}
+
+/* Compact Notification Row Spacing & Typography */
+body[data-page="dashboard"] .notif-card-unread,
+body[data-page="dashboard"] .notif-card-read {
+    background-color: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--dash-border-subtle) !important;
+    border-radius: 0 !important;
+    padding: 0.4rem 0.3rem !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+    font-size: 0.78rem !important;
+    line-height: 1.3 !important;
+}
+
+body[data-page="dashboard"] .notif-card-unread {
+    background-color: var(--dash-purple-bg) !important;
+    border-left: 3px solid var(--dash-purple) !important;
+    padding-left: 0.5rem !important;
+}
+
+body[data-page="dashboard"] .notif-card-unread:hover,
+body[data-page="dashboard"] .notif-card-read:hover {
+    background-color: var(--dash-surface-hover) !important;
+}
+
+/* Action button sizing inside notifications */
+body[data-page="dashboard"] #notifications-container .btn {
+    padding: 0.15rem 0.45rem !important;
+    font-size: 0.72rem !important;
+    border-radius: 0.25rem !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Step 6: Compact Right-Side Activity Cards
+   -------------------------------------------------------------------------- */
+#found-notices-container .card,
+#received-claims-container .card,
+#submitted-claims-container .card {
+    background-color: var(--dash-surface) !important;
+    border: 1px solid var(--dash-border-subtle) !important;
+    border-radius: 0.375rem !important;
+    padding: 0.5rem 0.65rem !important;
+    margin-bottom: 0.4rem !important;
+    box-shadow: none !important;
+    font-size: 0.78rem !important;
+}
+
+#found-notices-container .card:hover,
+#received-claims-container .card:hover,
+#submitted-claims-container .card:hover {
+    background-color: var(--dash-surface-hover) !important;
+    border-color: var(--dash-border) !important;
+}
+
+#found-notices-container,
+#received-claims-container,
+#submitted-claims-container {
+    max-height: clamp(140px, 20vh, 220px);
+    overflow-y: auto;
+    padding-right: 0.15rem;
+}
+
+/* --------------------------------------------------------------------------
+   7. "Your Lost Items" & "Your Found Items" 2-Column Card Grid Styling
+   -------------------------------------------------------------------------- */
+#my-lost-items-container,
+#my-found-items-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+    max-height: clamp(220px, 32vh, 380px);
+    overflow-y: auto;
+    padding-right: 0.15rem;
+}
+
+@media (min-width: 576px) {
+    #my-lost-items-container,
+    #my-found-items-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+#my-lost-items-container > div.text-center,
+#my-found-items-container > div.text-center {
+    grid-column: 1 / -1;
+}
+
+#my-lost-items-container .user-item-card,
+#my-found-items-container .user-item-card {
+    background-color: var(--dash-surface) !important;
+    border: 1px solid var(--dash-border-subtle) !important;
+    border-radius: 0.375rem !important;
+    padding: 0.65rem 0.75rem !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+    height: 100%;
+}
+
+#my-lost-items-container .user-item-card:hover,
+#my-found-items-container .user-item-card:hover {
+    background-color: var(--dash-surface-hover) !important;
+    border-color: var(--dash-border) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Step 4 Typography Hierarchy Refinements
+   -------------------------------------------------------------------------- */
+body[data-page="dashboard"] h2.fw-bold {
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.015em;
+}
+
+body[data-page="dashboard"] .text-muted.mb-0 {
+    font-size: 0.85rem !important;
+}
+
+body[data-page="dashboard"] .badge {
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. Modals Override
+   -------------------------------------------------------------------------- */
+body[data-page="dashboard"] .modal-content {
+    background-color: var(--dash-surface) !important;
+    border: 1px solid var(--dash-border) !important;
+    color: var(--dash-text-main) !important;
+}
+
+body[data-page="dashboard"] .modal-header {
+    border-bottom: 1px solid var(--dash-border-subtle) !important;
+}
+
+body[data-page="dashboard"] .form-control,
+body[data-page="dashboard"] .form-select {
+    background-color: var(--dash-bg) !important;
+    border: 1px solid var(--dash-border) !important;
+    color: var(--dash-text-main) !important;
+}
