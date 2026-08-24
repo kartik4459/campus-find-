@@ -3720,78 +3720,7 @@ html.light-theme .dash-stat-card:hover {
     color: #06b6d4;
     border: 1px solid rgba(6, 182, 212, 0.25);
 }
-
-.icon-found-bg {
-    background-color: rgba(16, 185, 129, 0.12);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.25);
-}
-
-.icon-match-bg {
-    background-color: rgba(168, 85, 247, 0.12);
-    color: #a855f7;
-    border: 1px solid rgba(168, 85, 247, 0.25);
-}
-
-.dash-stat-number {
-    font-size: 1.85rem;
-    font-weight: 800;
-    line-height: 1.1;
-    color: var(--text-heading, #ffffff);
-}
-
-html.light-theme .dash-stat-number {
-    color: #0f172a;
-}
-
-.dash-stat-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-muted, #94a3b8);
-}
-
-/* Dashboard Personal Item Cards */
-.user-item-card {
-    background-color: var(--bg-card, #100e20);
-    border: 1px solid var(--border-color, rgba(168, 85, 247, 0.15));
-    border-radius: var(--radius-md, 12px);
-    transition: all 0.2s ease;
-}
-
-.user-item-card:hover {
-    border-color: var(--primary-color, #a855f7);
-    transform: translateY(-2px);
-}
-
-html.light-theme .user-item-card {
-    background-color: #ffffff;
-    border-color: #e2e8f0;
-}
-
-html.light-theme .user-item-card:hover {
-    border-color: #7c3aed;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
-}
-
-.badge-lost {
-    background-color: rgba(6, 182, 212, 0.15) !important;
-    color: #06b6d4 !important;
-    border: 1px solid rgba(6, 182, 212, 0.3) !important;
-}
-
-.badge-found {
-    background-color: rgba(16, 185, 129, 0.15) !important;
-    color: #10b981 !important;
-    border: 1px solid rgba(16, 185, 129, 0.3) !important;
-}
-
-/* ==========================================================================
-   Reporting Form Breathable Spacing & Layout Improvements
-   ========================================================================== */
-
-/* Form Card Container Padding */
+/* Reporting Form Breathable Spacing & Layout Improvements */
 .form-card {
     padding: 2.25rem 2rem !important;
 }
@@ -3851,7 +3780,7 @@ html.light-theme .user-item-card:hover {
     .form-stepper {
         margin-bottom: 2rem !important;
         padding: 0 !important;
-@media (max-width: 576px) {
+    }
     .stepper-label {
         font-size: 0.65rem;
     }
@@ -4046,6 +3975,20 @@ html.light-theme .user-item-card:hover {
     .form-stepper {
         margin-bottom: 2rem !important;
         padding: 0 !important;
+    }
+    .stepper-label {
+        font-size: 0.65rem;
+    }
+    .stepper-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 0.85rem;
+    }
+    .form-stepper::before, .form-stepper-progress {
+        top: 16px;
+    }
+    .stepper-item.active .stepper-circle {
+        transform: scale(1.08);
     }
     .step-pane-header {
         margin-bottom: 1.35rem !important;
@@ -4267,125 +4210,7 @@ body[data-page="dashboard"] .btn-outline-success:hover {
 }
 
 .help-item-card.active-item {
-    border-color: rgba(168, 85, /* =============================================================
-   ACCOUNT / PROFILE DROPDOWN MENU VISIBILITY & CONTRAST STYLES
-   ============================================================= */
-
-.navbar .dropdown-menu {
-    background-color: #120f26 !important;
-    border: 1px solid rgba(168, 85, 247, 0.3) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
-    border-radius: 1rem !important;
-    padding: 0.75rem !important;
-    min-width: 280px !important;
-}
-
-/* Active Account Top Card */
-.navbar .dropdown-menu .active-account-card {
-    background-color: rgba(22, 19, 48, 0.95) !important;
-    border: 1px solid rgba(168, 85, 247, 0.3) !important;
-    border-radius: 0.75rem !important;
-    padding: 0.85rem 1rem !important;
-}
-
-.navbar .dropdown-menu .active-account-card .text-uppercase {
-    color: #a7b7cd !important;
-    letter-spacing: 0.05em !important;
-    font-size: 0.7rem !important;
-    font-weight: 700 !important;
-}
-
-.navbar .dropdown-menu .active-account-card strong {
-    color: #ffffff !important;
-    font-size: 1.05rem !important;
-    font-weight: 700 !important;
-}
-
-.navbar .dropdown-menu .active-account-card .text-muted {
-    color: #cbd5e1 !important;
-    font-size: 0.8rem !important;
-    opacity: 1 !important;
-}
-
-/* Roll Number & Department Badges */
-.navbar .dropdown-menu .badge-account-info {
-    background-color: rgba(168, 85, 247, 0.15) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(168, 85, 247, 0.35) !important;
-    font-size: 0.75rem !important;
-    font-weight: 600 !important;
-    padding: 0.35rem 0.65rem !important;
-    border-radius: 0.5rem !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 0.35rem !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
-}
-
-.navbar .dropdown-menu .badge-account-info i {
-    color: #00f5c4 !important;
-    font-size: 0.85rem !important;
-}
-
-/* Saved Accounts Items */
-.navbar .dropdown-menu .dropdown-item {
-    color: #ffffff !important;
-    border-radius: 0.6rem !important;
-    padding: 0.55rem 0.75rem !important;
-    transition: background-color 0.2s ease !important;
-}
-
-.navbar .dropdown-menu .dropdown-item:hover {
-    background-color: rgba(168, 85, 247, 0.2) !important;
-    color: #ffffff !important;
-}
-
-.navbar .dropdown-menu .dropdown-item.active-account-item {
-    background-color: rgba(168, 85, 247, 0.16) !important;
-    border: 1px solid rgba(168, 85, 247, 0.35) !important;
-}
-
-.navbar .dropdown-menu .avatar-circle-mini {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 0.8rem !important;
-    background-color: rgba(168, 85, 247, 0.2) !important;
-    color: #c084fc !important;
-    border: 1px solid rgba(168, 85, 247, 0.35) !important;
-}
-
-.navbar .dropdown-menu .dropdown-item .leading-tight {
-    color: #ffffff !important;
-    font-weight: 600 !important;
-    font-size: 0.92rem !important;
-}
-
-.navbar .dropdown-menu .dropdown-item .text-muted {
-    color: #cbd5e1 !important;
-    font-size: 0.78rem !important;
-    opacity: 1 !important;
-}
-
-/* Active Status Badge */
-.navbar .dropdown-menu .badge-active-status {
-    background-color: #a855f7 !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
-    font-size: 0.68rem !important;
-    padding: 0.25rem 0.65rem !important;
-    border-radius: 999px !important;
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.4) !important;
-}
-
-/* =============================================================
-   CAMPUSFIND SECURE MATCH CHAT STYLES - HIGH VISIBILITY & CONTRAST
-   ============================================================= */
-
-body[data-page="chat"] .bg-card {
-    background-color: #120f26 !important;
-    border: 1px solid rgba(168, 85, 247, 0.25) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-}x rgba(168, 85, 247, 0.18) !important;
+    border-color: rgba(168, 85, 247, 0.55) !important;
     background-color: #161233 !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 18px rgba(168, 85, 247, 0.18) !important;
 }
@@ -4985,14 +4810,10 @@ body[data-page="my-reports"] .my-reports-card-anim {
 .campus-insights-card {
     opacity: 0;
     transform: translateY(20px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-}
+    transition: opacity 0.6s ease,transform 0.6s ease;
+    }
 
 .campus-insights-section.is-visible .campus-insights-card {
     opacity: 1;
     transform: translateY(0);
 }
-
-
-
-
