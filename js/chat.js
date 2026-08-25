@@ -64,7 +64,7 @@ function initChatPage() {
         )
     );
 
-    let isApproved = (linkedClaim && (
+    let rawIsApproved = (linkedClaim && (
         linkedClaim.status === "Approved & Meeting Scheduled" ||
         linkedClaim.status === "Verified" ||
         linkedClaim.status === "Recovery Arranged" ||
@@ -72,12 +72,12 @@ function initChatPage() {
     )) || currentChat.status === "Verified" || currentChat.status === "Recovery Arranged" || currentChat.status === "Recovered" || currentChatId === "CHAT-DEMO-001";
 
     let isRejected = (linkedClaim && linkedClaim.status === "Rejected") || currentChat.status === "Rejected";
-    let isClosed = currentChat.readOnly === true;
-    if (isClosed) isApproved = false; // Force-lock messaging once handoff is verified
+    let isClosed = currentChat.readOnly === true || currentChat.status === "Recovered";
+    let isApproved = rawIsApproved && !isClosed; // Active unlocked messaging state
 
-        // Self-heal: sync chat status if it was approved via the Dashboard claim flow
+    // Self-heal: sync chat status if it was approved via the Dashboard claim flow
     // instead of the in-chat "Approve Ownership" button
-    if (isApproved && !isClosed && currentChat.status !== "Verified" && currentChat.status !== "Recovery Arranged" && currentChat.status !== "Recovered") {
+    if (rawIsApproved && !isClosed && currentChat.status !== "Verified" && currentChat.status !== "Recovery Arranged" && currentChat.status !== "Recovered") {
         updateChatStatus(currentChatId, "Verified");
         currentChat = getChatById(currentChatId);
     }
@@ -85,10 +85,11 @@ function initChatPage() {
     markChatMessagesRead(currentChatId, currentUser.useremail);
 
     // Render UI according to role & approval state
-    renderChatSidebar(isApproved, isRejected);
-    renderChatHeader(isApproved, isRejected);
-    renderFinderActionPanel(isFinder, isApproved, isRejected, linkedClaim);
-    renderChatInputState(isApproved, isFinder, isRejected, isClosed);    renderQuickActionChips(isApproved);
+    renderChatSidebar(rawIsApproved, isRejected, isClosed);
+    renderChatHeader(rawIsApproved, isRejected, isClosed);
+    renderFinderActionPanel(isFinder, rawIsApproved, isRejected, isClosed, linkedClaim);
+    renderChatInputState(isApproved, isFinder, isRejected, isClosed);
+    renderQuickActionChips(isApproved);
     renderRecoveryStatusBar();
     renderChatMessages();
 
@@ -111,7 +112,7 @@ function showChatError(msg) {
     }
 }
 
-function renderChatSidebar(isApproved, isRejected) {
+function renderChatSidebar(rawIsApproved, isRejected, isClosed) {
     if (!currentChat) return;
 
     let scoreEl = document.getElementById("sidebar-match-score");
@@ -137,7 +138,10 @@ function renderChatSidebar(isApproved, isRejected) {
     if (finderNameEl) finderNameEl.innerText = finderName;
 
     if (badgeEl) {
-        if (isApproved) {
+        if (isClosed || currentChat.status === "Recovered") {
+            badgeEl.innerText = "✓ Item Recovered";
+            badgeEl.className = "badge bg-info text-dark rounded-pill px-3 py-1 fw-bold";
+        } else if (rawIsApproved || currentChat.status === "Verified" || currentChat.status === "Recovery Arranged") {
             badgeEl.innerText = "✓ Ownership Verified";
             badgeEl.className = "badge bg-success text-white rounded-pill px-3 py-1 fw-bold";
         } else if (isRejected) {
@@ -150,7 +154,7 @@ function renderChatSidebar(isApproved, isRejected) {
     }
 }
 
-function renderChatHeader(isApproved, isRejected) {
+function renderChatHeader(rawIsApproved, isRejected, isClosed) {
     if (!currentChat) return;
 
     let headerItem = document.getElementById("chat-header-item");
@@ -164,7 +168,10 @@ function renderChatHeader(isApproved, isRejected) {
     if (headerItem) headerItem.innerText = currentChat.lostItemName;
     if (headerFinder) headerFinder.innerText = `Finder: ${finderName}`;
     if (headerStatus) {
-        if (isApproved) {
+        if (isClosed || currentChat.status === "Recovered") {
+            headerStatus.innerText = "✓ Item Recovered";
+            headerStatus.className = "badge bg-info text-dark rounded-pill px-3 py-1 fw-bold extra-small";
+        } else if (rawIsApproved || currentChat.status === "Verified" || currentChat.status === "Recovery Arranged") {
             headerStatus.innerText = "✓ Ownership Verified";
             headerStatus.className = "badge bg-success text-white rounded-pill px-3 py-1 fw-bold extra-small";
         } else if (isRejected) {
@@ -177,13 +184,13 @@ function renderChatHeader(isApproved, isRejected) {
     }
 }
 
-function renderFinderActionPanel(isFinder, isApproved, isRejected, linkedClaim) {
+function renderFinderActionPanel(isFinder, rawIsApproved, isRejected, isClosed, linkedClaim) {
     let panel = document.getElementById("finder-action-bar");
     let proofDisplay = document.getElementById("finder-claim-proof-display");
     if (!panel) return;
 
-    // Show action bar ONLY to Finder during Pending state
-    if (isFinder && !isApproved && !isRejected) {
+    // Show action bar ONLY to Finder during Pending state (NOT approved, NOT rejected, NOT closed)
+    if (isFinder && !rawIsApproved && !isRejected && !isClosed) {
         panel.classList.remove("d-none");
         if (proofDisplay) {
             let proofText = linkedClaim && linkedClaim.providedProof ? linkedClaim.providedProof : "No details provided";
@@ -204,7 +211,7 @@ function renderChatInputState(isApproved, isFinder, isRejected, isClosed) {
     let safetyTip = document.getElementById("chat-safety-tip");
     let chipsRow = document.getElementById("chat-chips-row");
 
-    if (isApproved) {
+    if (isApproved && !isClosed) {
         if (chatInput) {
             chatInput.disabled = false;
             chatInput.placeholder = "Type a message to coordinate recovery...";
@@ -216,7 +223,7 @@ function renderChatInputState(isApproved, isFinder, isRejected, isClosed) {
     } else {
         if (chatInput) {
             chatInput.disabled = true;
-            chatInput.placeholder = isRejected ? "Chat is locked (Claim Rejected)" : "Chat is locked (Verification Pending)";
+            chatInput.placeholder = isClosed ? "Chat is locked (Item Recovered / Report Closed)" : (isRejected ? "Chat is locked (Claim Rejected)" : "Chat is locked (Verification Pending)");
         }
         if (sendBtn) sendBtn.disabled = true;
         if (safetyTip) safetyTip.classList.add("d-none");
@@ -342,13 +349,16 @@ function renderRecoveryStatusBar() {
                         Location: <strong>${escapeHtml(rec.location)}</strong> · ${rec.date} @ ${rec.time}
                     </span>
                 </div>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="text-end">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="text-end me-1">
                         <span class="extra-small text-muted d-block uppercase fw-bold" style="font-size: 0.65rem;">Recovery in:</span>
                         <span id="recovery-countdown-display" class="badge bg-primary fs-6 font-monospace py-1.5 px-2.5">00 : 00 : 00</span>
                     </div>
-                    <button class="btn btn-sm btn-outline-primary fw-bold extra-small py-1 px-2.5" onclick="openArrangeRecoveryModal()">
-                        <i class="bi bi-pencil me-1"></i>Update Time
+                    <button class="btn btn-sm btn-outline-primary fw-bold extra-small py-1.5 px-2.5" onclick="openArrangeRecoveryModal()">
+                        <i class="bi bi-pencil me-1"></i>Update Plan
+                    </button>
+                    <button class="btn btn-sm btn-success fw-bold extra-small py-1.5 px-2.5" onclick="openHandoffCodeModal()">
+                        <i class="bi bi-shield-lock-fill me-1"></i>Secure Handoff Verification
                     </button>
                 </div>
             `;
@@ -386,9 +396,12 @@ function renderRecoveryStatusBar() {
                         </strong>
                         <span class="text-dark small fw-semibold">Did you receive your item? Your scheduled recovery time has passed.</span>
                     </div>
-                    <div class="d-flex gap-2 flex-wrap">
+                    <div class="d-flex gap-2 flex-wrap align-items-center">
                         <button class="btn btn-sm btn-success fw-bold py-1.5 px-3" onclick="confirmItemReceipt(true)">
                             <i class="bi bi-check-circle-fill me-1"></i>✓ Yes, I received my item
+                        </button>
+                        <button class="btn btn-sm btn-primary fw-bold extra-small py-1.5 px-2.5" onclick="openHandoffCodeModal()">
+                            <i class="bi bi-shield-lock-fill me-1"></i>Secure Handoff Verification
                         </button>
                         <button class="btn btn-sm btn-outline-secondary fw-bold py-1.5 px-3" onclick="confirmItemReceipt(false)">
                             Not yet
@@ -407,7 +420,12 @@ function renderRecoveryStatusBar() {
                             <small class="text-muted extra-small">Scheduled recovery time has passed. Awaiting confirmation from lost owner (<strong>${escapeHtml(lostOwnerName)}</strong>).</small>
                         </div>
                     </div>
-                    <span class="badge bg-warning text-dark rounded-pill px-3 py-1.5 fw-bold extra-small">Awaiting Owner Confirmation</span>
+                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-1.5 fw-bold extra-small">Awaiting Owner Confirmation</span>
+                        <button class="btn btn-sm btn-success fw-bold extra-small py-1.5 px-2.5" onclick="openHandoffCodeModal()">
+                            <i class="bi bi-shield-lock-fill me-1"></i>Secure Handoff Verification
+                        </button>
+                    </div>
                 `;
                 return;
             }
@@ -415,7 +433,7 @@ function renderRecoveryStatusBar() {
 
         // DEFAULT VERIFIED STATE: No date set yet or 'Not yet' clicked
         let recInfo = rec
-            ? `<strong>${rec.location}</strong> · ${rec.date} @ ${rec.time}`
+            ? `<strong>${escapeHtml(rec.location)}</strong> · ${rec.date} @ ${rec.time}`
             : `Ownership Verified by Finder`;
 
         bar.className = "p-3 border-bottom bg-success-subtle text-dark d-flex justify-content-between align-items-center flex-wrap gap-2";
@@ -886,13 +904,14 @@ function confirmItemReceipt(isReceived) {
     if (isReceived) {
         // Lost Owner confirms "Yes, I received my item"
         updateChatStatus(currentChatId, "Recovered");
+        lockChatAsReadOnly(currentChatId);
 
         // System message in chat
         let systemMsg = {
             id: "MSG-" + Date.now(),
             senderId: "SYSTEM",
             senderName: "CampusFind System",
-            text: `🎉 Item receipt confirmed by owner (${currentUser.username}). Status updated to RECOVERED!`,
+            text: `🎉 Item receipt confirmed by owner (${currentUser.username}). Status updated to RECOVERED! This conversation is now read-only.`,
             type: "system",
             timestamp: new Date().toISOString(),
             read: true

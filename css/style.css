@@ -270,60 +270,40 @@ html.light-theme .hero-section {
     background-color: var(--bg-main) !important;
 }
 
-/* Ambient glow blobs for Hero Section in Dark Mode */
-.hero-section::before {
-    content: "";
-    position: absolute;
-    top: 20%;
-    left: -10%;
-    width: 350px;
-    height: 350px;
-    background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%);
-    filter: blur(60px);
-    z-index: 0;
-    pointer-events: none;
-}
-
-.hero-section::after {
-    content: "";
-    position: absolute;
-    bottom: 10%;
-    right: -10%;
-    width: 350px;
-    height: 350px;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
-    filter: blur(60px);
-    z-index: 0;
-    pointer-events: none;
-}
-
-/* Deactivate pseudo glow blobs in light theme */
-html.light-theme .hero-section::before,
-html.light-theme .hero-section::after {
-    display: none;
-}
-
 .hero-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 1rem;
-    background-color: var(--primary-light);
-    color: var(--primary-color);
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    background: rgba(6, 182, 212, 0.08);
+    color: #06b6d4;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     border-radius: 50px;
-    margin-bottom: 1.5rem;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba(6, 182, 212, 0.25);
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.08);
+}
+
+.hero-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #06b6d4;
+    box-shadow: 0 0 6px #06b6d4;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .hero-title {
-    font-size: 2.75rem;
+    font-size: 3.1rem;
     font-weight: 800;
-    line-height: 1.2;
-    margin-bottom: 1rem;
+    line-height: 1.18;
+    margin-bottom: 1.25rem;
     color: var(--text-heading);
+    letter-spacing: -0.02em;
 }
 
 .hero-title span {
@@ -333,12 +313,22 @@ html.light-theme .hero-section::after {
 }
 
 .hero-subtitle {
-    font-size: 1.1rem;
+    font-size: 1.08rem;
     color: var(--text-body);
-    max-width: 680px;
-    margin: 0 auto 2.2rem;
+    max-width: 480px;
+    margin: 0 0 2rem 0;
     font-weight: 400;
+    line-height: 1.55;
     opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.15rem;
+    }
+    .hero-subtitle {
+        max-width: 100%;
+    }
 }
 
 /* Stat Box hover effects */
