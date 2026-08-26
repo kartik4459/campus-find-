@@ -304,6 +304,37 @@ function scrollToMyReports(e) {
     }, 150);
 }
 
+function scrollToCampusInsights(e) {
+    let section = document.getElementById("campus-insights-section");
+    if (!section) return;
+
+    if (e) e.preventDefault();
+
+    let sidebarEl = document.getElementById("sidebarMenu");
+    if (sidebarEl) {
+        let bsOffcanvas = (typeof bootstrap !== "undefined" && bootstrap.Offcanvas) ? bootstrap.Offcanvas.getInstance(sidebarEl) : null;
+        if (bsOffcanvas) {
+            bsOffcanvas.hide();
+        } else {
+            let closeBtn = sidebarEl.querySelector(".btn-close");
+            if (closeBtn) closeBtn.click();
+        }
+    }
+
+    setTimeout(function() {
+        let navbar = document.querySelector(".navbar-custom");
+        let navbarHeight = navbar ? navbar.getBoundingClientRect().height : 70;
+        let targetTop = Math.max(0, section.getBoundingClientRect().top + window.scrollY - navbarHeight - 16);
+        window.scrollTo({
+            top: targetTop,
+            behavior: "smooth"
+        });
+        if (history && history.pushState) {
+            history.pushState(null, null, "#campus-insights-section");
+        }
+    }, 150);
+}
+
 // -------------------------------------------------------------
 // 1. HOME PAGE LOGIC
 // -------------------------------------------------------------
@@ -323,6 +354,41 @@ function initHomePage() {
                 });
             }
         }, 300);
+    } else if (window.location.hash === "#campus-insights-section") {
+        setTimeout(function() {
+            let section = document.getElementById("campus-insights-section");
+            if (section) {
+                let navbar = document.querySelector(".navbar-custom");
+                let navbarHeight = navbar ? navbar.getBoundingClientRect().height : 70;
+                window.scrollTo({
+                    top: Math.max(0, section.getBoundingClientRect().top + window.scrollY - navbarHeight - 16),
+                    behavior: "smooth"
+                });
+            }
+        }, 300);
+    }
+
+    // Active link highlighting for Campus Insights vs Home
+    let insightsSection = document.getElementById("campus-insights-section");
+    if (insightsSection) {
+        let activeObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                let insightsLinks = document.querySelectorAll('a[href*="campus-insights-section"]');
+                let homeLinks = document.querySelectorAll('.sidebar-nav a[href="index.html"]');
+                if (entry.isIntersecting) {
+                    insightsLinks.forEach(link => link.classList.add("active"));
+                    homeLinks.forEach(link => link.classList.remove("active"));
+                } else if (!window.location.hash.includes("campus-insights-section")) {
+                    insightsLinks.forEach(link => link.classList.remove("active"));
+                    homeLinks.forEach(link => {
+                        if (window.location.pathname.endsWith("index.html") || window.location.pathname.endsWith("/")) {
+                            link.classList.add("active");
+                        }
+                    });
+                }
+            });
+        }, { threshold: 0.25 });
+        activeObserver.observe(insightsSection);
     }
 
     // Calculate real data target counts
@@ -4358,6 +4424,101 @@ function initCampusInsights() {
     }, { threshold: 0.2 });
 
     observer.observe(section);
+
+    // 4. Donut Segment Interactive Click Handler & Information Popup
+    let popup = document.getElementById("donut-segment-popup");
+    let popupTitle = document.getElementById("donut-popup-title");
+    let popupCount = document.getElementById("donut-popup-count");
+    let popupPct = document.getElementById("donut-popup-pct");
+    let popupClose = document.getElementById("donut-popup-close");
+    let donutWrapper = document.getElementById("campus-insights-donut-wrapper");
+
+    let donutSegments = [
+        {
+            el: arcLost,
+            title: "Lost Items",
+            count: countLost,
+            pct: pctLost,
+            colorDark: "#a855f7",
+            colorLight: "#7c3aed",
+            titleDark: "#c084fc",
+            titleLight: "#7c3aed",
+            glow: "rgba(168, 85, 247, 0.35)"
+        },
+        {
+            el: arcFound,
+            title: "Found Items",
+            count: countFound,
+            pct: pctFound,
+            colorDark: "#06b6d4",
+            colorLight: "#0891b2",
+            titleDark: "#38bdf8",
+            titleLight: "#0891b2",
+            glow: "rgba(6, 182, 212, 0.35)"
+        },
+        {
+            el: arcRecovered,
+            title: "Recovered Items",
+            count: countRecovered,
+            pct: pctRecovered,
+            colorDark: "#10b981",
+            colorLight: "#059669",
+            titleDark: "#34d399",
+            titleLight: "#059669",
+            glow: "rgba(16, 185, 129, 0.35)"
+        }
+    ];
+
+    function closeDonutPopup() {
+        if (popup) popup.classList.add("d-none");
+        donutSegments.forEach(s => {
+            if (s.el) s.el.classList.remove("is-selected");
+        });
+    }
+
+    donutSegments.forEach(seg => {
+        if (!seg.el) return;
+
+        // Hover In: Show tooltip & highlight segment
+        seg.el.addEventListener("mouseenter", function(e) {
+            donutSegments.forEach(s => {
+                if (s.el) s.el.classList.remove("is-selected");
+            });
+            seg.el.classList.add("is-selected");
+
+            let isLight = document.documentElement.classList.contains("light-theme");
+            let borderColor = isLight ? seg.colorLight : seg.colorDark;
+            let titleColor = isLight ? seg.titleLight : seg.titleDark;
+
+            if (popup) {
+                popup.style.setProperty("--popup-border", borderColor);
+                popup.style.setProperty("--popup-title-color", titleColor);
+                popup.style.setProperty("--popup-glow", seg.glow);
+
+                if (popupTitle) popupTitle.textContent = seg.title;
+                if (popupCount) popupCount.textContent = `${seg.count} ${seg.count === 1 ? 'report' : 'reports'}`;
+                if (popupPct) popupPct.textContent = `${seg.pct}% of total reports`;
+
+                popup.classList.remove("d-none");
+
+                // Restart popup animation for smooth transition
+                popup.style.animation = 'none';
+                popup.offsetHeight; /* trigger reflow */
+                popup.style.animation = 'donutPopupFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+            }
+        });
+
+        // Hover Out: Hide tooltip & un-highlight segment
+        seg.el.addEventListener("mouseleave", function(e) {
+            closeDonutPopup();
+        });
+    });
+
+    if (donutWrapper) {
+        donutWrapper.addEventListener("mouseleave", function() {
+            closeDonutPopup();
+        });
+    }
 }
 
 

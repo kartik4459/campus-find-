@@ -472,7 +472,7 @@ function renderChatMessages() {
         if (msg.type === "system") {
             container.innerHTML += `
                 <div class="text-center my-2">
-                    <div class="d-inline-block px-3 py-1.5 bg-dark-subtle rounded-pill border border-secondary-subtle extra-small text-muted shadow-sm">
+                    <div class="d-inline-block px-3.5 py-1.5 bg-dark-subtle rounded-pill border border-secondary-subtle extra-small shadow-sm">
                         ${msg.text}
                     </div>
                 </div>
@@ -703,7 +703,28 @@ function finderRequestMoreInfo() {
 // -------------------------------------------------------------
 // RECOVERY ARRANGEMENT & MARK AS RECOVERED
 // -------------------------------------------------------------
+function handleRecoveryLocationChange(selectEl) {
+    let customGroup = document.getElementById("custom-recovery-location-group");
+    let customInput = document.getElementById("custom-recovery-location");
+    if (!customGroup || !customInput) return;
+
+    if (selectEl && selectEl.value === "Other") {
+        customGroup.classList.remove("d-none");
+        customInput.required = true;
+        customInput.focus();
+    } else {
+        customGroup.classList.add("d-none");
+        customInput.required = false;
+        customInput.value = "";
+    }
+}
+
 function openArrangeRecoveryModal() {
+    let selectEl = document.getElementById("recovery-location");
+    if (selectEl) {
+        selectEl.value = selectEl.options[0].value;
+        handleRecoveryLocationChange(selectEl);
+    }
     let modalEl = document.getElementById("arrangeRecoveryModal");
     if (modalEl) {
         let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -713,7 +734,15 @@ function openArrangeRecoveryModal() {
 
 function handleConfirmRecoveryPlan(event) {
     event.preventDefault();
-    let location = document.getElementById("recovery-location").value;
+    let locationSelect = document.getElementById("recovery-location");
+    let location = locationSelect ? locationSelect.value : "";
+    if (location === "Other") {
+        let customInput = document.getElementById("custom-recovery-location");
+        let customVal = customInput ? customInput.value.trim() : "";
+        if (customVal) {
+            location = customVal;
+        }
+    }
     let date = document.getElementById("recovery-date").value;
     let time = document.getElementById("recovery-time").value;
     let notes = document.getElementById("recovery-notes") ? document.getElementById("recovery-notes").value.trim() : "";
