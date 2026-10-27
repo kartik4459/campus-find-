@@ -883,6 +883,11 @@ html.light-theme .modal-footer {
 }
 
 /* Button variants styling overrides */
+.btn,
+button:not(.btn-close):not([class*="carousel"]):not([class*="navbar-toggler"]) {
+    transition: color 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease, filter 0.25s ease;
+}
+
 .btn-primary {
     background-color: var(--primary-color) !important;
     border-color: var(--primary-color) !important;
