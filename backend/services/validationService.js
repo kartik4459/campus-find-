@@ -34,6 +34,9 @@ if (!validTypes.includes(formData.type)) {
     if (!formData.itemName || formData.itemName.trim().length < 3) {
         errors.itemName = "Item name must be at least 3 characters long.";
     }
+    if (formData.itemName && formData.itemName.trim().length > 100) {
+    errors.itemName = "Item name cannot exceed 100 characters.";
+}
 
     if (!formData.category) {
         errors.category = "Please select an item category.";
