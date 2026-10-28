@@ -5,7 +5,7 @@ const storage = require('../services/storageService');
 // GET /api/notifications
 router.get('/', async (req, res) => {
     try {
-        const { email } = req.query;
+        const email = req.query.email?.trim();
         const notifs = await storage.getNotifications(email);
         res.json({ success: true, notifications: notifs });
     } catch (err) {
