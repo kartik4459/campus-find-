@@ -26,7 +26,11 @@ function validatePasswordSecurity(password) {
 
 function validateReportForm(formData) {
     const errors = {};
+    const validTypes = ['lost', 'found'];
 
+if (!validTypes.includes(formData.type)) {
+    errors.type = "Report type must be either lost or found.";
+}
     if (!formData.itemName || formData.itemName.trim().length < 3) {
         errors.itemName = "Item name must be at least 3 characters long.";
     }
