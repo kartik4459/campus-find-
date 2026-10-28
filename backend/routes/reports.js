@@ -25,8 +25,8 @@ router.get('/', async (req, res) => {
             const target = email.toLowerCase().trim();
             reports = reports.filter(r => r && r.postedByEmail && r.postedByEmail.toLowerCase().trim() === target);
         }
-        if (search) {
-            const q = search.toLowerCase().trim();
+        if (search?.trim()) {
+    const q = search.trim().toLowerCase();
             reports = reports.filter(r => {
                 if (!r) return false;
                 return (r.itemName && r.itemName.toLowerCase().includes(q)) ||
