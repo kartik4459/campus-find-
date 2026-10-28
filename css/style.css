@@ -329,6 +329,7 @@ html.light-theme .hero-section::after {
 .hero-title span {
     background: var(--gradient-text);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -3248,6 +3249,7 @@ html.light-theme .recent-reports-section .card-img-wrapper {
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
 }
 
@@ -4585,6 +4587,7 @@ html.light-theme body[data-page="my-reports"] .user-item-card:hover {
 .text-gradient-insights {
     background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

@@ -44,6 +44,37 @@ function safeParseJSON(raw, fallback) {
     }
 }
 
+// ── Node.js + Express Backend Sync Helper ─────────────────────
+// Dispatches updates in background to Node.js backend when available
+// Preserves 100% synchronous LocalStorage access for uninterrupted UI
+var BACKEND_BASE_URL = (function () {
+    if (typeof window !== "undefined" && window.location) {
+        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+            return "http://localhost:3000";
+        }
+        if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+            return window.location.origin;
+        }
+    }
+    return "http://localhost:3000";
+})();
+
+function syncWithBackend(path, method, body) {
+    if (typeof fetch !== "function") return;
+    try {
+        var url = (BACKEND_BASE_URL ? BACKEND_BASE_URL : "") + path;
+        fetch(url, {
+            method: method || "POST",
+            headers: { "Content-Type": "application/json" },
+            body: body ? JSON.stringify(body) : undefined
+        }).catch(function () {
+            // Server offline or standalone client; LocalStorage handles persistence seamlessly
+        });
+    } catch (e) {
+        // Safe failover
+    }
+}
+
 // ============================================================
 //  STORAGE INIT
 //  Called once on script load.
@@ -101,6 +132,53 @@ function initStorage() {
     if (!localStorage.getItem("campus_chats")) {
         localStorage.setItem("campus_chats", JSON.stringify([]));
     }
+
+    // ── Background sync from Node.js backend if available ────
+    if (typeof fetch === "function") {
+        fetch((BACKEND_BASE_URL ? BACKEND_BASE_URL : "") + "/api/sync")
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data && data.success) {
+                    var localReports = safeParseJSON(localStorage.getItem("campus_reports"), []);
+                    if (!Array.isArray(localReports)) localReports = [];
+                    if (Array.isArray(data.reports) && data.reports.length > 0) {
+                        var reportMap = {};
+                        localReports.forEach(function(r) { if (r && r.id) reportMap[String(r.id)] = true; });
+                        var reportsChanged = false;
+                        data.reports.forEach(function(r) {
+                            if (r && r.id && !reportMap[String(r.id)]) {
+                                if (!r.postedBy && r.contactName) r.postedBy = r.contactName;
+                                if (!r.postedByEmail && r.contactEmail) r.postedByEmail = r.contactEmail;
+                                localReports.push(r);
+                                reportMap[String(r.id)] = true;
+                                reportsChanged = true;
+                            }
+                        });
+                        if (reportsChanged || localReports.length === 0) {
+                            localStorage.setItem("campus_reports", JSON.stringify(localReports));
+                        }
+                    }
+                    var localUsers = safeParseJSON(localStorage.getItem("campusfind_users"), []);
+                    if (!Array.isArray(localUsers)) localUsers = [];
+                    if (Array.isArray(data.users) && data.users.length > 0) {
+                        var userMap = {};
+                        localUsers.forEach(function(u) { if (u && u.useremail) userMap[u.useremail.toLowerCase().trim()] = true; });
+                        var usersChanged = false;
+                        data.users.forEach(function(u) {
+                            if (u && u.useremail && !userMap[u.useremail.toLowerCase().trim()]) {
+                                localUsers.push(u);
+                                userMap[u.useremail.toLowerCase().trim()] = true;
+                                usersChanged = true;
+                            }
+                        });
+                        if (usersChanged || localUsers.length === 0) {
+                            localStorage.setItem("campusfind_users", JSON.stringify(localUsers));
+                        }
+                    }
+                }
+            })
+            .catch(function () {});
+    }
 }
 
 // Run immediately when the script is loaded
@@ -142,6 +220,7 @@ function saveUser(user) {
         users.push(user);
     }
     localStorage.setItem("campusfind_users", JSON.stringify(users));
+    syncWithBackend("/api/users/save", "POST", user);
 }
 
 /**
@@ -278,6 +357,7 @@ function setUserBanned(email, banned) {
     if (idx === -1) return;
     users[idx].banned = !!banned;
     localStorage.setItem("campusfind_users", JSON.stringify(users));
+    syncWithBackend("/api/users/ban", "POST", { email: email, banned: banned });
 }
 
 function deleteUser(email) {
@@ -287,6 +367,7 @@ function deleteUser(email) {
         return !(u.useremail && u.useremail.toLowerCase().trim() === key);
     });
     localStorage.setItem("campusfind_users", JSON.stringify(users));
+    syncWithBackend("/api/users/" + encodeURIComponent(email), "DELETE");
 }
 
 // ============================================================
@@ -307,6 +388,7 @@ function saveReport(report) {
     var reports = getReports();
     reports.unshift(report);
     localStorage.setItem("campus_reports", JSON.stringify(reports));
+    syncWithBackend("/api/reports", "POST", report);
 }
 
 function sameIdString(id1, id2) {
@@ -372,6 +454,7 @@ function deleteReport(id) {
         return r && !sameIdString(r.id, id);
     });
     localStorage.setItem("campus_reports", JSON.stringify(reports));
+    syncWithBackend("/api/reports/" + encodeURIComponent(id), "DELETE");
 }
 
 // ============================================================
@@ -417,6 +500,7 @@ function saveClaim(claim) {
     var claims = getClaims();
     claims.unshift(claim);
     localStorage.setItem("campus_claims", JSON.stringify(claims));
+    syncWithBackend("/api/claims", "POST", claim);
 }
 
 function updateClaimStatus(claimId, status, extraData) {
@@ -435,6 +519,7 @@ function updateClaimStatus(claimId, status, extraData) {
         }
     }
     localStorage.setItem("campus_claims", JSON.stringify(claims));
+    syncWithBackend("/api/claims/" + encodeURIComponent(claimId), "PATCH", { status: status, extraData: extraData });
 }
 
 // ============================================================
@@ -508,6 +593,7 @@ function sendNotification(notification) {
     var all = safeParseJSON(localStorage.getItem("campus_notifications"), []);
     all.unshift(notification);
     localStorage.setItem("campus_notifications", JSON.stringify(all));
+    syncWithBackend("/api/notifications", "POST", notification);
 }
 
 function markNotificationAsRead(notifId) {
@@ -517,6 +603,7 @@ function markNotificationAsRead(notifId) {
     if (idx >= 0) {
         all[idx].read = true;
         localStorage.setItem("campus_notifications", JSON.stringify(all));
+        syncWithBackend("/api/notifications/" + encodeURIComponent(notifId) + "/read", "PATCH");
     }
 }
 
@@ -528,6 +615,7 @@ function clearNotifications(userEmail) {
         return !n.recipientEmail || n.recipientEmail.toLowerCase().trim() !== target;
     });
     localStorage.setItem("campus_notifications", JSON.stringify(remaining));
+    syncWithBackend("/api/notifications?email=" + encodeURIComponent(userEmail), "DELETE");
 }
 
 function deleteNotification(notifId) {
@@ -535,6 +623,7 @@ function deleteNotification(notifId) {
     var all = safeParseJSON(localStorage.getItem("campus_notifications"), []);
     var remaining = all.filter(function(n) { return !sameIdString(n.id, notifId); });
     localStorage.setItem("campus_notifications", JSON.stringify(remaining));
+    syncWithBackend("/api/notifications/" + encodeURIComponent(notifId), "DELETE");
 }
 
 // ============================================================
@@ -594,6 +683,7 @@ function saveChat(chat) {
         chats.unshift(chat);
     }
     localStorage.setItem("campus_chats", JSON.stringify(chats));
+    syncWithBackend("/api/chats", "POST", chat);
 }
 
 function sendChatMessage(chatId, message) {
@@ -603,6 +693,7 @@ function sendChatMessage(chatId, message) {
     chat.messages.push(message);
     chat.updatedAt = new Date().toISOString();
     localStorage.setItem("campus_chats", JSON.stringify(chats));
+    syncWithBackend("/api/chats/" + encodeURIComponent(chatId) + "/messages", "POST", message);
 }
 
 function updateChatStatus(chatId, status, recoveryDetails) {
@@ -613,6 +704,7 @@ function updateChatStatus(chatId, status, recoveryDetails) {
     if (recoveryDetails) chat.recoveryDetails = recoveryDetails;
     chat.updatedAt = new Date().toISOString();
     localStorage.setItem("campus_chats", JSON.stringify(chats));
+    syncWithBackend("/api/chats/" + encodeURIComponent(chatId) + "/status", "PATCH", { status: status, recoveryDetails: recoveryDetails });
 }
 
 function getUnreadChatCount(userEmail) {
@@ -636,6 +728,7 @@ function markChatMessagesRead(chatId, userEmail) {
         if (m.senderId !== userEmail) m.read = true;
     });
     localStorage.setItem("campus_chats", JSON.stringify(chats));
+    syncWithBackend("/api/chats/" + encodeURIComponent(chatId) + "/read", "POST", { userEmail: userEmail });
 }
 
 // ============================================================

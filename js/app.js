@@ -1081,7 +1081,7 @@ function initReportPage() {
             status:        "Searching"
         };
 
-        // ── Persist to campus_reports ───────────────────────────────
+        // ── Persist to campus_reports (LocalStorage) ────────────────
         try {
             let existing = [];
             let raw = localStorage.getItem("campus_reports");
@@ -1097,7 +1097,7 @@ function initReportPage() {
         uploadedImageBase64 = null;
         uploadedImageFeaturesPromise = null;
 
-        // ── Verify save ─────────────────────────────────────────────
+        // ── Verify LocalStorage save ────────────────────────────────
         try {
             let check = JSON.parse(localStorage.getItem("campus_reports") || "[]");
             let found = Array.isArray(check) ? check.find(r => r.id === newReport.id) : null;
@@ -1106,6 +1106,57 @@ function initReportPage() {
                 return;
             }
         } catch(ex) { /* if parsing fails, trust the save went through */ }
+
+        // ── Send report to Node.js backend → MongoDB Atlas ──────────
+        // Always target port 3000 regardless of which port Live Server runs on.
+        const API_BASE = "http://localhost:3000";
+
+        // Backend validateReportForm requires contactName and contactEmail.
+        // Map them from the activeUser fields already collected above.
+        let reportForApi = Object.assign({}, newReport, {
+            contactName:  activeUser.username  || newReport.postedBy      || "",
+            contactEmail: activeUser.useremail || newReport.postedByEmail  || ""
+        });
+
+        try {
+            let apiResponse = await fetch(API_BASE + "/api/reports", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(reportForApi)
+            });
+
+            let apiResult = null;
+            try {
+                apiResult = await apiResponse.json();
+            } catch (_) {
+                apiResult = null;
+            }
+
+            if (!apiResponse.ok || !apiResult || !apiResult.success) {
+                // apiResult.errors from validateReportForm is a plain object
+                // {fieldName: "message"}, not an array — extract safely.
+                let errMsg;
+                if (apiResult) {
+                    if (typeof apiResult.error === "string" && apiResult.error) {
+                        errMsg = apiResult.error;
+                    } else if (apiResult.errors) {
+                        if (Array.isArray(apiResult.errors)) {
+                            errMsg = apiResult.errors.join(", ");
+                        } else if (typeof apiResult.errors === "object") {
+                            errMsg = Object.values(apiResult.errors).join("; ");
+                        } else {
+                            errMsg = String(apiResult.errors);
+                        }
+                    }
+                }
+                errMsg = errMsg || ("Server responded with status " + apiResponse.status);
+                showError("Report saved locally but could not be saved to the database: " + errMsg + ". Please check that the backend server is running on port 3000.");
+                return;
+            }
+        } catch (networkErr) {
+            showError("Report saved locally but the database could not be reached: " + networkErr.message + ". Please ensure the backend server is running on port 3000.");
+            return;
+        }
 
         // ── Success → redirect ──────────────────────────────────────
         showSuccess('Report for "' + escapeHtml(newReport.itemName) + '" submitted by ' + escapeHtml(activeUser.username || "you") + '! Redirecting...');
@@ -1118,8 +1169,8 @@ function initReportPage() {
 // -------------------------------------------------------------
 // 3. MATCHES PAGE LOGIC
 // -------------------------------------------------------------
-function initMatchesPage() {
-    let reports = getReports();
+function initMatchesPage(fetchedReports) {
+    let reports = Array.isArray(fetchedReports) ? fetchedReports : getReports();
     let urlParams = new URLSearchParams(window.location.search);
     let urlTargetId = urlParams.get("id");
     let currentUser = getCurrentUser();
@@ -1180,7 +1231,7 @@ function initMatchesPage() {
             otherReports.forEach(r => {
                 otherOptGroup += `
                     <option value="${r.id}" ${targetReport && r.id === targetReport.id ? 'selected' : ''}>
-                        [${r.type.toUpperCase()}] ${r.itemName} (by ${r.postedBy})
+                        [${r.type.toUpperCase()}] ${r.itemName} (by ${r.postedBy || r.contactName || 'Student'})
                     </option>
                 `;
             });
@@ -1200,12 +1251,40 @@ function initMatchesPage() {
     // If active user has no reports yet and hasn't selected another campus report:
     if (!targetReport && myReports.length === 0) {
         renderNoUserReportsState(currentUser);
-        return;
-    }
-
-    if (targetReport) {
+    } else if (targetReport) {
         renderTargetBanner(targetReport, currentUser);
         renderMatchCardsList(targetReport, reports);
+    }
+
+    // Refresh from backend to sync any new reports from MongoDB Atlas
+    if (!fetchedReports && typeof fetch === "function") {
+        const API_BASE = "http://localhost:3000";
+        fetch(API_BASE + "/api/reports")
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success && Array.isArray(data.reports)) {
+                    let local = getReports();
+                    let map = {};
+                    local.forEach(r => { if (r && r.id) map[String(r.id)] = true; });
+                    let added = false;
+                    data.reports.forEach(r => {
+                        if (r && r.id && !map[String(r.id)]) {
+                            if (!r.postedBy && r.contactName) r.postedBy = r.contactName;
+                            if (!r.postedByEmail && r.contactEmail) r.postedByEmail = r.contactEmail;
+                            local.push(r);
+                            map[String(r.id)] = true;
+                            added = true;
+                        }
+                    });
+                    if (added) {
+                        localStorage.setItem("campus_reports", JSON.stringify(local));
+                        initMatchesPage(local);
+                    }
+                }
+            })
+            .catch(() => {
+                // Offline fallback - LocalStorage reports remain in place
+            });
     }
 }
 
